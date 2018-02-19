@@ -18,10 +18,10 @@ using namespace std;
 
 // obsolete for assymetric formulation where only i < j
 // only for j < i
-/*inline int ind(const int i, const int j, const int n)
+inline int ind(const int i, const int j, const int n)
 {
   return j + (2*n - i - 1)*i/2;
-}*/
+}
 
 //for debug
 void print_GRBLinExpr(GRBLinExpr& expr)
@@ -265,15 +265,16 @@ int main(int argc, char *argv[])
     GRBModel model = GRBModel(env);
     model.getEnv().set(GRB_IntParam_LazyConstraints, 1);
     // Create variables
-    int nr_vars = n*(n+1)/2; // store only i <= j
-    GRBVar* x = model.addVars(nr_vars, GRB_BINARY);
+    GRBVar** x = new GRBVar*[n];
+    for(int i = 0; i < n; ++i)
+      x[i] = model.addVars(n, GRB_BINARY);
     model.update();
 
     // Set objective: minimize sum x_ij
     GRBLinExpr expr = 0;
     for(int i = 0; i < n; ++i)
-      for(int j = i; j < n; ++j)
-        expr += d[i][j] * p[i] * x[ind(i,j,n)];
+      for(int j = 0; j < n; ++j)
+        expr += d[i][j] * p[i] * x[i][j];
 
     model.setObjective(expr, GRB_MINIMIZE);
 
@@ -281,49 +282,47 @@ int main(int argc, char *argv[])
     for(int i = 0; i < n; ++i)
     {
       GRBLinExpr constr = 0;
-      for(int j = i; j < n; ++j)
-        constr += x[ind(i,j,n)];
+      for(int j = 0; j < n; ++j)
+        constr += x[i][j];
       model.addConstr(constr == 1);
     }
 
     // add contraints (5)
     for(int i = 0; i < n; ++i)
-    {
-      for(int j = 0; j < i; ++j)
-        model.addConstr(x[ind(j,i,n)] <= x[ind(i,i,n)]);
-    }
+      for(int j = 0; j < n; ++j)
+        if(i != j) model.addConstr(x[j][i] <= x[i][i]);
 
     // add constraint 3
     expr = 0;
     for(int j = 0; j < n; ++j)
-      expr += x[ind(j,j,n)];
+      expr += x[j][j];
     model.addConstr(expr == k);
 
     // add constraint 4
     for(int j = 0; j < n; ++j)
     {
       GRBLinExpr constr = 0;
-      for(int i = 0; i < j; ++i)
-        constr += p[i]*x[ind(i,j,n)];
+      for(int i = 0; i < n; ++i)
+        if(i != j) constr += p[i]*x[i][j];
       // add for j
-      model.addConstr(constr + (p[j] - U)*x[ind(j,j,n)] <= 0); // U
-      model.addConstr(constr + (p[j] - L)*x[ind(j,j,n)] >= 0); // L
+      model.addConstr(constr + (p[j] - U)*x[j][j] <= 0); // U
+      model.addConstr(constr + (p[j] - L)*x[j][j] >= 0); // L
     }
 
     // Optimize model
-    LazyCallback cb = LazyCallback(x, n, g);
-    model.setCallback(&cb);
+//    LazyCallback cb = LazyCallback(x, n, g);
+//    model.setCallback(&cb);
     model.write("out.lp");
     model.optimize();
 
     // translate solution
     for(int i = 0; i < n; ++i)
-      if(x[ind(i,i,n)].get(GRB_DoubleAttr_X) > 0.5)
+      if(x[i][i].get(GRB_DoubleAttr_X) > 0.5)
       {
         printf("Cluster head %d:", i);
-        for(int j = 0; j < i; ++j) // clusterhead is always maximum!
+        for(int j = 0; j < n; ++j) // clusterhead is always maximum!
         {
-          if(x[ind(j,i,n)].get(GRB_DoubleAttr_X) > 0.5)
+          if(j != i && x[j][i].get(GRB_DoubleAttr_X) > 0.5)
           {
             printf(" %u", j);
           }
@@ -335,9 +334,9 @@ int main(int argc, char *argv[])
 
     cout << "Obj: " << model.get(GRB_DoubleAttr_ObjVal) << endl;
 
-    cout << "Number of callbacks = " << cb.numCallbacks << endl;
+/*    cout << "Number of callbacks = " << cb.numCallbacks << endl;
     cout << "Total time in callbacks = " << cb.callbackTime << " secs " << endl;
-
+*/
     delete g;
 
   } catch(GRBException e) {
