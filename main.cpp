@@ -39,27 +39,29 @@ void print_GRBLinExpr(GRBLinExpr& expr)
 class LazyCallback: public GRBCallback
 {
   private:
-    double* x;
+    int** x;
     int* visited;
     int* aci;
-    GRBVar* vars;
+    GRBVar** vars;
     int n;
-    int nvars;
     graph* g;
   public:
     int numCallbacks;
     double callbackTime;
-    LazyCallback(GRBVar* v, int n_, graph* g_) : n(n_), numCallbacks(0), callbackTime(0.)
+    LazyCallback(GRBVar** v, int n_, graph* g_) : n(n_), numCallbacks(0), callbackTime(0.)
     {
-      nvars = n_*(n_+1)/2; x = new double[nvars];
-      vars = v;
+      x = new int*[n];
+      for(int i = 0; i < n; ++i)
+        x[i] = new int[n];
+      vars = v; // pointer copy
       visited = new int[n_];
       aci = new int[n_]; // who cares about memory, maximum time/space trade-off
-      g = g_;
-//      x = new double*[nrd_];
+      g = g_; // shallow copy!
     }
 #define mydel(x) { if(x) delete [] x; }
     virtual ~LazyCallback() {
+      for(int i = 0; i < n; ++i)
+        mydel(x[i]);
       mydel(x);
       mydel(visited);
       mydel(aci);
@@ -72,35 +74,17 @@ class LazyCallback: public GRBCallback
           numCallbacks++;
           auto start = chrono::steady_clock::now();
           // MIP solution callback
-//          for(int i = 0; i < nrd; ++i)
-            x = getSolution(vars, nvars);
-//          for(int i = 0; i < n; ++i)
-//            sol[i] = (x[ind(i,i,n)] > 0.5);
-/*          for(int i = 0; i < n; ++i)
-            for(int j = 0; j <= i; ++j)
-              printf("x%d_%d (%d) = %d\n", j, i, ind(j,i,n), (x[ind(j,i,n)]>0.5)?1:0);*/
-/*          for(int i = 0; i < n; ++i)
-            if(x[ind(i,i,n)] > 0.5)
-            {
-               printf("Cluster head %d:", i);
-               for(int j = 0; j < i; ++j) // clusterhead is always maximum!
-               {
-               if(x[ind(j,i,n)] > 0.5)
-               {
-                  printf(" %u", j);
-                }
-             }
-             printf("\n");
-           }
-*/
+          for(int i = 0; i < n; ++i)
+            for(int j = 0; j < n; ++j)
+              x[i][j] = (getSolution(vars[i][j]) > 0.5)?1:0;
 
           // main work done here
           vector<int> s;
           // check constraint 7
-          // run DFS from ii checking al j < i xji
+          // run DFS from ii
           for(int i = 0; i < n; ++i)
           {
-            if(x[ind(i,i,n)] > 0.5) // i is a cluster head
+            if(x[i][i]) // i is a cluster head
             {
               // run DFS on C_i and mark vertices
               for(int k = 0; k < n; ++k)
@@ -111,19 +95,19 @@ class LazyCallback: public GRBCallback
               {
                 int cur = s.back(); s.pop_back();
                 visited[cur] = 1;
-                auto nb = g->nb(cur);
-                for(auto it = nb.begin(); it != nb.end(); ++it)
+                auto nbs = g->nb(cur);
+                for(int nb: nbs)
                 {
-                  if(*it < i && x[ind(*it, i, n)] > 0.5) // in C_i
+                  if(x[nb][i]) // in C_i
                   {
-                    if(!visited[*it])
-                      s.push_back(*it);
+                    if(!visited[nb])
+                      s.push_back(nb);
                   }
                 }
               }
-              for(int k = 0; k < i; ++k)
+              for(int k = 0; k < n; ++k)
               {
-                if(x[ind(k,i, n)] > 0.5 && !visited[k])
+                if(x[k][i] && !visited[k])
                 {
 //                  printf("Cluster head %d not connected to node %d\n", i, k);
                   // add k,i-separator now
@@ -138,15 +122,15 @@ class LazyCallback: public GRBCallback
                   {
                     int cur = s.back(); s.pop_back();
                     visited[cur] = 1;
-                    auto nb = g->nb(cur);
-                    for(auto it = nb.begin(); it != nb.end(); ++it)
+                    auto nbs = g->nb(cur);
+                    for(int nb: nbs)
                     {
-                      if(!visited[*it])
+                      if(!visited[nb])
                       {
-                        if(*it < i && x[ind(*it, i, n)] > 0.5) // *it in C_i
-                          s.push_back(*it);
+                        if(x[nb][i]) // *it in C_i
+                          s.push_back(nb);
                         else
-                          aci[*it] = 1;
+                          aci[nb] = 1;
                       }
                     }
                   }
@@ -164,22 +148,21 @@ class LazyCallback: public GRBCallback
                   while(!s.empty())
                   {
                     int cur = s.back(); s.pop_back();
-                    auto nb = g->nb(cur);
-                    for(auto it = nb.begin(); it != nb.end(); ++it)
+                    auto nbs = g->nb(cur);
+                    for(int nb: nbs)
                     {
-                      if(!visited[*it])
+                      if(!visited[nb])
                       {
-                        visited[*it] = 1;
-                        if(aci[*it])
+                        visited[nb] = 1;
+                        if(aci[nb])
                         {
-                          if(*it < i)
                           {
                             //printf("+ x%d_%d (%d)", *it, i, ind(*it, i, n));
                             //printf("+ C%d", ind(*it, i, n));
-                            expr += vars[ind(*it, i, n)];
+                            expr += vars[nb][i];
                           }
                         } else {
-                          s.push_back(*it);
+                          s.push_back(nb);
                         }
                       }
                     }
@@ -187,7 +170,7 @@ class LazyCallback: public GRBCallback
                   //printf(" >= x%d_%d (%d)\n", k, i, ind(k,i,n));
                   //printf(" - C%d >= 0\n", ind(k,i,n));
                   //printf("Actual expression (>= 0): ");
-                  expr -= vars[ind(k,i,n)];
+                  expr -= vars[k][i];
                   //print_GRBLinExpr(expr);
                   addLazy(expr >= 0);
                   goto myend; //FIXME but thats's easier, no?
@@ -310,8 +293,8 @@ int main(int argc, char *argv[])
     }
 
     // Optimize model
-//    LazyCallback cb = LazyCallback(x, n, g);
-//    model.setCallback(&cb);
+    LazyCallback cb = LazyCallback(x, n, g);
+    model.setCallback(&cb);
     model.write("out.lp");
     model.optimize();
 
@@ -334,9 +317,9 @@ int main(int argc, char *argv[])
 
     cout << "Obj: " << model.get(GRB_DoubleAttr_ObjVal) << endl;
 
-/*    cout << "Number of callbacks = " << cb.numCallbacks << endl;
+    cout << "Number of callbacks = " << cb.numCallbacks << endl;
     cout << "Total time in callbacks = " << cb.callbackTime << " secs " << endl;
-*/
+
     delete g;
 
   } catch(GRBException e) {
