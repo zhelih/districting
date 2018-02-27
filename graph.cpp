@@ -138,6 +138,36 @@ bool graph::is_connected()
   return res;
 }
 
+//BFS should be more efficient, but keep this for later uses
+void graph::floyd_warshall(vector<vector<int>>& d)
+{
+  int infty = nr_nodes+1;
+  int i, j;
+  // memory management
+  d.resize(nr_nodes);
+  for(i = 0; i < nr_nodes; ++i)
+    d[i].resize(nr_nodes);
+
+  for(i = 0; i < nr_nodes; ++i)
+    for(j = 0; j < nr_nodes; ++j)
+      if(i == j)
+        d[i][j] = 0;
+      else
+        d[i][j] = (is_edge(i,j))?1:infty;
+
+  // main loop
+  for(int k = 0; k < nr_nodes; ++k)
+    for(i = 0; i < nr_nodes; ++i)
+      for(j = 0; j < nr_nodes; ++j)
+        d[i][j] = min(d[i][j], d[i][k] + d[k][j]);
+
+  // assign infty to -1 for now
+  for(i = 0; i < nr_nodes; ++i)
+    for(j = 0; j < nr_nodes; ++j)
+      if(d[i][j] == infty)
+        d[i][j] = -1;
+}
+
 /*void graph::check_solution()
 {
   for(i = 0; i < n; ++i)

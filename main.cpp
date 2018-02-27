@@ -240,6 +240,8 @@ int main(int argc, char *argv[])
     // read dij
     vector<vector<int> > d(n, vector<int>(n, 1)); //TODO data with d_ij
 
+    g->floyd_warshall(d);
+
     fclose(f);
     printf("starting gurobi. k = %d, L = %d, U = %d\n", k, L, U);
 

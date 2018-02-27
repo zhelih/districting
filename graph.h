@@ -20,6 +20,7 @@ class graph
   inline bool is_edge(uint i, uint j) {return adj[i][j];}
   std::vector<int>& nb(uint i) { return nb_[i]; }
   bool is_connected(); // TODO const;
+  void floyd_warshall(std::vector<std::vector<int>>& d);
 //  inline uint weight(uint i) { return 1; }
 };
 
