@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
       if(x[i][i].get(GRB_DoubleAttr_X) > 0.5)
       {
         printf("Cluster head %d:", i);
-        for(int j = 0; j < n; ++j) // clusterhead is always maximum!
+        for(int j = 0; j < n; ++j)
         {
           if(j != i && x[j][i].get(GRB_DoubleAttr_X) > 0.5)
           {
@@ -321,6 +321,34 @@ int main(int argc, char *argv[])
 
     cout << "Number of callbacks = " << cb.numCallbacks << endl;
     cout << "Total time in callbacks = " << cb.callbackTime << " secs " << endl;
+
+    // write to file for an output
+    vector<vector<int> > clusters(n);;
+    for(int i = 0; i < n; ++i)
+      for(int j = 0; j < n; ++j)
+        if(x[i][j].get(GRB_DoubleAttr_X) > 0.5)
+          clusters[j].push_back(i);
+
+/*    printf("Districts:\n");
+    for(i = 0; i < nr_districts; ++i)
+    {
+      printf("District %d: (y[i] = %d)", i, ((y[i].get(GRB_DoubleAttr_X)>0.5)?1:0));
+      for(auto it = clusters[i].begin(); it != clusters[i].end(); ++it)
+        printf(" %d", *it);
+      printf("\n");
+    }
+*/
+    f = fopen("districting.out", "w");
+    int nr = 0;
+    for(int i = 0; i < n; ++i)
+    {
+      for(int node : clusters[i])
+        fprintf(f, "%d %d\n", node, nr);
+      nr += (clusters[i].size() > 0);
+    }
+
+    fclose(f);
+
 
     delete g;
 
