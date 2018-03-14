@@ -18,14 +18,15 @@ texas_c.qpj  texas_c.shx
 
 **Distance matrix between centroids as CSV table (huge)**
 
-texas_d.csv 
+texas_d.csv
+texas_d.zip (zipped version if .csv)
 
 **Data table listing population and neigbors**
 
 texas_features.xls 
 texas_features.csv
 
-**QGIS project files:
+**QGIS project files**
 
 texas.qgs
 texas.qgs~
