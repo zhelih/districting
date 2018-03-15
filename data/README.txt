@@ -19,7 +19,7 @@ texas_c.qpj  texas_c.shx
 **Distance matrix between centroids as CSV table (huge)**
 
 texas_d.csv
-texas_d.zip (zipped version if .csv)
+texas_d.zip (zipped version of .csv)
 
 **Data table listing population and neigbors**
 

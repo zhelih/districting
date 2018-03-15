@@ -38,7 +38,7 @@ layer = iface.activeLayer()
 # of the chosen field.
 layer.startEditing()
 layer.dataProvider().addAttributes(
-        [QgsField(_NEW_NEIGHBORS_FIELD, QVariant.String)])#,
+        [QgsField(_NEW_NEIGHBORS_FIELD, QVariant.String, "", 2000)])#,
          # QgsField(_NEW_SUM_FIELD, QVariant.Int)])
 layer.updateFields()
 # Create a dictionary of all features
@@ -70,7 +70,9 @@ for f in feature_dict.values():
         # these conditions. So if a feature is not disjoint, it is a neighbor.
         if (f != intersecting_f and
             not intersecting_f.geometry().disjoint(geom)):
-            neighbors.append(intersecting_f[_NAME_FIELD])
+            com = intersecting_f.geometry().intersection(geom)
+            if(com.length() > 1.e-10):
+                neighbors.append(intersecting_f[_NAME_FIELD])
 #            neighbors_sum += intersecting_f[_SUM_FIELD]
     f[_NEW_NEIGHBORS_FIELD] = ','.join(neighbors)
 #    f[_NEW_SUM_FIELD] = neighbors_sum
