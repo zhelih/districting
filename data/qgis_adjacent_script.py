@@ -74,6 +74,9 @@ for f in feature_dict.values():
             if(com.length() > 1.e-10):
                 neighbors.append(intersecting_f[_NAME_FIELD])
 #            neighbors_sum += intersecting_f[_SUM_FIELD]
+    res = ','.join(neighbors)
+    if(f[_NAME_FIELD] == "48355006200"):
+        print "%s" % res
     f[_NEW_NEIGHBORS_FIELD] = ','.join(neighbors)
 #    f[_NEW_SUM_FIELD] = neighbors_sum
     # Update the layer with new attribute values.
