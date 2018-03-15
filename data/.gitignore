@@ -1,2 +1,4 @@
 # keeping data localy here
 states/*
+*.native
+_build/

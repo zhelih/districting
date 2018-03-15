@@ -30,3 +30,9 @@ texas_features.csv
 
 texas.qgs
 texas.qgs~
+
+** Graph generated file **
+
+texas.dimacs
+texas.hash
+texas.population
