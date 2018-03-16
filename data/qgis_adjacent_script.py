@@ -93,7 +93,7 @@ for f in feature_dict.values():
                 neighbors.append(intersecting_f[_NAME_FIELD])
 #            neighbors_sum += intersecting_f[_SUM_FIELD]
     res = ','.join(neighbors)
-    output_file.write("{}, {}, {}\n".format(f[_NAME_FIELD], f[_POP_FIELD], res))
+    output_file.write("{},{},\"{}\"\n".format(f[_NAME_FIELD], f[_POP_FIELD], res))
     
 #    if(f[_NAME_FIELD] == "48355006200"):
 #        print "%s" % res

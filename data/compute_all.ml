@@ -26,7 +26,7 @@ let () =
   end;
   let state = Sys.argv.(1) in
 
-  let f_in = open_in (state ^ "_features.csv") in
+  let f_in = try open_in (state ^ "_features.csv") with _ -> (printf "Input not found\n"; exit 1) in
   (* format: geoid, pop, nbs *)
   (* skip first row *)
   ignore (input_line f_in);
