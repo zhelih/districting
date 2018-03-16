@@ -37,6 +37,7 @@ let () =
   let rec loop i =
     try
       let line = input_line f_in in
+(*       printf "1: Processing line %S\n" line; *)
       let (geoid,rest) = split line ',' in
       let (pop,rest) = split rest ',' in
       let pop = try int_of_string pop with _ -> 0 in
@@ -48,6 +49,8 @@ let () =
   loop 1;
   seek_in f_in 0;
 
+(*   printf "first loop done\n"; *)
+
   let n = Hashtbl.length h_ind in (* nr_nodes *)
   let adj = Array.make_matrix (n+1) (n+1) false in
   (* skip first row *)
@@ -55,14 +58,15 @@ let () =
   let rec loop i =
     try
       let line = input_line f_in in
+(*       printf "2: Processing line %S\n" line; *)
       let (geoid,rest) = split line ',' in (* too lazy to merge with code above *)
       let (_,rest) = split rest ',' in
       let rest = if rest.[0] = '"' then String.sub rest 1 (String.length rest - 2) else rest in (* remove quotes *)
       let nbs = nsplit rest ',' in
 
-      let v_from = Hashtbl.find h_ind geoid in
+      let v_from = try Hashtbl.find h_ind geoid with exn -> (printf "missing %s (v_from)\n" geoid; raise exn) in
       List.iter (fun geoid_to ->
-        let v_to = Hashtbl.find h_ind geoid_to in
+        let v_to = try Hashtbl.find h_ind geoid_to with exn -> (printf "missing %s from %s (v_to)\n" geoid_to geoid; raise exn) in
         adj.(v_from).(v_to) <- true;
         adj.(v_to).(v_from) <- true
       ) nbs;
@@ -82,6 +86,8 @@ let () =
     done
   done;
   close_out f;
+
+  printf "adj done\n";
 
   let f = open_out (state ^ ".hash") in
   fprintf f "#   Used to map graph vertices to ids\n";
