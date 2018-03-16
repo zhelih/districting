@@ -38,6 +38,7 @@ from PyQt4.QtCore import QVariant
 # For example, if your identifier field is called 'XYZ', then change the line
 # below to _NAME_FIELD = 'XYZ'
 _NAME_FIELD = 'GEOID10'
+_POP_FIELD = 'DP0010001'
 # Replace the value below with the field name that you want to sum up.
 # For example, if the # field that you want to sum up is called 'VALUES', then
 # change the line below to _SUM_FIELD = 'VALUES'
@@ -63,6 +64,8 @@ feature_dict = {f.id(): f for f in layer.getFeatures()}
 index = QgsSpatialIndex()
 for f in feature_dict.values():
     index.insertFeature(f)
+
+output_file = open("features.csv", "w")
 
 # Loop through all features and find features that touch each feature
 for f in feature_dict.values():
@@ -90,12 +93,15 @@ for f in feature_dict.values():
                 neighbors.append(intersecting_f[_NAME_FIELD])
 #            neighbors_sum += intersecting_f[_SUM_FIELD]
     res = ','.join(neighbors)
-    if(f[_NAME_FIELD] == "48355006200"):
-        print "%s" % res
-    f[_NEW_NEIGHBORS_FIELD] = ','.join(neighbors)
+    output_file.write("{}, {}, {}\n".format(f[_NAME_FIELD], f[_POP_FIELD], res))
+    
+#    if(f[_NAME_FIELD] == "48355006200"):
+#        print "%s" % res
+#    f[_NEW_NEIGHBORS_FIELD] = ','.join(neighbors)
 #    f[_NEW_SUM_FIELD] = neighbors_sum
     # Update the layer with new attribute values.
     layer.updateFeature(f)
 
 layer.commitChanges()
+output_file.close()
 print 'Processing complete.'
