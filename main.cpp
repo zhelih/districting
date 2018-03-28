@@ -5,6 +5,7 @@
 #include <chrono>
 #include <vector>
 #include <cmath>
+#include <cstring>
 
 using namespace std;
 
@@ -198,51 +199,63 @@ int main(int argc, char *argv[])
   ios::sync_with_stdio(1);
   if(argc < 3)
   {
-    printf("Usage: %s <dimacs input> <data input>\n", argv[0]);
+    printf("Usage: %s [ <dimacs input> <data input> | grid <n> ]\n", argv[0]);
     return 0;
   }
   try {
-    graph* g = from_dimacs(argv[1]);
-    if(!g)
+    graph* g = 0;
+    int L = 0, U = 100000;
+    int k = 1; // number of district
+    vector<int> p;
+    if(!strcmp(argv[1], "grid"))
     {
-      printf("Fail to load graph %s\n", argv[1]);
-      return 1;
-    }
-    if(!g->is_connected())
-    {
-      printf("Problem is infeasible (not connected!)\n");
-      return 0;
+      int n = atoi(argv[2]);
+      g = from_grid(n);
+      L = n; U = n; k = n;
+      p.resize(n*n);
+      for(int i = 0; i < n*n; ++i)
+        p[i] = 1;
+    } else {
+      g = from_dimacs(argv[1]);
+      if(!g)
+      {
+        printf("Fail to load graph %s\n", argv[1]);
+        return 1;
+      }
+      if(!g->is_connected())
+      {
+        printf("Problem is infeasible (not connected!)\n");
+        return 0;
+      }
+      int n = g->nr_nodes;
+
+      FILE* f = fopen(argv[2], "r");
+      if(!f)
+      {
+        printf("Failed to open data file %s\n", argv[2]);
+        return 1;
+      }
+
+      // read L, U and read k
+      fscanf(f, "%d %d %d ", &k, &L, &U);
+
+      // read p[i]
+      // skip r b for compatibility with old gerry
+      p.resize(n);
+      for(int i = 0; i < n; ++i)
+      {
+        int tmp, tmp2, tmp3;
+        fscanf(f, "%d %d %d ", &tmp, &tmp2, &tmp3); // ignore tmp2 tmp3, they are red and blue #
+        p[i] = tmp;
+      }
+      fclose(f);
+
     }
     int n = g->nr_nodes;
-
-    FILE* f = fopen(argv[2], "r");
-    if(!f)
-    {
-      printf("Failed to open data file %s\n", argv[2]);
-      return 1;
-    }
-
-    // read L, U
-    int L = 0, U = 100000;
-    // read k
-    int k = 1; // number of district
-    fscanf(f, "%d %d %d ", &k, &L, &U);
-
-    // read p[i]
-    // skip r b for compatibility with old gerry
-    vector<int> p(n, 0); // or 1?
-    for(int i = 0; i < n; ++i)
-    {
-      int tmp, tmp2, tmp3;
-      fscanf(f, "%d %d %d ", &tmp, &tmp2, &tmp3); // ignore tmp2 tmp3, they are red and blue #
-      p[i] = tmp;
-    }
-    // read dij
     vector<vector<int> > d(n, vector<int>(n, 1)); //TODO data with d_ij
 
     g->floyd_warshall(d);
 
-    fclose(f);
     printf("starting gurobi. k = %d, L = %d, U = %d\n", k, L, U);
 
     GRBEnv env = GRBEnv();
@@ -338,7 +351,7 @@ int main(int argc, char *argv[])
       printf("\n");
     }
 */
-    f = fopen("districting.out", "w");
+    FILE* f = fopen("districting.out", "w");
     int nr = 0;
     for(int i = 0; i < n; ++i)
     {
