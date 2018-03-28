@@ -25,5 +25,6 @@ class graph
 };
 
 graph* from_dimacs(const char* fname); // don't forget to delete
+graph* from_grid(int n);
 
 #endif

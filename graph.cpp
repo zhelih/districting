@@ -191,3 +191,28 @@ void graph::floyd_warshall(vector<vector<int>>& d)
 {
   return adj[i][j/CHUNK_SIZE]&mask[j%CHUNK_SIZE];
 }*/
+
+graph* from_grid(int n)
+{
+  graph *g = new graph(n*n);
+  for(long i = 0; i < n; i++) // add horizontal edges
+  {
+  	for(long j = 0; j+1 < n; j++)
+	  {
+		  long u = i*n + j;
+  		long v = u + 1;
+      g->add_edge(u,v);
+	  }
+  }
+
+  for(long i = 0; i+1 < n; i++) // add vertical edges
+  {
+	  for(long j = 0; j < n; j++)
+  	{
+	  	long u = i*n + j;
+		  long v = u + n;
+      g->add_edge(u,v);
+	  }
+  }
+  return g;
+}
