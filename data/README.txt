@@ -36,3 +36,15 @@ texas.qgs~
 texas.dimacs
 texas.hash
 texas.population
+
+
+Algorithm to craete this files:
+1) open QGIS
+2) load Profile-County GDB
+3) filter layer: right-click in layers-panel, then filter, expression: "GEOID10" LIKE '45%'
+4) save as shapefile: right-click in layers-panel, save-as
+5) centroids: menu vector -> geometry tools -> polygon centroids
+6) distance matrix: menu vector -> analysis -> distance matrix : choose full
+7) generate features: plugins -> python console -> load script -> run
+8) run a programming tool to get .dimacs, .hash and .population
+9) get a glass of beer to enjoy the evening
