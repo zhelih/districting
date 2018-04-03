@@ -82,7 +82,7 @@ let () =
   for i = 1 to n do
     for j = i+1 to n do
       if adj.(i).(j) then
-        fprintf f "e %d %d\n" i j
+        fprintf f "e %d %d\n" (i-1) (j-1)
     done
   done;
   close_out f;
@@ -92,13 +92,17 @@ let () =
   let f = open_out (state ^ ".hash") in
   fprintf f "#   Used to map graph vertices to ids\n";
   Hashtbl.iter (fun k v ->
-    fprintf f "%d %s\n" v k
+    fprintf f "%d %s\n" (v-1) k
   ) h_ind;
   close_out f;
   let f = open_out (state ^ ".population") in
+  (* compute total population *)
+  let total_pop = ref 0 in
+  Hashtbl.iter (fun _k v -> total_pop := !total_pop + v) h_pop;
   fprintf f "#   Used to get population for a graph vertex\n";
+  fprintf f "total pop = %d\n" !total_pop;
   Hashtbl.iter (fun k v ->
     let ind = Hashtbl.find h_ind k in
-    fprintf f "%d %d\n" ind v
+    fprintf f "%d %d\n" (ind-1) v
   ) h_pop;
   close_out f

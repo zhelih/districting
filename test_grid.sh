@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for i in `seq 2 15`;
+for i in `seq 13 40`;
 do
   res=$(./gerry_assign grid $i)
   obj=$(echo "$res" | grep Obj | tail -n 1 | awk '{ print $2}')

@@ -236,6 +236,11 @@ int main(int argc, char *argv[])
         return 1;
       }
 
+      // skip first two lines
+      char buf[1023];
+      fgets(buf, sizeof(buf), f);
+      fgets(buf, sizeof(buf), f);
+
       // read L, U and read k
       fscanf(f, "%d %d %d ", &k, &L, &U);
 
@@ -245,8 +250,8 @@ int main(int argc, char *argv[])
       for(int i = 0; i < n; ++i)
       {
         int tmp, tmp2, tmp3;
-        fscanf(f, "%d %d %d ", &tmp, &tmp2, &tmp3); // ignore tmp2 tmp3, they are red and blue #
-        p[i] = tmp;
+        fscanf(f, "%d %d ", &tmp, &tmp2);
+        p[tmp] = tmp2;
       }
       fclose(f);
 
