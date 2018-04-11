@@ -38,7 +38,8 @@ class KGraph
 		// end new functions by Austin
 
 		vector<long> *adj;  // stores the adj lists. Each list is maintained as a sorted vector.
-		vector<long> *pdadj;
+		vector<long> *pdadj; // primal-dual edge list
+		vector<long> *edge; // edgacency list
 		long *degree;       // stores the degree seq
 		long n;             // num of nodes
 		long m;             // num of edges
