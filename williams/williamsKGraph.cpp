@@ -1115,6 +1115,7 @@ void KGraph::ReadDualGraph(string file)
 	cerr << "# of Edges in Dual Graph: " << m << ".\n";
 	pdadj = new vector<long>[m];
 	adj = new vector<long>[n];
+	edge = new vector<long>[n];
 	degree = new long[n];
 	memset(degree, 0, n * sizeof(long));
 	// READ IN THE EDGES
@@ -1146,9 +1147,18 @@ void KGraph::ReadDualGraph(string file)
 
 		pdadj[k].push_back(Lnum1);
 		pdadj[k].push_back(Lnum2);
-
-		adj[Lnum1].push_back(Lnum2);
-		adj[Lnum2].push_back(Lnum1);
+		if (Lnum1 == Lnum2)
+		{
+			adj[Lnum1].push_back(Lnum2);
+			edge[Lnum1].push_back(k);
+		}
+		else
+		{
+			adj[Lnum1].push_back(Lnum2);
+			adj[Lnum2].push_back(Lnum1);
+			edge[Lnum1].push_back(k);
+			edge[Lnum2].push_back(k);
+		}
 		degree[Lnum1]++;
 		degree[Lnum2]++;
 	}
@@ -1178,6 +1188,7 @@ void KGraph::ReadPrimalGraph(string file)
 	cerr << "# of Edges in Primal Graph: " << m << ".\n";
 	pdadj = new vector<long>[m];
 	adj = new vector<long>[n];
+	edge = new vector<long>[n];
 	degree = new long[n];
 	memset(degree, 0, n * sizeof(long));
 	// READ IN THE EDGES
@@ -1211,8 +1222,19 @@ void KGraph::ReadPrimalGraph(string file)
 		//cerr << Lnum2 << endl;
 		pdadj[k].push_back(Lnum1);
 		pdadj[k].push_back(Lnum2);
-		adj[Lnum1].push_back(Lnum2);
-		adj[Lnum2].push_back(Lnum1);
+
+		if (Lnum1 == Lnum2)
+		{
+			adj[Lnum1].push_back(Lnum2);
+			edge[Lnum1].push_back(k);
+		}
+		else
+		{
+			adj[Lnum1].push_back(Lnum2);
+			adj[Lnum2].push_back(Lnum1);
+			edge[Lnum1].push_back(k);
+			edge[Lnum2].push_back(k);
+		}
 		degree[Lnum1]++;
 		degree[Lnum2]++;
 	}
