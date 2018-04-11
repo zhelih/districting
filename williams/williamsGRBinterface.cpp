@@ -30,11 +30,6 @@ string statusNumtoString(int num)
 vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 {
 	vector<vector<long>> spt;
-
-	//bool con = g1.IsConnected();
-
-	//cerr << con << endl;
-
 	if (!g1.IsConnected()) // check if problem is feasible before sending to Gurobi
 	{
 		cerr << "No Spanning Tree exists! Graph is not connected." << endl;
@@ -72,26 +67,32 @@ vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 
 		model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
 		model.update();
-
 		cerr << "Adding incoming constraints in root of primal" << endl;
 		long r = g1.pdadj[0][0];
 		long r_d = g2.pdadj[0][0];
 		cerr << "primal root: " << r << "dual root: " << r_d << endl;
-		GRBLinExpr expr = 0;
-		for (long j = 0; j < g1.m; j++)
+		vector <long> direct(g1.m,0);
+		long aux;
+		vector <GRBLinExpr> exprPrim(g1.n);
+		for (int i = 0; i < g1.n; i++)
 		{
-			if (g1.pdadj[j][0] == r && g1.pdadj[j][0] == g1.pdadj[j][1])
-				expr += Y[j][0];
-			else
+			exprPrim[i] = 0;
+		}
+		for (long j = 0; j < g1.edge[r].size(); j++)
+		{
+			aux = g1.edge[r][j];
+			if (direct[aux] == 0)
 			{
-				if (g1.pdadj[j][0] == r)
-					expr += Y[j][0];
-
-				if (g1.pdadj[j][1] == r)
-					expr += Y[j][1];
+				exprPrim[r] += Y[aux][0];
+				direct[aux]++;
+			}
+			else if (direct[aux] == 1)
+			{
+				exprPrim[r] += Y[aux][1];
+				direct[aux]++;
 			}
 		}
-		model.addConstr(expr == 0);
+		model.addConstr(exprPrim[r] == 0);
 		model.update();
 		cerr << "Adding incoming constraints in non-root of primal" << endl;
 
@@ -101,41 +102,46 @@ vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 		{
 			if (i == r)
 				continue;
-			GRBLinExpr expr1 = 0;
-			for (long j = 0; j < g2.m; j++)
+			for (long j = 0; j < g1.edge[i].size(); j++)
 			{
-				if (g1.pdadj[j][0] == i && g1.pdadj[j][0] == g1.pdadj[j][1])
-					expr1 += Y[j][0];
-				else
+				aux = g1.edge[i][j];
+				if (direct[aux] == 0)
 				{
-					if (g1.pdadj[j][0] == i)
-						expr1 += Y[j][0];
-
-					else if (g1.pdadj[j][1] == i)
-						expr1 += Y[j][1];
+					exprPrim[i] += Y[aux][0];
+					direct[aux]++;
 				}
-
+				else if (direct[aux] == 1)
+				{
+					exprPrim[i] += Y[aux][1];
+					direct[aux]++;
+				}
 			}
-			model.addConstr(expr1 == 1);
+			model.addConstr(exprPrim[i] == 1);
 		}
 		model.update();
 
 		cerr << "Adding incoming constraints in root of dual" << endl;
-		GRBLinExpr expr2 = 0;
-		for (long j = 0; j < g2.m; j++)
+		vector <long> directDual(g2.m,0);
+		vector <GRBLinExpr> exprDual(g2.n);
+		for (int i = 0; i < g2.n; i++)
 		{
-			if (g2.pdadj[j][0] == r_d && g2.pdadj[j][0] == g2.pdadj[j][1])
-				expr2 += Z[j][0];
-
-			else
+			exprDual[i] = 0;
+		}
+		for (long j = 0; j < g2.edge[r].size(); j++)
+		{
+			aux = g2.edge[r_d][j];
+			if (directDual[aux] == 0)
 			{
-				if (g2.pdadj[j][0] == r_d)
-					expr2 += Z[j][0];
-				if (g2.pdadj[j][1] == r_d)
-					expr2 += Z[j][1];
+				exprDual[r_d] += Z[aux][0];
+				directDual[aux]++;
+			}
+			else if (directDual[aux] == 1)
+			{
+				exprDual[r_d] += Z[aux][1];
+				directDual[aux]++;
 			}
 		}
-		model.addConstr(expr2 == 0);
+		model.addConstr(exprDual[r_d] == 0);
 		model.update();
 		cerr << "Adding incoming constraints in non-root of dual" << endl;
 
@@ -143,21 +149,21 @@ vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 		{
 			if (i == r_d)
 				continue;
-			GRBLinExpr expr3 = 0;
-			for (long j = 0; j < g2.m; j++)
+			for (long j = 0; j < g2.edge[i].size(); j++)
 			{
-				if (g2.pdadj[j][0] == i && g2.pdadj[j][0] == g2.pdadj[j][1])
-					expr3 += Z[j][0];
-				else
+				aux = g2.edge[i][j];
+				if (directDual[aux] == 0)
 				{
-					if (g2.pdadj[j][0] == i)
-						expr3 += Z[j][0];
-					if (g2.pdadj[j][1] == i)
-						expr3 += Z[j][1];
+					exprDual[i] += Z[aux][0];
+					directDual[aux]++;
 				}
-
+				else if (directDual[aux] == 1)
+				{
+					exprDual[i] += Z[aux][1];
+					directDual[aux]++;
+				}
 			}
-			model.addConstr(expr3 == 1);
+			model.addConstr(exprDual[i] == 1);
 		}
 		model.update();
 
