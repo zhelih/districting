@@ -73,11 +73,7 @@ vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 		cerr << "primal root: " << r << "dual root: " << r_d << endl;
 		vector <long> direct(g1.m,0);
 		long aux;
-		vector <GRBLinExpr> exprPrim(g1.n);
-		for (int i = 0; i < g1.n; i++)
-		{
-			exprPrim[i] = 0;
-		}
+		vector <GRBLinExpr> exprPrim(g1.n,0);
 		for (long j = 0; j < g1.edge[r].size(); j++)
 		{
 			aux = g1.edge[r][j];
@@ -122,11 +118,7 @@ vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 
 		cerr << "Adding incoming constraints in root of dual" << endl;
 		vector <long> directDual(g2.m,0);
-		vector <GRBLinExpr> exprDual(g2.n);
-		for (int i = 0; i < g2.n; i++)
-		{
-			exprDual[i] = 0;
-		}
+		vector <GRBLinExpr> exprDual(g2.n,0);
 		for (long j = 0; j < g2.edge[r].size(); j++)
 		{
 			aux = g2.edge[r_d][j];
