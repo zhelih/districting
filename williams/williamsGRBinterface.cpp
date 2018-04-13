@@ -24,9 +24,6 @@ string statusNumtoString(int num)
 	else if (num == 14) return "An asynchronous optimization call was made, but the associated optimization run is not yet complete.";
 	else if (num >= 15 || num <= 0) return "No specific error could be recognized.";
 }
-
-
-
 vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 {
 	vector<vector<long>> spt;
@@ -67,95 +64,96 @@ vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 
 		model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
 		model.update();
-		cerr << "Adding incoming constraints in root of primal" << endl;
+		//cerr << "Adding incoming constraints in root of primal" << endl;
 		long r = g1.pdadj[0][0];
 		long r_d = g2.pdadj[0][0];
 		cerr << "primal root: " << r << "dual root: " << r_d << endl;
 		vector <long> direct(g1.m,0);
 		long aux;
 		vector <GRBLinExpr> exprPrim(g1.n,0);
-		for (long j = 0; j < g1.edge[r].size(); j++)
-		{
-			aux = g1.edge[r][j];
-			if (direct[aux] == 0)
-			{
-				exprPrim[r] += Y[aux][0];
-				direct[aux]++;
-			}
-			else if (direct[aux] == 1)
-			{
-				exprPrim[r] += Y[aux][1];
-				direct[aux]++;
-			}
-		}
-		model.addConstr(exprPrim[r] == 0);
-		model.update();
-		cerr << "Adding incoming constraints in non-root of primal" << endl;
-
+		cerr << "Adding incoming constraints of primal" << endl;
 		cerr << "nodes of primal: " << g1.n << endl;
-
 		for (long i = 0; i < g1.n; i++)
 		{
 			if (i == r)
-				continue;
-			for (long j = 0; j < g1.edge[i].size(); j++)
 			{
-				aux = g1.edge[i][j];
-				if (direct[aux] == 0)
+				for (long j = 0; j < g1.edge[r].size(); j++)
 				{
-					exprPrim[i] += Y[aux][0];
-					direct[aux]++;
+					aux = g1.edge[r][j];
+					if (direct[aux] == 0)
+					{
+						exprPrim[r] += Y[aux][0];
+						direct[aux]++;
+					}
+					else if (direct[aux] == 1)
+					{
+						exprPrim[r] += Y[aux][1];
+						direct[aux]++;
+					}
 				}
-				else if (direct[aux] == 1)
-				{
-					exprPrim[i] += Y[aux][1];
-					direct[aux]++;
-				}
+				model.addConstr(exprPrim[r] == 0);
 			}
-			model.addConstr(exprPrim[i] == 1);
+			else
+			{
+				for (long j = 0; j < g1.edge[i].size(); j++)
+				{
+					aux = g1.edge[i][j];
+					if (direct[aux] == 0)
+					{
+						exprPrim[i] += Y[aux][0];
+						direct[aux]++;
+					}
+					else if (direct[aux] == 1)
+					{
+						exprPrim[i] += Y[aux][1];
+						direct[aux]++;
+					}
+				}
+				model.addConstr(exprPrim[i] == 1);
+			}
 		}
 		model.update();
-
-		cerr << "Adding incoming constraints in root of dual" << endl;
 		vector <long> directDual(g2.m,0);
 		vector <GRBLinExpr> exprDual(g2.n,0);
-		for (long j = 0; j < g2.edge[r].size(); j++)
-		{
-			aux = g2.edge[r_d][j];
-			if (directDual[aux] == 0)
-			{
-				exprDual[r_d] += Z[aux][0];
-				directDual[aux]++;
-			}
-			else if (directDual[aux] == 1)
-			{
-				exprDual[r_d] += Z[aux][1];
-				directDual[aux]++;
-			}
-		}
-		model.addConstr(exprDual[r_d] == 0);
-		model.update();
-		cerr << "Adding incoming constraints in non-root of dual" << endl;
-
+		cerr << "Adding incoming constraints of dual" << endl;
 		for (long i = 0; i < g2.n; i++)
 		{
 			if (i == r_d)
-				continue;
-			for (long j = 0; j < g2.edge[i].size(); j++)
 			{
-				aux = g2.edge[i][j];
-				if (directDual[aux] == 0)
+				for (long j = 0; j < g2.edge[r].size(); j++)
 				{
-					exprDual[i] += Z[aux][0];
-					directDual[aux]++;
+					aux = g2.edge[r_d][j];
+					if (directDual[aux] == 0)
+					{
+						exprDual[r_d] += Z[aux][0];
+						directDual[aux]++;
+					}
+					else if (directDual[aux] == 1)
+					{
+						exprDual[r_d] += Z[aux][1];
+						directDual[aux]++;
+					}
 				}
-				else if (directDual[aux] == 1)
-				{
-					exprDual[i] += Z[aux][1];
-					directDual[aux]++;
-				}
+				model.addConstr(exprDual[r_d] == 0);
 			}
-			model.addConstr(exprDual[i] == 1);
+			else
+			{
+				for (long j = 0; j < g2.edge[i].size(); j++)
+				{
+					aux = g2.edge[i][j];
+					if (directDual[aux] == 0)
+					{
+						exprDual[i] += Z[aux][0];
+						directDual[aux]++;
+					}
+					else if (directDual[aux] == 1)
+					{
+						exprDual[i] += Z[aux][1];
+						directDual[aux]++;
+					}
+				}
+				model.addConstr(exprDual[i] == 1);
+			}
 		}
 		model.update();
 
