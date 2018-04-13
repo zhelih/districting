@@ -2,3 +2,5 @@
 states/*
 *.native
 _build/
+TX.data
+TX.dimacs

@@ -215,6 +215,7 @@ int main(int argc, char *argv[])
       p.resize(n*n);
       for(int i = 0; i < n*n; ++i)
         p[i] = 1;
+
     } else {
       g = from_dimacs(argv[1]);
       if(!g)
@@ -257,9 +258,22 @@ int main(int argc, char *argv[])
 
     }
     int n = g->nr_nodes;
-    vector<vector<int> > d(n, vector<int>(n, 1)); //TODO data with d_ij
+    vector<vector<float> > d(n, vector<float>(n, 1)); //TODO data with d_ij
+    // Euclidian distances for a grid
+      int n_ = sqrt(n);
+      for(int i1 = 0; i1 < n_; ++i1)
+        for(int j1 = 0; j1 < n_; ++j1)
+          for(int i2 = 0; i2 < n_; ++i2)
+            for(int j2 = 0; j2 < n_; ++j2) {
+              int delta_i = abs(i1-i2);
+              int delta_j = abs(j1-j2);
+              float d_ = sqrt((float)(delta_i*delta_i + delta_j*delta_j)); // euclidian
+              float d2_ = delta_i + delta_j; // hop
+              float d3_ = max(delta_i, delta_j); // manhattan
+              d[i1+n_*j1][i2+n_*j2] = d3_;
+            }
 
-    g->floyd_warshall(d);
+//    g->floyd_warshall(d);
 
     printf("starting gurobi. k = %d, L = %d, U = %d\n", k, L, U);
 

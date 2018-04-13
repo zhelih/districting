@@ -139,7 +139,7 @@ bool graph::is_connected()
 }
 
 //BFS should be more efficient, but keep this for later uses
-void graph::floyd_warshall(vector<vector<int>>& d)
+void graph::floyd_warshall(vector<vector<float>>& d)
 {
   int infty = nr_nodes+1;
   int i, j;
