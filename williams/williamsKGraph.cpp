@@ -327,12 +327,27 @@ KGraph::KGraph(string nm, string file, string type)
 		ReadPrimalGraph(file);
 	else if (type == "dual")
 		ReadDualGraph(file);
+	//else if (type == "popData")
+		//ReadPopData(file);
 	else if (type == "dimacs_color")
 		ReadDIMACSColorGraph(file);
 	else if (type == "DAT")
 		ReadDATGraph(file);
 	else if (type == "ieee")
 		ReadIEEEGraph(file);
+	else
+		cerr << "Format " << type << " not found.\n";
+}
+
+/* Useful constructor. Names the graph, and reads it from a files. */
+KGraph::KGraph(string nm, string file, string type, long &V)
+{
+	n = 0;
+	m = 0;
+	Delta = 0;
+	name = nm;
+	if (type == "popData")
+		ReadPopData(file, V);
 	else
 		cerr << "Format " << type << " not found.\n";
 }
@@ -1113,9 +1128,8 @@ void KGraph::ReadDualGraph(string file)
 	cerr << "# of Nodes in Dual Graph: " << n << ".\n";
 	input >> temp >> m;
 	cerr << "# of Edges in Dual Graph: " << m << ".\n";
-	pdadj = new vector<long>[m];
+	edge = new vector<long>[m];
 	adj = new vector<long>[n];
-	edge = new vector<long>[n];
 	degree = new long[n];
 	memset(degree, 0, n * sizeof(long));
 	// READ IN THE EDGES
@@ -1128,7 +1142,6 @@ void KGraph::ReadDualGraph(string file)
 				z = i;
 		}
 		string num1, num2;
-		//cerr << z << endl;
 		for (long i = 0; i < temp.length(); i++)
 		{
 			if (i == z)
@@ -1145,19 +1158,16 @@ void KGraph::ReadDualGraph(string file)
 		Lnum1 = stol(num1);
 		Lnum2 = stol(num2);
 
-		pdadj[k].push_back(Lnum1);
-		pdadj[k].push_back(Lnum2);
+		edge[k].push_back(Lnum1);
+		edge[k].push_back(Lnum2);
 		if (Lnum1 == Lnum2)
 		{
 			adj[Lnum1].push_back(Lnum2);
-			edge[Lnum1].push_back(k);
 		}
 		else
 		{
 			adj[Lnum1].push_back(Lnum2);
 			adj[Lnum2].push_back(Lnum1);
-			edge[Lnum1].push_back(k);
-			edge[Lnum2].push_back(k);
 		}
 		degree[Lnum1]++;
 		degree[Lnum2]++;
@@ -1186,9 +1196,8 @@ void KGraph::ReadPrimalGraph(string file)
 	cerr << "# of Nodes in Primal Graph: " << n << ".\n";
 	input >> temp >> m;
 	cerr << "# of Edges in Primal Graph: " << m << ".\n";
-	pdadj = new vector<long>[m];
+	edge = new vector<long>[m];
 	adj = new vector<long>[n];
-	edge = new vector<long>[n];
 	degree = new long[n];
 	memset(degree, 0, n * sizeof(long));
 	// READ IN THE EDGES
@@ -1217,28 +1226,55 @@ void KGraph::ReadPrimalGraph(string file)
 		}
 
 		Lnum1 = stol(num1);
-		//cerr << Lnum1 << endl;
 		Lnum2 = stol(num2);
-		//cerr << Lnum2 << endl;
-		pdadj[k].push_back(Lnum1);
-		pdadj[k].push_back(Lnum2);
+		edge[k].push_back(Lnum1);
+		edge[k].push_back(Lnum2);
 
 		if (Lnum1 == Lnum2)
 		{
 			adj[Lnum1].push_back(Lnum2);
-			edge[Lnum1].push_back(k);
 		}
 		else
 		{
 			adj[Lnum1].push_back(Lnum2);
 			adj[Lnum2].push_back(Lnum1);
-			edge[Lnum1].push_back(k);
-			edge[Lnum2].push_back(k);
 		}
 		degree[Lnum1]++;
 		degree[Lnum2]++;
 	}
 }
+
+
+void KGraph::ReadPopData(string file, long &V)
+{
+	cerr << "ReadPopData " << endl;
+	//long n_f = 0;
+	string temp;
+	long Lnum1;
+	long z;
+	ifstream input;
+	input.open(file.c_str(), ios::in);
+	if (!input.is_open())
+	{
+		cout << "File not found\n";
+		exit(-1);
+	}
+
+	pop = new long [V];
+
+	for (long i = 0; i < 13; i++)
+		input >> temp;
+
+	// READ IN THE EDGES
+	for (long i=0; i < V; i++) //Change it
+	{
+		input >> temp;
+		input >> temp;
+		Lnum1 = stol(temp);
+		pop[i] = Lnum1;
+	}
+}
+
 
 /* Reads a graph from a file in the SNAP format.
  * The format is described at http://snap.stanford.edu/data/index.html
