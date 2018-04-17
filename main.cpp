@@ -263,7 +263,6 @@ int main(int argc, char *argv[])
       fscanf(f, "%d %d %d ", &k, &L, &U);
 
       // read p[i]
-      // skip r b for compatibility with old gerry
       p.resize(n);
       for(int i = 0; i < n; ++i)
       {
@@ -277,7 +276,7 @@ int main(int argc, char *argv[])
     int n = g->nr_nodes;
     vector<vector<float> > d(n, vector<float>(n, 1)); //TODO data with d_ij
     // Euclidian distances for a grid
-      int n_ = sqrt(n);
+/*      int n_ = sqrt(n);
       for(int i1 = 0; i1 < n_; ++i1)
         for(int j1 = 0; j1 < n_; ++j1)
           for(int i2 = 0; i2 < n_; ++i2)
@@ -289,8 +288,8 @@ int main(int argc, char *argv[])
               float d3_ = max(delta_i, delta_j); // chebyshev (l_infinity)
               d[i1+n_*j1][i2+n_*j2] = d2_;
             }
-
-//    g->floyd_warshall(d);
+*/
+    g->floyd_warshall(d);
 
     // reduce number of variables (safe)
     unordered_set<pair<int,int>> x_zeros;
@@ -453,5 +452,9 @@ int populate_zeros(unordered_set<pair<int,int>> &x_zeros, graph* g, const vector
         x_zeros.insert(make_pair(s, i));
     }
   }
+/*  for(pair<int,int> p : x_zeros) {
+    printf("(%d,%d) ", p.first, p.second);
+  }
+  printf("\n");*/
   return x_zeros.size();
 }
