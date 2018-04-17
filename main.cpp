@@ -6,6 +6,9 @@
 #include <vector>
 #include <cmath>
 #include <cstring>
+#include <unordered_set> // for variable reduction
+#include <queue> // for Dijkstra
+#include <climits> // for INT_MAX
 
 using namespace std;
 
@@ -36,6 +39,20 @@ void print_GRBLinExpr(GRBLinExpr& expr)
 //  printf(" <= %.1lf", expr.getConstant());
 }
 
+// magic going on here
+// required by unordered_set
+namespace std {
+template <> struct hash<std::pair<int, int>> {
+    inline size_t operator()(const std::pair<int, int> &v) const {
+        std::hash<int> int_hasher;
+        return int_hasher(v.first) ^ int_hasher(v.second);
+    }
+};
+
+}
+
+// @return number of variables removed
+int populate_zeros(unordered_set<pair<int,int>> &x_zeros, graph* g, const vector<int> &p, int U);
 
 class LazyCallback: public GRBCallback
 {
@@ -43,13 +60,13 @@ class LazyCallback: public GRBCallback
     int** x;
     int* visited;
     int* aci;
-    GRBVar** vars;
+    GRBVar*** vars;
     int n;
     graph* g;
   public:
     int numCallbacks;
     double callbackTime;
-    LazyCallback(GRBVar** v, int n_, graph* g_) : n(n_), numCallbacks(0), callbackTime(0.)
+    LazyCallback(GRBVar*** v, int n_, graph* g_) : n(n_), numCallbacks(0), callbackTime(0.)
     {
       x = new int*[n];
       for(int i = 0; i < n; ++i)
@@ -77,7 +94,7 @@ class LazyCallback: public GRBCallback
           // MIP solution callback
           for(int i = 0; i < n; ++i)
             for(int j = 0; j < n; ++j)
-              x[i][j] = (getSolution(vars[i][j]) > 0.5)?1:0;
+              x[i][j] = (vars[i][j] && getSolution(vars[i][j][0]) > 0.5)?1:0;
 
           // main work done here
           vector<int> s;
@@ -160,7 +177,7 @@ class LazyCallback: public GRBCallback
                           {
                             //printf("+ x%d_%d (%d)", *it, i, ind(*it, i, n));
                             //printf("+ C%d", ind(*it, i, n));
-                            expr += vars[nb][i];
+                            expr += vars[nb][i][0];
                           }
                         } else {
                           s.push_back(nb);
@@ -171,7 +188,7 @@ class LazyCallback: public GRBCallback
                   //printf(" >= x%d_%d (%d)\n", k, i, ind(k,i,n));
                   //printf(" - C%d >= 0\n", ind(k,i,n));
                   //printf("Actual expression (>= 0): ");
-                  expr -= vars[k][i];
+                  expr -= vars[k][i][0];
                   //print_GRBLinExpr(expr);
                   addLazy(expr >= 0);
                   goto myend; //FIXME but thats's easier, no?
@@ -250,7 +267,7 @@ int main(int argc, char *argv[])
       p.resize(n);
       for(int i = 0; i < n; ++i)
       {
-        int tmp, tmp2, tmp3;
+        int tmp, tmp2;
         fscanf(f, "%d %d ", &tmp, &tmp2);
         p[tmp] = tmp2;
       }
@@ -268,30 +285,42 @@ int main(int argc, char *argv[])
               int delta_i = abs(i1-i2);
               int delta_j = abs(j1-j2);
               float d_ = sqrt((float)(delta_i*delta_i + delta_j*delta_j)); // euclidian
-              float d2_ = delta_i + delta_j; // hop
-              float d3_ = max(delta_i, delta_j); // manhattan
-              d[i1+n_*j1][i2+n_*j2] = d3_;
+              float d2_ = delta_i + delta_j; // hop (manhattan)
+              float d3_ = max(delta_i, delta_j); // chebyshev (l_infinity)
+              d[i1+n_*j1][i2+n_*j2] = d2_;
             }
 
 //    g->floyd_warshall(d);
 
+    // reduce number of variables (safe)
+    unordered_set<pair<int,int>> x_zeros;
+    int rem = populate_zeros(x_zeros, g, p, U);
+    printf("Preprocessing : removed %d variables (U)\n", rem);
     printf("starting gurobi. k = %d, L = %d, U = %d\n", k, L, U);
 
     GRBEnv env = GRBEnv();
 
     GRBModel model = GRBModel(env);
     model.getEnv().set(GRB_IntParam_LazyConstraints, 1);
-    // Create variables
-    GRBVar** x = new GRBVar*[n];
+    // Create variables ( wut )
+    GRBVar*** x = new GRBVar**[n];
     for(int i = 0; i < n; ++i)
-      x[i] = model.addVars(n, GRB_BINARY);
+      x[i] = new GRBVar*[n];
+
+    for(int i = 0; i < n; ++i)
+      for(int j = 0; j < n; ++j)
+        if(x_zeros.count(make_pair(i,j)) > 0)
+          x[i][j] = NULL;
+        else
+          x[i][j] = model.addVars(1, GRB_BINARY);
     model.update();
 
     // Set objective: minimize sum x_ij
     GRBLinExpr expr = 0;
     for(int i = 0; i < n; ++i)
       for(int j = 0; j < n; ++j)
-        expr += d[i][j] * p[i] * x[i][j];
+        if(x[i][j])
+          expr += d[i][j] * p[i] * x[i][j][0];
 
     model.setObjective(expr, GRB_MINIMIZE);
 
@@ -300,19 +329,20 @@ int main(int argc, char *argv[])
     {
       GRBLinExpr constr = 0;
       for(int j = 0; j < n; ++j)
-        constr += x[i][j];
+        if(x[i][j])
+          constr += x[i][j][0];
       model.addConstr(constr == 1);
     }
 
     // add contraints (5)
     for(int i = 0; i < n; ++i)
       for(int j = 0; j < n; ++j)
-        if(i != j) model.addConstr(x[j][i] <= x[i][i]);
+        if(i != j && x[i][j]) model.addConstr(x[j][i][0] <= x[i][i][0]);
 
     // add constraint 3
     expr = 0;
     for(int j = 0; j < n; ++j)
-      expr += x[j][j];
+      expr += x[j][j][0];
     model.addConstr(expr == k);
 
     // add constraint 4
@@ -320,10 +350,10 @@ int main(int argc, char *argv[])
     {
       GRBLinExpr constr = 0;
       for(int i = 0; i < n; ++i)
-        if(i != j) constr += p[i]*x[i][j];
+        if(i != j && x[i][j]) constr += p[i]*x[i][j][0];
       // add for j
-      model.addConstr(constr + (p[j] - U)*x[j][j] <= 0); // U
-      model.addConstr(constr + (p[j] - L)*x[j][j] >= 0); // L
+      model.addConstr(constr + (p[j] - U)*x[j][j][0] <= 0); // U
+      model.addConstr(constr + (p[j] - L)*x[j][j][0] >= 0); // L
     }
 
     // Optimize model
@@ -334,12 +364,12 @@ int main(int argc, char *argv[])
 
     // translate solution
     for(int i = 0; i < n; ++i)
-      if(x[i][i].get(GRB_DoubleAttr_X) > 0.5)
+      if(x[i][i][0].get(GRB_DoubleAttr_X) > 0.5)
       {
         printf("Cluster head %d:", i);
         for(int j = 0; j < n; ++j)
         {
-          if(j != i && x[j][i].get(GRB_DoubleAttr_X) > 0.5)
+          if(j != i && x[j][i] && x[j][i][0].get(GRB_DoubleAttr_X) > 0.5)
           {
             printf(" %u", j);
           }
@@ -358,7 +388,7 @@ int main(int argc, char *argv[])
     vector<vector<int> > clusters(n);;
     for(int i = 0; i < n; ++i)
       for(int j = 0; j < n; ++j)
-        if(x[i][j].get(GRB_DoubleAttr_X) > 0.5)
+        if(x[i][j] && x[i][j][0].get(GRB_DoubleAttr_X) > 0.5)
           clusters[j].push_back(i);
 
 /*    printf("Districts:\n");
@@ -392,4 +422,36 @@ int main(int argc, char *argv[])
   }
 
   return 0;
+}
+
+// @return number of variables removed
+int populate_zeros(unordered_set<pair<int,int>> &x_zeros, graph* g, const vector<int> &p, int U) {
+  // run Dijsktra with d(s) = p[s] and w[u,v] = p[v]
+  // scan all distances, if legnth > U then add to x_zeros
+  // TODO optimize time? Is this really takes long to spend time on optimizing?
+  for(int s = 0; s < g->nr_nodes; ++s) { // select s as source
+    // typical Dijsktra with heap here
+    priority_queue< pair<int,int>, vector <pair<int,int>> , greater<pair<int,int>> > pq;
+    vector<int> dist(g->nr_nodes, INT_MAX); //FIXME long?
+    pq.push(make_pair(0, s)); // copy constructor?
+    dist[s] = p[s]; // NB: not zero here!
+    while (!pq.empty())
+    {
+        int u = pq.top().second;
+        pq.pop();
+        for(int nb: g->nb(u)) {
+          int weight = p[nb];
+          if(dist[nb] > dist[u] + weight) {
+            dist[nb] = dist[u] + weight;
+            pq.push(make_pair(dist[nb], nb));
+          }
+        }
+    }
+
+    for(int i = 0; i < g->nr_nodes; ++i) {
+      if(dist[i] > U)
+        x_zeros.insert(make_pair(s, i));
+    }
+  }
+  return x_zeros.size();
 }
