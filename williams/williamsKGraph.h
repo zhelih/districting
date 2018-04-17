@@ -38,9 +38,10 @@ class KGraph
 		// end new functions by Austin
 
 		vector<long> *adj;  // stores the adj lists. Each list is maintained as a sorted vector.
-		vector<long> *pdadj; // primal-dual edge list
-		vector<long> *edge; // edgacency list
+		vector<long> *edge; // primal-dual edge list
+		//vector<long> *edge; // edgacency list
 		long *degree;       // stores the degree seq
+		long *pop;          // stores the population
 		long n;             // num of nodes
 		long m;             // num of edges
 		long Delta;         // higest degree. As of now, is instanciated when graph is read or copied, not maintained afterwards
@@ -51,6 +52,7 @@ class KGraph
 		KGraph(string nm);
 		KGraph(long n);		
 		KGraph(string nm, string file, string type);
+		KGraph(string nm, string file, string type, long &V);
 		KGraph(const KGraph &rhs);
 
 		/* File IO utility functions */
@@ -61,6 +63,7 @@ class KGraph
 		void ReadSNAPGraph(string file);
 		void ReadPrimalGraph(string file);
 		void ReadDualGraph(string file);
+		void ReadPopData(string file, long &V);
 		bool WriteGVizGraph(vector <bool> F, string file);
 		bool WriteGVizGraph(string file);
 		void WriteSNAPGraph(string outfile);
