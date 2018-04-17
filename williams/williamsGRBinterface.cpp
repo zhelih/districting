@@ -142,20 +142,20 @@ vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 		cerr << "Extracting solution" << endl;
 		int status = model.get(GRB_IntAttr_Status);
 		cerr << statusNumtoString(status) << endl;
-		vector<long> aux(2,0);
+		vector<long> arc(2,0);
 		for (int i = 0; i < g1.m; i++)
 		{
 			if (Y[i][0].get(GRB_DoubleAttr_X) > 0.5)	// since Gurobi uses floating point numbers, a binary variable may take value 0.9999. So just check if it's above 0.5
 			{
-				aux[0]=i;
-				aux[1] = 0;
-				spt.push_back(aux);
+				arc[0]=i;
+				arc[1] = 0;
+				spt.push_back(arc);
 			}
 			if (Y[i][1].get(GRB_DoubleAttr_X) > 0.5)	// since Gurobi uses floating point numbers, a binary variable may take value 0.9999. So just check if it's above 0.5
 			{
-				aux[0] = i;
-				aux[1] = 1;
-				spt.push_back(aux);
+				arc[0] = i;
+				arc[1] = 1;
+				spt.push_back(arc);
 			}		
 		}
 		delete[] Y;
@@ -186,30 +186,16 @@ vector<vector<long>> solveFM2(KGraph &g1, KGraph &g2, KGraph &d, long &K, long &
 		GRBModel model = GRBModel(env);
 		//model.getEnv().set(GRB_IntParam_LazyConstraints, 1);
 
-		cerr << "Start Defining Y Vars" << endl; //For Primal Spanning Tree
+		cerr << "Start Defining Y, Z, X, and F Vars" << endl; //For Primal Spanning Tree
 		GRBVar **Y = new GRBVar*[g1.m];
-		for (long i = 0; i < g1.m; i++)
-		{
-			Y[i] = model.addVars(2, GRB_BINARY);
-		}
-		cerr << "Start Defining Z Vars" << endl; //For Dual Spanning Tree
 		GRBVar **Z = new GRBVar*[g2.m];
-		for (long i = 0; i < g2.m; i++)
-		{
-			Z[i] = model.addVars(2, GRB_BINARY);
-		}
-
-		cerr << "Start Defining X Vars" << endl; //For Primal Forest
 		GRBVar **X = new GRBVar*[g1.m];
-		for (long i = 0; i < g1.m; i++)
-		{
-			X[i] = model.addVars(2, GRB_BINARY);
-		}
-
-		cerr << "Start Defining F Vars" << endl; //For Flow Variables
 		GRBVar **F = new GRBVar*[g1.m];
 		for (long i = 0; i < g1.m; i++)
 		{
+			Y[i] = model.addVars(2, GRB_BINARY);
+			Z[i] = model.addVars(2, GRB_BINARY);
+			X[i] = model.addVars(2, GRB_BINARY);
 			F[i] = model.addVars(2, GRB_CONTINUOUS);
 		}
 
@@ -291,7 +277,7 @@ vector<vector<long>> solveFM2(KGraph &g1, KGraph &g2, KGraph &d, long &K, long &
 		cerr << "Adding X <= W constraints" << endl;
 		for (long i = 0; i < g1.m; i++)
 		{
-			model.addConstr(Y[i][0] + Y[i][1] - X[i][0] - X[i][1] >= 0);
+			model.addConstr(Y[i][0] + Y[i][1] >= X[i][0] + X[i][1]);
 		}
 		model.update();
 
@@ -339,15 +325,15 @@ vector<vector<long>> solveFM2(KGraph &g1, KGraph &g2, KGraph &d, long &K, long &
 		{
 			u = g1.edge[i][0];
 			v = g1.edge[i][1];
-			exprIncom[u] += X[i][0];
-			exprIncom[v] += X[i][1];
-			exprOutgo[u] += X[i][1];
-			exprOutgo[v] += X[i][0];
+			exprIncom[u] += F[i][0];
+			exprIncom[v] += F[i][1];
+			exprOutgo[u] += F[i][1];
+			exprOutgo[v] += F[i][0];
 		}
 
 		for (long i = 0; i < g1.n; i++)
 		{
-			model.addConstr(exprIncom[i] + G[i] - exprOutgo[i] - d.pop[i] == 0);
+			model.addConstr(exprIncom[i] + G[i] == exprOutgo[i] + d.pop[i]);
 		}
 		model.update();
 
@@ -393,22 +379,22 @@ vector<vector<long>> solveFM2(KGraph &g1, KGraph &g2, KGraph &d, long &K, long &
 		cerr << "Extracting solution" << endl;
 		int status = model.get(GRB_IntAttr_Status);
 		cerr << statusNumtoString(status) << endl;
-		vector<long> aux (2);
+		vector<long> arc (2);
 
 		for (int i = 0; i < g1.m; i++)
 		{
 			
 			if (X[i][0].get(GRB_DoubleAttr_X) > 0.5)	// since Gurobi uses floating point numbers, a binary variable may take value 0.9999. So just check if it's above 0.5
 			{
-				aux[0] = i;
-				aux[1] = 0;
-				form2.push_back(aux);
+				arc[0] = i;
+				arc[1] = 0;
+				form2.push_back(arc);
 			}
 			if (X[i][1].get(GRB_DoubleAttr_X) > 0.5)	// since Gurobi uses floating point numbers, a binary variable may take value 0.9999. So just check if it's above 0.5
 			{
-				aux[0] = i;
-				aux[1] = 1;
-				form2.push_back(aux);
+				arc[0] = i;
+				arc[1] = 1;
+				form2.push_back(arc);
 			}
 		}
 
