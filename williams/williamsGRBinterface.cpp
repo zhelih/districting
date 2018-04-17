@@ -26,7 +26,7 @@ string statusNumtoString(int num)
 }
 vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 {
-	vector<vector<long>> spt;
+	vector<vector<long>> spt (g1.n);
 	if (!g1.IsConnected()) // check if problem is feasible before sending to Gurobi
 	{
 		cerr << "No Spanning Tree exists! Graph is not connected." << endl;
@@ -64,96 +64,48 @@ vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 
 		model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
 		model.update();
-		//cerr << "Adding incoming constraints in root of primal" << endl;
 		long r = g1.pdadj[0][0];
 		long r_d = g2.pdadj[0][0];
+		long u, v;
 		cerr << "primal root: " << r << "dual root: " << r_d << endl;
-		vector <long> direct(g1.m,0);
-		long aux;
 		vector <GRBLinExpr> exprPrim(g1.n,0);
+		vector <GRBLinExpr> exprDual(g2.n, 0);
+
+		for (long i = 0; i < g1.m; i++)
+		{
+			u = g1.pdadj[i][0];
+			v = g1.pdadj[i][1];
+			exprPrim[u] += Y[i][0];
+			exprPrim[v] += Y[i][1];
+			u = g2.pdadj[i][0];
+			v = g2.pdadj[i][1];
+			exprDual[u] += Z[i][0];
+			exprDual[v] += Z[i][1];
+		}
+
 		cerr << "Adding incoming constraints of primal" << endl;
-		cerr << "nodes of primal: " << g1.n << endl;
+
+		//cerr << "nodes of primal: " << g1.n << endl;
+
+		model.addConstr(exprPrim[r] == 0);
+		
 		for (long i = 0; i < g1.n; i++)
 		{
 			if (i == r)
-			{
-				for (long j = 0; j < g1.edge[r].size(); j++)
-				{
-					aux = g1.edge[r][j];
-					if (direct[aux] == 0)
-					{
-						exprPrim[r] += Y[aux][0];
-						direct[aux]++;
-					}
-					else if (direct[aux] == 1)
-					{
-						exprPrim[r] += Y[aux][1];
-						direct[aux]++;
-					}
-				}
-				model.addConstr(exprPrim[r] == 0);
-			}
-			else
-			{
-				for (long j = 0; j < g1.edge[i].size(); j++)
-				{
-					aux = g1.edge[i][j];
-					if (direct[aux] == 0)
-					{
-						exprPrim[i] += Y[aux][0];
-						direct[aux]++;
-					}
-					else if (direct[aux] == 1)
-					{
-						exprPrim[i] += Y[aux][1];
-						direct[aux]++;
-					}
-				}
-				model.addConstr(exprPrim[i] == 1);
-			}
+				continue;
+			model.addConstr(exprPrim[i] == 1);
 		}
 		model.update();
-		vector <long> directDual(g2.m,0);
-		vector <GRBLinExpr> exprDual(g2.n,0);
+
 		cerr << "Adding incoming constraints of dual" << endl;
+		//vector <long> directDual(g2.m, 0);
+		model.addConstr(exprDual[r_d] == 0);
+
 		for (long i = 0; i < g2.n; i++)
 		{
 			if (i == r_d)
-			{
-				for (long j = 0; j < g2.edge[r].size(); j++)
-				{
-					aux = g2.edge[r_d][j];
-					if (directDual[aux] == 0)
-					{
-						exprDual[r_d] += Z[aux][0];
-						directDual[aux]++;
-					}
-					else if (directDual[aux] == 1)
-					{
-						exprDual[r_d] += Z[aux][1];
-						directDual[aux]++;
-					}
-				}
-				model.addConstr(exprDual[r_d] == 0);
-			}
-			else
-			{
-				for (long j = 0; j < g2.edge[i].size(); j++)
-				{
-					aux = g2.edge[i][j];
-					if (directDual[aux] == 0)
-					{
-						exprDual[i] += Z[aux][0];
-						directDual[aux]++;
-					}
-					else if (directDual[aux] == 1)
-					{
-						exprDual[i] += Z[aux][1];
-						directDual[aux]++;
-					}
-				}
-				model.addConstr(exprDual[i] == 1);
-			}
+				continue;
+			model.addConstr(exprDual[i] == 1);
 		}
 		model.update();
 
@@ -161,21 +113,24 @@ vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 		for (long i = 0; i < g1.m; i++)
 		{
 			GRBLinExpr expr4 = 0;
-			if (g1.pdadj[i][0] == g1.pdadj[i][1])
-			{
-				expr4 = Y[i][0] + Z[i][0] + Z[i][1];
-			}
-			else if (g2.pdadj[i][0] == g2.pdadj[i][1])
-			{
-				expr4 = Y[i][0] + Y[i][1] + Z[i][0];
-			}
-			else
-			{
-				expr4 = Y[i][0] + Y[i][1] + Z[i][0] + Z[i][1];
-			}
+			expr4 = Y[i][0] + Y[i][1] + Z[i][0] + Z[i][1];
 			model.addConstr(expr4 == 1);
 		}
 		model.update();
+
+		cerr << "Trimming loops" << endl;
+		for (long i = 0; i < g1.m; i++)
+		{
+			u = g1.pdadj[i][0];
+			v = g1.pdadj[i][1];
+			if (u == v)
+				Y[i][1].set(GRB_DoubleAttr_UB, 0.0);
+			u = g2.pdadj[i][0];
+			v = g2.pdadj[i][1];
+			if (u == v)
+				Z[i][1].set(GRB_DoubleAttr_UB, 0.0);
+		}
+
 		model.write("debug.lp");
 		cerr << "Optimizing" << endl;
 		model.optimize();
@@ -188,26 +143,23 @@ vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 		cerr << "Extracting solution" << endl;
 		int status = model.get(GRB_IntAttr_Status);
 		cerr << statusNumtoString(status) << endl;
-
-
 		for (int i = 0; i < g1.m; i++)
 		{
 			vector<long> art;
 			if (Y[i][0].get(GRB_DoubleAttr_X) > 0.5)	// since Gurobi uses floating point numbers, a binary variable may take value 0.9999. So just check if it's above 0.5
 			{
-				art.push_back(g1.pdadj[i][0]);
+				art.push_back(i);
+				art.push_back(0);
 			}
 			if (Y[i][1].get(GRB_DoubleAttr_X) > 0.5)	// since Gurobi uses floating point numbers, a binary variable may take value 0.9999. So just check if it's above 0.5
 			{
-				art.push_back(g1.pdadj[i][1]);
+				art.push_back(i);
+				art.push_back(1);
 			}
 			spt.push_back(art);
 		}
-
 		delete[] Y;
 		delete[] Z;
-
-
 	}
 	catch (GRBException e) {
 		cout << "Error code = " << e.getErrorCode() << endl;
