@@ -127,7 +127,7 @@ vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 			if (u == v)
 				Z[i][1].set(GRB_DoubleAttr_UB, 0.0);
 		}
-
+		model.update();
 		model.write("debug.lp");
 		cerr << "Optimizing" << endl;
 		model.optimize();
