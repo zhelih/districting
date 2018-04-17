@@ -26,7 +26,7 @@ string statusNumtoString(int num)
 }
 vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 {
-	vector<vector<long>> spt (g1.n);
+	vector<vector<long>> spt (g1.n - 1);
 	if (!g1.IsConnected()) // check if problem is feasible before sending to Gurobi
 	{
 		cerr << "No Spanning Tree exists! Graph is not connected." << endl;
@@ -85,8 +85,6 @@ vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 
 		cerr << "Adding incoming constraints of primal" << endl;
 
-		//cerr << "nodes of primal: " << g1.n << endl;
-
 		model.addConstr(exprPrim[r] == 0);
 		
 		for (long i = 0; i < g1.n; i++)
@@ -98,7 +96,6 @@ vector<vector<long>> solveMST(KGraph &g1, KGraph &g2)
 		model.update();
 
 		cerr << "Adding incoming constraints of dual" << endl;
-		//vector <long> directDual(g2.m, 0);
 		model.addConstr(exprDual[r_d] == 0);
 
 		for (long i = 0; i < g2.n; i++)
