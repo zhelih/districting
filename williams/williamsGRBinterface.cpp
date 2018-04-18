@@ -184,6 +184,7 @@ vector<vector<long>> solveFM2(KGraph &g1, KGraph &g2, KGraph &d, long &K, long &
 		//env.set(GRB_IntParam_OutputFlag, 0);
 		env.set(GRB_DoubleParam_TimeLimit, 3600);
 		GRBModel model = GRBModel(env);
+		env.set(GRB_IntParam_Method, 3);
 		//model.getEnv().set(GRB_IntParam_LazyConstraints, 1);
 
 		cerr << "Start Defining Y, Z, X, and F Vars" << endl; //For Primal Spanning Tree
@@ -193,8 +194,8 @@ vector<vector<long>> solveFM2(KGraph &g1, KGraph &g2, KGraph &d, long &K, long &
 		GRBVar **F = new GRBVar*[g1.m];
 		for (long i = 0; i < g1.m; i++)
 		{
-			Y[i] = model.addVars(2, GRB_BINARY);
-			Z[i] = model.addVars(2, GRB_BINARY);
+			Y[i] = model.addVars(2, GRB_CONTINUOUS);
+			Z[i] = model.addVars(2, GRB_CONTINUOUS);
 			X[i] = model.addVars(2, GRB_BINARY);
 			F[i] = model.addVars(2, GRB_CONTINUOUS);
 		}
@@ -204,6 +205,13 @@ vector<vector<long>> solveFM2(KGraph &g1, KGraph &g2, KGraph &d, long &K, long &
 
 		cerr << "Start Defining G Vars" << endl; //For Generation Variables
 		GRBVar *G = model.addVars(g1.n, GRB_CONTINUOUS);
+
+		cerr << "Increase Branch Priority of R Vars" << endl; //For Root Var Priority
+
+		for (long i = 0; i < g1.n; i++)
+		{
+			R[i].set(GRB_IntAttr_BranchPriority, 9.0);
+		}
 
 		model.update();
 		cerr << "Finish Defining Vars" << endl;
@@ -365,9 +373,29 @@ vector<vector<long>> solveFM2(KGraph &g1, KGraph &g2, KGraph &d, long &K, long &
 				Z[i][1].set(GRB_DoubleAttr_UB, 0.0);
 		}
 		model.update();
-
-
 		model.write("debug.lp");
+
+		//cerr << "Obtaining a feasible upper bound" << endl;
+
+		//vector<long> sortedPop(g1.n,0);
+
+		//for (long i = 0; i < g1.n; i++)
+		//{
+		//	sortedPop[i] = d.pop[i];
+		//}
+		//sort(sortedPop.begin(), sortedPop.end());
+		////long u, v;
+		//for (long i = g1.n - 1; i > g1.n - K -1; i--)
+		//{
+		//	u = sortedPop[i];
+		//	for (long j = 0; j < g1.n; j++)
+		//	{
+		//		if (u == d.pop[j])
+		//			R[j].set(GRB_DoubleAttr_Start, 1.0);
+		//	}
+		//}
+		//model.update();
+
 		cerr << "Optimizing" << endl;
 		model.optimize();
 
