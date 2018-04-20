@@ -39,7 +39,7 @@ class KGraph
 
 		vector<long> *adj;  // stores the adj lists. Each list is maintained as a sorted vector.
 		vector<long> *edge; // primal-dual edge list
-		//vector<long> *edge; // edgacency list
+		vector<long> *edj; // edgacency list
 		long *degree;       // stores the degree seq
 		long *pop;          // stores the population
 		long n;             // num of nodes
