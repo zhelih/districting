@@ -51,6 +51,26 @@ int main(int argc, char *argv[])
 		cout << "Time in seconds: " << (double)(clock() - start) / CLOCKS_PER_SEC << endl;
 	}
 
+	else if (strcmp(argv[1], "formulation3") == 0) // Solves formulation2 of districting
+	{
+		if (argc < 5)
+		{
+			cout << "error: not enough inputs.";
+			return 0;
+		}
+		KGraph g1(argv[3], argv[3], argv[2]);
+		KGraph g2(argv[5], argv[5], argv[4]);
+		long V = g1.n;
+		KGraph d(argv[7], argv[7], argv[6], V);
+		long K = atol(argv[8]);
+		long L = atol(argv[9]);
+		long U = atol(argv[10]);
+		vector<vector<long>> FM3;
+		time_t start = clock();
+		FM3 = solveFM3(g1, g2, d, K, L, U);
+		cout << "Time in seconds: " << (double)(clock() - start) / CLOCKS_PER_SEC << endl;
+	}
+
 	else
 	{
 		cout << "ERROR: Your command is not valid.";
