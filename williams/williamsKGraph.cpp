@@ -380,12 +380,19 @@ void KGraph::Duplicate(const KGraph &rhs)
 	Delta = rhs.Delta;
 	degree = new long[n];
 	adj = new vector<long>[n];
+	edj = new vector<long>[n];
+	edge = new vector<long>[m];
 	long i = 0;
 	//#pragma omp parallel for	
 	for (i = 0; i < n; i++)
 	{
 		degree[i] = rhs.degree[i];
 		adj[i] = rhs.adj[i];
+		edj[i] = rhs.adj[i];
+	}
+	for (i = 0; i < m; i++)
+	{
+		edge[i] = rhs.edge[i];
 	}
 }
 
@@ -1130,6 +1137,7 @@ void KGraph::ReadDualGraph(string file)
 	cerr << "# of Edges in Dual Graph: " << m << ".\n";
 	edge = new vector<long>[m];
 	adj = new vector<long>[n];
+	edj = new vector<long>[n];
 	degree = new long[n];
 	memset(degree, 0, n * sizeof(long));
 	// READ IN THE EDGES
@@ -1163,11 +1171,14 @@ void KGraph::ReadDualGraph(string file)
 		if (Lnum1 == Lnum2)
 		{
 			adj[Lnum1].push_back(Lnum2);
+			edj[Lnum1].push_back(k);
 		}
 		else
 		{
 			adj[Lnum1].push_back(Lnum2);
 			adj[Lnum2].push_back(Lnum1);
+			edj[Lnum1].push_back(k);
+			edj[Lnum2].push_back(k);
 		}
 		degree[Lnum1]++;
 		degree[Lnum2]++;
@@ -1198,11 +1209,13 @@ void KGraph::ReadPrimalGraph(string file)
 	cerr << "# of Edges in Primal Graph: " << m << ".\n";
 	edge = new vector<long>[m];
 	adj = new vector<long>[n];
+	edj = new vector<long>[n];
 	degree = new long[n];
 	memset(degree, 0, n * sizeof(long));
 	// READ IN THE EDGES
 	for (long k = 0; k < m; k++)
 	{
+		//cerr << k << endl;
 		input >> temp;
 		for (long i = 0; i < temp.length(); i++)
 		{
@@ -1232,12 +1245,19 @@ void KGraph::ReadPrimalGraph(string file)
 
 		if (Lnum1 == Lnum2)
 		{
+			//cerr << "hi" << endl;
 			adj[Lnum1].push_back(Lnum2);
+			edj[Lnum1].push_back(k);
+			//cerr << "hi" << endl;
 		}
 		else
 		{
+			//cerr << "hi" << endl;
 			adj[Lnum1].push_back(Lnum2);
 			adj[Lnum2].push_back(Lnum1);
+			edj[Lnum1].push_back(k);
+			edj[Lnum2].push_back(k);
+			//cerr << "hi" << endl;
 		}
 		degree[Lnum1]++;
 		degree[Lnum2]++;
