@@ -21,7 +21,7 @@ using namespace std;
 class LazyConstraints : public GRBCallback //Lazy constraints for redistricting problem
 {
 private:
-	long** x;
+	long **x;
 	long *r;
 
 public:
