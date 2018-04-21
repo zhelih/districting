@@ -610,7 +610,10 @@ vector<vector<long>> solveFM3(KGraph &g1, KGraph &g2, KGraph &d, long &K, long &
 
 		for (long i = 0; i < g1.n; i++)
 		{
-			model.addConstr(exprIncom[i] <= exprOutgo[i] + d.pop[i]);
+			model.addConstr(exprIncom[i] <= U*(1-R[i]));
+			model.addConstr(exprIncom[i] >= d.pop[i]*(1 - R[i]));
+			model.addConstr(exprOutgo[i] <= U - d.pop[i]);
+			model.addConstr(exprOutgo[i] >= L*R[i]);
 		}
 		model.update();
 
