@@ -388,7 +388,7 @@ void KGraph::Duplicate(const KGraph &rhs)
 	{
 		degree[i] = rhs.degree[i];
 		adj[i] = rhs.adj[i];
-		edj[i] = rhs.adj[i];
+		edj[i] = rhs.edj[i];
 	}
 	for (i = 0; i < m; i++)
 	{
