@@ -45,6 +45,8 @@ void LazyConstraints::callback() {
 			numCallbacks++;
 			time_t start = clock();
 
+			vector<bool> selectedEdges(g1Cop.m, false);
+			vector<bool> selectedRoots(g1Cop.n, false);
 			//vector<double> *x = new vector<double>[g1Cop.m];
 
 			x = new long*[g1Cop.m];
@@ -55,7 +57,8 @@ void LazyConstraints::callback() {
 			{
 				for (long j = 0; j < 2; j++)
 				{
-					x[i][j] = getSolution(vars[i][j]);
+					if(getSolution(vars[i][j]) > 0.5)
+						selectedEdges[i] = true;
 				}
 			}
 			
@@ -64,34 +67,11 @@ void LazyConstraints::callback() {
 			r = new long[g1Cop.n];
 			for (long i = 0; i < g1Cop.n; i++)
 			{
-					r[i] = getSolution(vars2[i]);			
-			}
-
-			
-
-			vector<bool> selectedRoots(g1Cop.n, false);
-			for (long i = 0; i < g1Cop.n; i++)			// convert the ``solution'' to a boolean vector
-			{
-				if (r[i] > 0.5)
-				{
+				if (getSolution(vars2[i]) > 0.5)
 					selectedRoots[i] = true;
-				}
 			}
 
-			
 
-			vector<bool> selectedEdges(g1Cop.m, false);
-			for (long i = 0; i < g1Cop.m; i++)			// convert the ``solution'' to a boolean vector
-			{
-				for (long j = 0; j < 2; j++)
-				{
-					if (x[i][j] > 0.5)
-					{
-						selectedEdges[i] = true;
-						break;
-					}
-				}
-			}
 
 			//cerr << "hi" << endl;
 
@@ -103,7 +83,6 @@ void LazyConstraints::callback() {
 			vector<long> parents;
 			vector<long> cut;
 			long sum =0;
-
 			for (long i = 0; i < g1Cop.n; i++) //find root nodes
 			{
 				children.clear();
@@ -112,6 +91,8 @@ void LazyConstraints::callback() {
 				sum = 0;
 				if (selectedRoots[i])
 				{
+					//if (numCallbacks == 1)
+					//	cerr << "Root: "<< i << endl;
 					//cerr << d1.pop[i] << endl;
 					sum += d1.pop[i];
 					//cerr << i << endl;
@@ -125,9 +106,11 @@ void LazyConstraints::callback() {
 						for (long j = 0; j<parents.size(); j++)
 						{
 							u = parents[j];
+							//cerr << "vertex " << u << ":" << endl;
 							for (long aux = 0; aux < g1Cop.edj[u].size(); aux++)
 							{
 								e = g1Cop.edj[u][aux];
+								//cerr << "edge: " << u << endl;
 								if (selectedEdges[e]) 
 								{
 									for (long k = 0; k < 2; k++)
@@ -136,6 +119,8 @@ void LazyConstraints::callback() {
 										if (labelVertex[v] != -1)
 											continue;
 										labelVertex[v] = i;
+										//if (numCallbacks == 1)
+										//	cerr << v << endl;
 										children.push_back(v);
 										sum += d1.pop[v];
 									}
@@ -143,6 +128,7 @@ void LazyConstraints::callback() {
 							}
 						}
 					}
+						
 					for (long k = 0; k < g1Cop.m; k++)
 					{
 						if (selectedEdges[k])
@@ -150,9 +136,11 @@ void LazyConstraints::callback() {
 						if (labelVertex[g1Cop.edge[k][0]] == i && labelVertex[g1Cop.edge[k][1]] == i)
 							continue;
 						if (labelVertex[g1Cop.edge[k][0]] == i || labelVertex[g1Cop.edge[k][1]] == i)
+						{
 							cut.push_back(k);
+						}
 					}
-					//Adding Lazy Cuts
+						
 					GRBLinExpr expr = 0;
 					if (sum < L1)
 					{
