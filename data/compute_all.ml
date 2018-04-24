@@ -49,10 +49,36 @@ let () =
   loop 1;
   seek_in f_in 0;
 
+  (* load distance matrix (memory intence) *)
+  let f = open_in (state ^ "_d.csv") in
+  let header = input_line f in
+  let fields = match nsplit header ',' with "ID"::tl -> tl | _ -> raise (Failure "Bad distance CSV") in
+  let nr_col = List.length fields in
+  let h_col = Hashtbl.create nr_col in
+  let h_row = Hashtbl.create nr_col in
+  List.iteri (fun i s ->
+    Hashtbl.add h_col (String.trim s) i
+  ) fields; (* maps geoid to matrix index *)
+
+  let distances = Array.make_matrix (nr_col+1) (nr_col+1) 0. in
+  let rec loop i =
+    try
+      let (geoid,d) = match nsplit (input_line f) ',' with f::s -> f,s | _ -> assert false in
+
+      Hashtbl.add h_row geoid i;
+      List.iteri (fun j d ->
+        distances.(j).(i) <- float_of_string (String.trim d)
+      ) d;
+      loop (i+1)
+    with End_of_file -> ();
+  in
+  loop 0;
+  close_in f;
+
 (*   printf "first loop done\n"; *)
 
   let n = Hashtbl.length h_ind in (* nr_nodes *)
-  let adj = Array.make_matrix (n+1) (n+1) false in
+  let adj = Array.make_matrix (n+1) (n+1) None in
   (* skip first row *)
   ignore (input_line f_in);
   let rec loop i =
@@ -67,8 +93,18 @@ let () =
       let v_from = try Hashtbl.find h_ind geoid with exn -> (printf "missing %s (v_from)\n" geoid; raise exn) in
       List.iter (fun geoid_to ->
         let v_to = try Hashtbl.find h_ind geoid_to with exn -> (printf "missing %s from %s (v_to)\n" geoid_to geoid; raise exn) in
-        adj.(v_from).(v_to) <- true;
-        adj.(v_to).(v_from) <- true
+        let d_col = try Hashtbl.find h_col geoid with exn -> (printf "missing %s from distances cols" geoid; raise exn) in
+        let d_row = try Hashtbl.find h_row geoid_to with exn -> (printf "missing %s from distances rows" geoid_to; raise exn) in
+
+        (* some checks *)
+        let d_col2 = try Hashtbl.find h_col geoid_to with exn -> (printf "missing %s from distances cols" geoid_to; raise exn) in
+        let d_row2 = try Hashtbl.find h_row geoid with exn -> (printf "missing %s from distances rows" geoid; raise exn) in
+        let d = distances.(d_col).(d_row) in
+        let d2 = distances.(d_col2).(d_row2) in
+        if d <> d2 then
+          printf "Distance error: %.8f <> %.8f for geoid %s and %s (indices (%d,%d) and (%d,%d)\n" d d2 geoid geoid_to d_col d_row d_col2 d_row2;
+        adj.(v_from).(v_to) <- Some d;
+        adj.(v_to).(v_from) <- Some d
       ) nbs;
       loop (i+1)
     with End_of_file -> ()
@@ -81,8 +117,9 @@ let () =
   fprintf f "p edge %d\n" n;
   for i = 1 to n do
     for j = i+1 to n do
-      if adj.(i).(j) then
-        fprintf f "e %d %d\n" (i-1) (j-1)
+      match adj.(i).(j) with
+      | Some d -> fprintf f "e %d %d %.8f\n" (i-1) (j-1) d
+      | None -> ()
     done
   done;
   close_out f;
