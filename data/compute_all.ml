@@ -29,7 +29,7 @@ let () =
   let f_in = try open_in (state ^ "_features.csv") with _ -> (printf "Input not found\n"; exit 1) in
   (* format: geoid, pop, nbs *)
   (* skip first row *)
-  ignore (input_line f_in);
+(*   ignore (input_line f_in); *)
 
   (* can be done in one read, but I am toooo lazy *)
   let h_pop = Hashtbl.create 1 in
@@ -118,7 +118,8 @@ let () =
   for i = 1 to n do
     for j = i+1 to n do
       match adj.(i).(j) with
-      | Some d -> fprintf f "e %d %d %.8f\n" (i-1) (j-1) d
+(*       | Some d -> fprintf f "e %d %d %.8f\n" (i-1) (j-1) d *)
+      | Some d -> fprintf f "e %d %d\n" (i-1) (j-1)
       | None -> ()
     done
   done;
@@ -127,7 +128,6 @@ let () =
   printf "adj done\n";
 
   let f = open_out (state ^ ".hash") in
-  fprintf f "#   Used to map graph vertices to ids\n";
   Hashtbl.iter (fun k v ->
     fprintf f "%d %s\n" (v-1) k
   ) h_ind;
@@ -136,7 +136,6 @@ let () =
   (* compute total population *)
   let total_pop = ref 0 in
   Hashtbl.iter (fun _k v -> total_pop := !total_pop + v) h_pop;
-  fprintf f "#   Used to get population for a graph vertex\n";
   fprintf f "total pop = %d\n" !total_pop;
   Hashtbl.iter (fun k v ->
     let ind = Hashtbl.find h_ind k in

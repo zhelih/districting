@@ -430,6 +430,7 @@ int populate_zeros(unordered_set<pair<int,int>> &x_zeros, graph* g, const vector
   // TODO optimize time? Is this really takes long to spend time on optimizing?
   for(int s = 0; s < g->nr_nodes; ++s) { // select s as source
     // typical Dijsktra with heap here
+    printf("%d.", s); fflush(stdout);
     priority_queue< pair<int,int>, vector <pair<int,int>> , greater<pair<int,int>> > pq;
     vector<int> dist(g->nr_nodes, INT_MAX); //FIXME long?
     pq.push(make_pair(0, s)); // copy constructor?
@@ -456,5 +457,6 @@ int populate_zeros(unordered_set<pair<int,int>> &x_zeros, graph* g, const vector
     printf("(%d,%d) ", p.first, p.second);
   }
   printf("\n");*/
+  printf("\n");
   return x_zeros.size();
 }

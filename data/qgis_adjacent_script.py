@@ -54,7 +54,7 @@ layer = iface.activeLayer()
 # of the chosen field.
 layer.startEditing()
 layer.dataProvider().addAttributes(
-        [QgsField(_NEW_NEIGHBORS_FIELD, QVariant.String, "", 2000)])#,
+        [QgsField(_NEW_NEIGHBORS_FIELD, QVariant.String, "", 254)])#,
          # QgsField(_NEW_SUM_FIELD, QVariant.Int)])
 layer.updateFields()
 # Create a dictionary of all features
