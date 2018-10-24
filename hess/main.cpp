@@ -9,7 +9,7 @@
 using namespace std;
 
 int read_input_data(const char* dimacs_fname, const char* distance_fname, const char* population_fname, // INPUTS
-                     graph* &g, vector<vector<int> >& dist, vector<int> population) // OUTPUTS
+                     graph* &g, vector<vector<int> >& dist, vector<int>& population) // OUTPUTS
 {
     // read dimacs graph
     g = from_dimacs(dimacs_fname);
