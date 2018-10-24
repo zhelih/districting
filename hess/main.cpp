@@ -8,33 +8,6 @@
 #include <cstring>
 using namespace std;
 
-#ifndef min
-#define min(a,b) (((a)<(b))?(a):(b))
-#endif
-
-#ifndef max
-#define max(a,b) (((a)<(b))?(b):(a))
-#endif
-
-// obsolete for assymetric formulation where only i < j
-// only for j < i
-inline int ind(const int i, const int j, const int n)
-{
-  return j + (2*n - i - 1)*i/2;
-}
-
-//for debug
-void print_GRBLinExpr(GRBLinExpr& expr)
-{
-  for(unsigned int i = 0; i < expr.size(); ++i)
-  {
-    if(expr.getCoeff(i) != 0)
-      printf("+ %.1lf %s", expr.getCoeff(i), expr.getVar(i).get(GRB_StringAttr_VarName).c_str());
-  }
-  printf("\n");
-//  printf(" <= %.1lf", expr.getConstant());
-}
-
 int main(int argc, char *argv[])
 {
   ios::sync_with_stdio(1);
@@ -140,12 +113,6 @@ int main(int argc, char *argv[])
       model.addConstr(constr == 1);
     }
 
-    // add contraints (1e)
-    for(int i = 0; i < n; ++i)
-      for(int j = 0; j < n; ++j)
-        if(i != j)
-          model.addConstr(x[i][j] <= x[j][j]);
-
     // add constraint (1c)
     expr = 0;
     for(int j = 0; j < n; ++j)
@@ -162,6 +129,12 @@ int main(int argc, char *argv[])
       model.addConstr(constr - U*x[j][j] <= 0); // U
       model.addConstr(constr - L*x[j][j] >= 0); // L
     }
+
+    // add contraints (1e)
+    for(int i = 0; i < n; ++i)
+      for(int j = 0; j < n; ++j)
+        if(i != j)
+          model.addConstr(x[i][j] <= x[j][j]);
 
     // Optimize model
     model.write("debug.lp");
