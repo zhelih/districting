@@ -58,11 +58,12 @@ int read_input_data(const char* dimacs_fname, const char* distance_fname, const 
     return 0;
 }
 
-void run_gurobi(graph* g, const vector<vector<int> >& dist, const vector<int>& population, int L, int U, int k)
+void run_gurobi(graph* g, const vector<vector<int> >& dist, const vector<int>& population, int L, int U, int k, vector<int>& sol)
 {
-    // create GUROBI Hess model
-    int n = g->nr_nodes;
+  // create GUROBI Hess model
+  int n = g->nr_nodes;
 
+  try {
     GRBEnv env = GRBEnv();
     GRBModel model = GRBModel(env);
 //    model.getEnv().set(GRB_IntParam_LazyConstraints, 1);
@@ -116,6 +117,26 @@ void run_gurobi(graph* g, const vector<vector<int> >& dist, const vector<int>& p
     model.write("debug.lp");
     model.optimize();
 
+    // translate the solution
+    sol.resize(n);
+
+    vector<int> heads(n, 0);
+    int cur = 1;
+    // firstly assign district number for clusterheads
+    for(int i = 0; i < n; ++i)
+      if(x[i][i].get(GRB_DoubleAttr_X) > 0.5)
+        heads[i] = cur++;
+    for(int i = 0; i < n; ++i)
+      for(int j = 0; j < n; ++j)
+        if(x[i][j].get(GRB_DoubleAttr_X) > 0.5)
+          sol[i] = heads[j];
+
+  } catch(GRBException e) {
+    cout << "Error code = " << e.getErrorCode() << endl;
+    cout << e.getMessage() << endl;
+  } catch(...) {
+    cout << "Exception during optimization" << endl;
+  }
 }
 
 
@@ -126,91 +147,38 @@ int main(int argc, char *argv[])
     printf("Usage: %s <dimacs> <distance> <population> <L> <U> <k>\n", argv[0]);
     return 0;
   }
-  try {
-    // parse command line arguments
-    char* dimacs_fname = argv[1];
-    char* distance_fname = argv[2];
-    char* population_fname = argv[3];
-    int L = std::stoi(argv[4]);
-    int U = std::stoi(argv[5]);
-    int k = std::stoi(argv[6]);
-    printf("Model input: L = %d, U = %d, k = %d\n", L, U, k);
+  // parse command line arguments
+  char* dimacs_fname = argv[1];
+  char* distance_fname = argv[2];
+  char* population_fname = argv[3];
+  int L = std::stoi(argv[4]);
+  int U = std::stoi(argv[5]);
+  int k = std::stoi(argv[6]);
+  printf("Model input: L = %d, U = %d, k = %d\n", L, U, k);
 
-    // read inputs
-    graph* g = 0;
-    vector<vector<int> > dist;
-    vector<int> population;
-    if(read_input_data(dimacs_fname, distance_fname, population_fname, g, dist, population))
-      return 1; // failure
+  // read inputs
+  graph* g = 0;
+  vector<vector<int> > dist;
+  vector<int> population;
+  if(read_input_data(dimacs_fname, distance_fname, population_fname, g, dist, population))
+    return 1; // failure
 
-    // check connectivity
-    if(!g->is_connected())
-    {
-      printf("Problem is infeasible (not connected!)\n");
-      return 0;
-    }
-
-    run_gurobi(g, dist, population, L, U, k);
-
-/*
-    // translate solution
-    for(int i = 0; i < n; ++i)
-      if(x[i][i][0].get(GRB_DoubleAttr_X) > 0.5)
-      {
-        printf("Cluster head %d:", i);
-        for(int j = 0; j < n; ++j)
-        {
-          if(j != i && x[j][i] && x[j][i][0].get(GRB_DoubleAttr_X) > 0.5)
-          {
-            printf(" %u", j);
-          }
-        }
-        printf("\n");
-      }
-//      for(int j = i; j < n; ++j)
-//        printf("x[%d][%d] = %lf\n", i, j, x[ind(i,j,n)].get(GRB_DoubleAttr_X));
-
-    cout << "Obj: " << model.get(GRB_DoubleAttr_ObjVal) << endl;
-
-    cout << "Number of callbacks = " << cb.numCallbacks << endl;
-    cout << "Total time in callbacks = " << cb.callbackTime << " secs " << endl;
-
-    // write to file for an output
-    vector<vector<int> > clusters(n);;
-    for(int i = 0; i < n; ++i)
-      for(int j = 0; j < n; ++j)
-        if(x[i][j] && x[i][j][0].get(GRB_DoubleAttr_X) > 0.5)
-          clusters[j].push_back(i);*/
-
-/*    printf("Districts:\n");
-    for(i = 0; i < nr_districts; ++i)
-    {
-      printf("District %d: (y[i] = %d)", i, ((y[i].get(GRB_DoubleAttr_X)>0.5)?1:0));
-      for(auto it = clusters[i].begin(); it != clusters[i].end(); ++it)
-        printf(" %d", *it);
-      printf("\n");
-    }
-*/
-/*    FILE* f = fopen("districting.out", "w");
-    int nr = 0;
-    for(int i = 0; i < n; ++i)
-    {
-      for(int node : clusters[i])
-        fprintf(f, "%d %d\n", node, nr);
-      nr += (clusters[i].size() > 0);
-    }
-
-    fclose(f);
-*/
-
-    delete g;
-
-  } catch(GRBException e) {
-    cout << "Error code = " << e.getErrorCode() << endl;
-    cout << e.getMessage() << endl;
-  } catch(...) {
-    cout << "Exception during optimization" << endl;
+  // check connectivity
+  if(!g->is_connected())
+  {
+    printf("Problem is infeasible (not connected!)\n");
+    return 0;
   }
 
+  vector<int> sol;
+  run_gurobi(g, dist, population, L, U, k, sol);
+
+  // write solution to file
+  FILE* f = fopen("districting.out", "w");
+  for(int i = 0; i < g->nr_nodes; ++i)
+    fprintf(f, "%d %d\n", i, sol[i]);
+  fclose(f);
+
+  delete g;
   return 0;
 }
