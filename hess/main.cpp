@@ -8,6 +8,57 @@
 #include <cstring>
 using namespace std;
 
+int read_input_data(const char* dimacs_fname, const char* distance_fname, const char* population_fname, // INPUTS
+                     graph* g, vector<vector<int> >& dist, vector<int> population) // OUTPUTS
+{
+    // read dimacs graph
+    g = from_dimacs(dimacs_fname);
+    if(!g) {
+      fprintf(stderr, "Failed to read dimacs graph from %s\n", dimacs_fname);
+      return 1;
+    }
+
+    // read distances (must be sorted)
+    FILE* f = fopen(distance_fname, "r");
+    if(!f) {
+      fprintf(stderr, "Failed to open %s\n", distance_fname);
+      return 1;
+    }
+    // file contains the first row as a header row, skip it
+    // also skip the first element in each row (node id)
+    char buf[3000]; //dummy
+    fgets(buf, sizeof(buf), f); // skip first line
+    dist.resize(g->nr_nodes);
+    for(int i = 0; i < g->nr_nodes; ++i)
+    {
+      dist[i].resize(g->nr_nodes);
+      int d; fscanf(f, "%d,", &d); // skip first element
+      for(int j = 0; j < g->nr_nodes; ++j) {
+        fscanf(f, "%d,", &d);
+        dist[i][j] = d;
+      }
+    }
+    fclose(f);
+
+    // read population file
+    f = fopen(population_fname, "r");
+    if(!f) {
+      fprintf(stderr, "Failed to open %s\n", population_fname);
+      return 1;
+    }
+    // skip first line about total population
+    fgets(buf, sizeof(buf), f);
+    population.resize(g->nr_nodes);
+    for(int i = 0; i < g->nr_nodes; ++i) {
+      int node, pop;
+      fscanf(f, "%d %d ", &node, &pop);
+      population[node] = pop;
+    }
+    fclose(f);
+    return 0;
+}
+
+
 int main(int argc, char *argv[])
 {
   ios::sync_with_stdio(1);
@@ -25,57 +76,12 @@ int main(int argc, char *argv[])
     int k = std::stoi(argv[6]);
     printf("Model input: L = %d, U = %d, k = %d\n", L, U, k);
 
-    // read dimacs graph
-    graph* g = from_dimacs(dimacs_fname);
-    if(!g) {
-      fprintf(stderr, "Failed to read dimacs graph from %s\n", dimacs_fname);
-      return 1;
-    }
-
-    // read distances (must be sorted)
-    vector<vector<int> > dist(g->nr_nodes, vector<int>(g->nr_nodes, 0));
-    FILE* f = fopen(distance_fname, "r");
-    if(!f) {
-      fprintf(stderr, "Failed to open %s\n", distance_fname);
-      return 1;
-    }
-    // file contains the first row as a header row, skip it
-    // also skip the first element in each row (node id)
-    char buf[3000]; //dummy
-    fgets(buf, sizeof(buf), f); // skip first line
-    for(int i = 0; i < g->nr_nodes; ++i)
-    {
-      int d; fscanf(f, "%d,", &d); // skip first element
-      for(int j = 0; j < g->nr_nodes; ++j) {
-        fscanf(f, "%d,", &d);
-        dist[i][j] = d;
-      }
-    }
-    fclose(f);
-
-/* TODO remove
-    for(int i = 0; i < g->nr_nodes; ++i) {
-      for(int j = 0; j < g->nr_nodes; ++j)
-        fprintf(stderr, "%d ", dist[i][j]);
-      fprintf(stderr, "\n");
-    }
-*/
-
-    // read population file
-    vector<int> population(g->nr_nodes, 0);
-    f = fopen(population_fname, "r");
-    if(!f) {
-      fprintf(stderr, "Failed to open %s\n", population_fname);
-      return 1;
-    }
-    // skip first line about total population
-    fgets(buf, sizeof(buf), f);
-    for(int i = 0; i < g->nr_nodes; ++i) {
-      int node, pop;
-      fscanf(f, "%d %d ", &node, &pop);
-      population[node] = pop;
-    }
-    fclose(f);
+    // read inputs
+    graph* g = 0;
+    vector<vector<int> > dist;
+    vector<int> population;
+    if(read_input_data(dimacs_fname, distance_fname, population_fname, g, dist, population))
+      return 1; // failure
 
     // check connectivity
     if(!g->is_connected())
