@@ -73,39 +73,20 @@ graph* from_dimacs(const char* fname)
 
 graph::graph(uint n)
 {
-  // compute bit mask
-  mask[0] = 1;
-  for(uint i = 1; i < CHUNK_SIZE; ++i)
-    mask[i] = mask[i-1] << 1;
-
- // create adj matrix
-  //adj = new uint*[n];
-  adj.resize(n);
-  for(uint i = 0; i < n; ++i)
-  {
-    //adj[i] = new uint[n];
-    adj[i].resize(n);
-  }
-  for(uint i = 0; i < n; ++i)
-    for(uint j = 0; j < n; ++j)
-      adj[i][j] = 0;
   nr_nodes = n;
   nb_.resize(n);
 }
 
 graph::~graph()
 {
-/*  for(uint i = 0; i < nr_nodes; ++i)
-    delete [] adj[i];
-  delete [] adj;*/
 }
 
 void graph::add_edge(uint i, uint j)
 {
-  if(!adj[i][j]) nb_[i].push_back(j); // prevent multiple edges
-  if(!adj[j][i]) nb_[j].push_back(i);
-  adj[i][j] = true;
-  adj[j][i] = true;
+  if(is_edge(i,j))
+    return;
+  nb_[i].push_back(j);
+  nb_[j].push_back(i);
 }
 
 bool graph::is_connected()
@@ -139,7 +120,13 @@ bool graph::is_connected()
   return res;
 }
 
-/*inline bool graph::is_edge(uint i, uint j)
+bool graph::is_edge(uint i, uint j)
 {
-  return adj[i][j/CHUNK_SIZE]&mask[j%CHUNK_SIZE];
-}*/
+  for(uint k : nb_[i])
+    if(k == j)
+      return true;
+  for(uint k : nb_[j])
+    if(k == i)
+      return true;
+  return false;
+}
