@@ -9,7 +9,7 @@
 using namespace std;
 
 int read_input_data(const char* dimacs_fname, const char* distance_fname, const char* population_fname, // INPUTS
-                     graph* g, vector<vector<int> >& dist, vector<int> population) // OUTPUTS
+                     graph* &g, vector<vector<int> >& dist, vector<int> population) // OUTPUTS
 {
     // read dimacs graph
     g = from_dimacs(dimacs_fname);
@@ -62,6 +62,17 @@ void run_gurobi(graph* g, const vector<vector<int> >& dist, const vector<int>& p
 {
   // create GUROBI Hess model
   int n = g->nr_nodes;
+  if(n <= 0)
+  {
+    fprintf(stderr, "run_gurobi: empty graph\n");
+    return;
+  }
+
+  if(dist.size() != n || population.size() != n)
+  {
+    fprintf(stderr, "dist/population size != n, expected %d\n", n);
+    return;
+  }
 
   try {
     GRBEnv env = GRBEnv();
@@ -174,10 +185,13 @@ int main(int argc, char *argv[])
   run_gurobi(g, dist, population, L, U, k, sol);
 
   // write solution to file
-  FILE* f = fopen("districting.out", "w");
-  for(int i = 0; i < g->nr_nodes; ++i)
-    fprintf(f, "%d %d\n", i, sol[i]);
-  fclose(f);
+  if(sol.size() > 0)
+  {
+    FILE* f = fopen("districting.out", "w");
+    for(int i = 0; i < g->nr_nodes; ++i)
+      fprintf(f, "%d %d\n", i, sol[i]);
+    fclose(f);
+  }
 
   delete g;
   return 0;
