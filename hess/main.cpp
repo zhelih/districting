@@ -58,38 +58,8 @@ int read_input_data(const char* dimacs_fname, const char* distance_fname, const 
     return 0;
 }
 
-
-int main(int argc, char *argv[])
+void run_gurobi(graph* g, const vector<vector<int> >& dist, const vector<int>& population, int L, int U, int k)
 {
-  ios::sync_with_stdio(1);
-  if(argc < 3) {
-    printf("Usage: %s <dimacs> <distance> <population> <L> <U> <k>\n", argv[0]);
-    return 0;
-  }
-  try {
-    // parse command line arguments
-    char* dimacs_fname = argv[1];
-    char* distance_fname = argv[2];
-    char* population_fname = argv[3];
-    int L = std::stoi(argv[4]);
-    int U = std::stoi(argv[5]);
-    int k = std::stoi(argv[6]);
-    printf("Model input: L = %d, U = %d, k = %d\n", L, U, k);
-
-    // read inputs
-    graph* g = 0;
-    vector<vector<int> > dist;
-    vector<int> population;
-    if(read_input_data(dimacs_fname, distance_fname, population_fname, g, dist, population))
-      return 1; // failure
-
-    // check connectivity
-    if(!g->is_connected())
-    {
-      printf("Problem is infeasible (not connected!)\n");
-      return 0;
-    }
-
     // create GUROBI Hess model
     int n = g->nr_nodes;
 
@@ -100,13 +70,13 @@ int main(int argc, char *argv[])
     GRBVar** x = new GRBVar*[n];
     for(int i = 0; i < n; ++i)
       x[i] = model.addVars(n, GRB_BINARY);
-   model.update();
+    model.update();
 
     // Set objective: minimize sum d^2_ij*x_ij
     GRBLinExpr expr = 0;
     for(int i = 0; i < n; ++i)
       for(int j = 0; j < n; ++j)
-        expr += (dist[i][j]/100) * (dist[i][j]/100) * population[i] * x[i][j]; //FIXME check overflow?
+        expr += ((double)dist[i][j]/1000.) * ((double)dist[i][j]/1000.) * population[i] * x[i][j]; //FIXME check overflow?
 
     model.setObjective(expr, GRB_MINIMIZE);
 
@@ -145,6 +115,43 @@ int main(int argc, char *argv[])
     // Optimize model
     model.write("debug.lp");
     model.optimize();
+
+}
+
+
+int main(int argc, char *argv[])
+{
+  ios::sync_with_stdio(1);
+  if(argc < 3) {
+    printf("Usage: %s <dimacs> <distance> <population> <L> <U> <k>\n", argv[0]);
+    return 0;
+  }
+  try {
+    // parse command line arguments
+    char* dimacs_fname = argv[1];
+    char* distance_fname = argv[2];
+    char* population_fname = argv[3];
+    int L = std::stoi(argv[4]);
+    int U = std::stoi(argv[5]);
+    int k = std::stoi(argv[6]);
+    printf("Model input: L = %d, U = %d, k = %d\n", L, U, k);
+
+    // read inputs
+    graph* g = 0;
+    vector<vector<int> > dist;
+    vector<int> population;
+    if(read_input_data(dimacs_fname, distance_fname, population_fname, g, dist, population))
+      return 1; // failure
+
+    // check connectivity
+    if(!g->is_connected())
+    {
+      printf("Problem is infeasible (not connected!)\n");
+      return 0;
+    }
+
+    run_gurobi(g, dist, population, L, U, k);
+
 /*
     // translate solution
     for(int i = 0; i < n; ++i)
