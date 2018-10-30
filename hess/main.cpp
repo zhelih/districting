@@ -9,6 +9,8 @@
 #include <cstring>
 using namespace std;
 
+extern const char* gitversion;
+
 void run_gurobi(graph* g, const vector<vector<int> >& dist, const vector<int>& population, int L, int U, int k, vector<int>& sol)
 {
   // create GUROBI Hess model
@@ -105,6 +107,7 @@ void run_gurobi(graph* g, const vector<vector<int> >& dist, const vector<int>& p
 int main(int argc, char *argv[])
 {
   ios::sync_with_stdio(1);
+  printf("Districting, build %s\n", gitversion);
   if(argc < 3) {
     printf("Usage: %s <dimacs> <distance> <population> <L> <U> <k>\n", argv[0]);
     return 0;
