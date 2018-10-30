@@ -1,62 +1,13 @@
 // Copyright Eugene Lykhovyd, 2017-2018.
 #include "gurobi_c++.h"
 #include "graph.h"
+#include "io.h"
 #include <cstdio>
 #include <chrono>
 #include <vector>
 #include <cmath>
 #include <cstring>
 using namespace std;
-
-int read_input_data(const char* dimacs_fname, const char* distance_fname, const char* population_fname, // INPUTS
-                     graph* &g, vector<vector<int> >& dist, vector<int>& population) // OUTPUTS
-{
-    // read dimacs graph
-    g = from_dimacs(dimacs_fname);
-    if(!g) {
-      fprintf(stderr, "Failed to read dimacs graph from %s\n", dimacs_fname);
-      return 1;
-    }
-
-    // read distances (must be sorted)
-    FILE* f = fopen(distance_fname, "r");
-    if(!f) {
-      fprintf(stderr, "Failed to open %s\n", distance_fname);
-      return 1;
-    }
-    // file contains the first row as a header row, skip it
-    // also skip the first element in each row (node id)
-    char buf[3000]; //dummy
-    fgets(buf, sizeof(buf), f); // skip first line
-    dist.resize(g->nr_nodes);
-    for(int i = 0; i < g->nr_nodes; ++i)
-    {
-      dist[i].resize(g->nr_nodes);
-      int d; fscanf(f, "%d,", &d); // skip first element
-      for(int j = 0; j < g->nr_nodes; ++j) {
-        fscanf(f, "%d,", &d);
-        dist[i][j] = d;
-      }
-    }
-    fclose(f);
-
-    // read population file
-    f = fopen(population_fname, "r");
-    if(!f) {
-      fprintf(stderr, "Failed to open %s\n", population_fname);
-      return 1;
-    }
-    // skip first line about total population
-    fgets(buf, sizeof(buf), f);
-    population.resize(g->nr_nodes);
-    for(int i = 0; i < g->nr_nodes; ++i) {
-      int node, pop;
-      fscanf(f, "%d %d ", &node, &pop);
-      population[node] = pop;
-    }
-    fclose(f);
-    return 0;
-}
 
 void run_gurobi(graph* g, const vector<vector<int> >& dist, const vector<int>& population, int L, int U, int k, vector<int>& sol)
 {
