@@ -70,6 +70,8 @@ GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<int> >& dist,
       if(i != j)
         model->addConstr(x[i][j] <= x[j][j]);
 
+  model->update();
+
   model->write("debug_hess.lp");
 
   return x;

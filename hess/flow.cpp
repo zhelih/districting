@@ -45,6 +45,7 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g)
   }
 
   // add constraint (16d)
+  // TODO without is_edge
   for(int i = 0; i < n; ++i)
     for(int j = 0; j < n; ++j)
       if(g->is_edge(i,j))
@@ -52,4 +53,5 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g)
         model->addConstr(f[i][j] - y[i][j] >= 0);
         model->addConstr(f[i][j] - n*y[i][j] <= 0);
       }
+  model->update();
 }
