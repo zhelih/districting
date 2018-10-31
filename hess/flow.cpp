@@ -54,6 +54,8 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g)
         model->addConstr(f[i][j] - n*y[i][j] <= 0);
       }
   model->update();
+
+  model->write("debug_scf.lp");
 }
 
 void build_mcf(GRBModel* model, GRBVar** x, graph* g)
