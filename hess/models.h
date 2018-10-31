@@ -9,4 +9,6 @@ using namespace std;
 
 // build hess model and return x variables
 GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<int> >& dist, const vector<int>& population, int L, int U, int k);
+// add SCF constraints to model with hess variables x
+void build_scf(GRBModel* model, GRBVar** x, graph* g);
 #endif

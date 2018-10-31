@@ -4,7 +4,6 @@
 #include "io.h"
 #include "models.h"
 #include <cstdio>
-#include <chrono>
 #include <vector>
 #include <cmath>
 #include <cstring>
@@ -45,10 +44,15 @@ int main(int argc, char *argv[])
   }
 
   try {
+    // initialize environment and create an empty model
     GRBEnv env = GRBEnv();
     GRBModel model = GRBModel(env);
 
+    // build hess model
     GRBVar** x = build_hess(&model, g, dist, population, L, U, k);
+
+    // add SCF contraints
+    build_scf(&model, x, g);
 
     //optimize the model
     model.optimize();
