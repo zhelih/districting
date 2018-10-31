@@ -53,6 +53,15 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g)
         model->addConstr(f[i][j] - y[i][j] >= 0);
         model->addConstr(f[i][j] - n*y[i][j] <= 0);
       }
+
+  // add constraint (Austin)
+  for(int v = 0; v < n; ++v)
+  {
+    // for every edge here
+    for(int i = 0; i < n; ++i)
+      for(int j : g->nb(i))
+        model->addConstr(x[i][v] + y[i][j] - x[j][v] <= 1);
+  }
   model->update();
 
   model->write("debug_scf.lp");
