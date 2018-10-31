@@ -55,3 +55,8 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g)
       }
   model->update();
 }
+
+void build_mcf(GRBModel* model, GRBVar** x, graph* g)
+{
+  throw "Unimplemented!";
+}
