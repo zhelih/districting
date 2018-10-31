@@ -20,7 +20,7 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g)
   // add constraint (16b)
   for(int i = 0; i < n; ++i)
   {
-    GRBLinExpr expr;
+    GRBLinExpr expr = 0;
     for(int j : g->nb(i))
     {
       expr += y[j][i];
@@ -31,7 +31,7 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g)
   // add constraint (16c)
   for(int i = 0; i < n; ++i)
   {
-    GRBLinExpr expr;
+    GRBLinExpr expr = 0;
     for(int j : g->nb(i))
     {
       expr += f[i][j]; // in d_+
