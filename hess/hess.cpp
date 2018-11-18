@@ -12,17 +12,6 @@ GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<int> >& dist,
 {
   // create GUROBI Hess model
   int n = g->nr_nodes;
-  if(n <= 0)
-  {
-    fprintf(stderr, "build_hess: empty graph\n");
-    throw "build_hess failed";
-  }
-
-  if(dist.size() != n || population.size() != n)
-  {
-    fprintf(stderr, "build_hess: dist/population size != n, expected %d\n", n);
-    throw "build_hess failed";
-  }
 
   // create n^2 variables
   GRBVar** x = new GRBVar*[n];

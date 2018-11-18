@@ -40,7 +40,19 @@ int main(int argc, char *argv[])
   if(!g->is_connected())
   {
     printf("Problem is infeasible (not connected!)\n");
-    return 0;
+    return 1;
+  }
+
+  if(g->nr_nodes <= 0)
+  {
+    fprintf(stderr, "empty graph\n");
+    return 1;
+  }
+
+  if(dist.size() != g->nr_nodes || population.size() != g->nr_nodes)
+  {
+    fprintf(stderr, "dist/population size != n, expected %d\n", g->nr_nodes);
+    return 1;
   }
 
   try {
