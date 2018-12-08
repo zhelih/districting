@@ -64,7 +64,7 @@ GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, in
   model->addConstr(lu[1] >= p_bar);
 
   model->update();
-  model->write("debug_lu1.lp");
+  model->write("debug_ul1.lp");
 
   return x;
 }
@@ -112,7 +112,7 @@ GRBVar** build_UL_2(GRBModel* model, graph* g, const vector<int>& population, in
   model->set(GRB_IntParam_Symmetry, 2);
 
   model->update();
-  model->write("debug_lu2.lp");
+  model->write("debug_ul2.lp");
 
   return x;
 }
