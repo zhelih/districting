@@ -1,6 +1,7 @@
 *.lp
 # dir with test data (local)
 NJ/*
+data/*
 # executables
 districting
 version.c
