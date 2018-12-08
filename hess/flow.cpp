@@ -76,6 +76,8 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
       f[v][i] = model->addVars(n, GRB_BINARY); // to node, j
   }
 
+  model->update();
+
   // add constraint (16b)
   for(int i = 0; i < n; ++i)
   {
@@ -112,6 +114,10 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
           continue;
         model->addConstr(f[v][i][j] - f[j][i][j] <= 0);
       }
+
+  model->update();
+
+  model->write("debug_mcf1.lp");
 }
 
 void build_mcf2(GRBModel* model, GRBVar** x, graph* g)
