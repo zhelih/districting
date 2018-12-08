@@ -7,17 +7,26 @@
 #include <vector>
 #include <cmath>
 #include <cstring>
+#include <chrono>
+
 using namespace std;
-
 extern const char* gitversion;
-
 
 int main(int argc, char *argv[])
 {
   ios::sync_with_stdio(1);
   printf("Districting, build %s\n", gitversion);
-  if(argc < 3) {
-    printf("Usage: %s <dimacs> <distance> <population> <L> <U> <k>\n", argv[0]);
+  if(argc < 8) {
+    printf("Usage: %s <dimacs> <distance> <population> <L> <U> <k> <model>\n\
+    Available models:\n\
+    \thess\t\tHess model\n\
+    \tscf\t\tHess model with SCF\n\
+    \tmcf1\t\tHess model with MCF1\n\
+    \tmcf2\t\tHess model with MCF2\n\
+    \tcut1\t\tHess model with CUT1\n\
+    \tcut2\t\tHess modek with CUT2\n\
+    \tul1\t\tU-L model type 1\n\
+    \tul2\t\tU-L model type 2 (auto strong symmetry)\n", argv[0]);
     return 0;
   }
   // parse command line arguments
@@ -28,6 +37,7 @@ int main(int argc, char *argv[])
   int U = std::stoi(argv[5]);
   int k = std::stoi(argv[6]);
   printf("Model input: L = %d, U = %d, k = %d\n", L, U, k);
+
 
   // read inputs
   graph* g = 0;
@@ -55,24 +65,62 @@ int main(int argc, char *argv[])
     return 1;
   }
 
+  long total_pop = 0L;
+  for(int p : population)
+    total_pop += p;
+  printf("Model input: total population = %ld\n", total_pop);
+
+  string arg_model = argv[argc-1];
+
+
   try {
     // initialize environment and create an empty model
     GRBEnv env = GRBEnv();
     GRBModel model = GRBModel(env);
 
-    // build hess model
-    GRBVar** x = build_hess(&model, g, dist, population, L, U, k);
+    // little ugly
+    bool need_solution = true;
+    GRBVar** x = 0;
+    if(arg_model != "ul1" && arg_model != "ul2")
+      x = build_hess(&model, g, dist, population, L, U, k);
 
-    // add SCF contraints
-    build_scf(&model, x, g);
+    if(arg_model == "scf")
+      build_scf(&model, x, g);
+    else if(arg_model == "mcf1")
+      build_mcf1(&model, x, g);
+    else if(arg_model == "mcf2")
+      build_mcf2(&model, x, g);
+    else if(arg_model == "cut1")
+      build_cut1(&model, x, g);
+    else if(arg_model == "cut2")
+      build_cut2(&model, x, g);
+    else if(arg_model == "ul1") {
+      x = build_UL_1(&model, g, population, k);
+      need_solution = false;
+    } else if(arg_model == "ul2") {
+      x = build_UL_2(&model, g, population, k);
+      need_solution = false;
+    } else if(arg_model != "hess") {
+      fprintf(stderr, "ERROR: Unknown model : %s\n", arg_model.c_str());
+      exit(1);
+    }
 
     //optimize the model
+    auto start = chrono::steady_clock::now();
     model.optimize();
+    chrono::duration<double> duration = chrono::steady_clock::now() - start;
+    printf("Time elapsed: %lf seconds\n", duration.count());
 
-    vector<int> sol;
-    translate_solution(x, sol, g->nr_nodes);
+    // will remain temporary for script run
+    double objval = model.get(GRB_DoubleAttr_ObjVal);
+    printf("qwerky567: Objective value: %lf (%e), Percentage from total: %lf (%e), time: %lf seconds\n", objval, objval, objval / ((double)total_pop), objval / ((double)total_pop), duration.count());
 
-    printf_solution(sol, "districting.out");
+    if(need_solution) {
+      vector<int> sol;
+      translate_solution(x, sol, g->nr_nodes);
+      printf_solution(sol, "districting.out");
+    }
+
   } catch(GRBException e) {
     cout << "Error code = " << e.getErrorCode() << endl;
     cout << e.getMessage() << endl;

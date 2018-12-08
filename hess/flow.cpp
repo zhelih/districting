@@ -65,7 +65,12 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g)
   model->write("debug_scf.lp");
 }
 
-void build_mcf(GRBModel* model, GRBVar** x, graph* g)
+void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
+{
+  throw "Unimplemented!";
+}
+
+void build_mcf2(GRBModel* model, GRBVar** x, graph* g)
 {
   throw "Unimplemented!";
 }
