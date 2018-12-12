@@ -1,4 +1,5 @@
 // source file for single and multi commodity flow formulations
+#include <unordered_map>
 #include "gurobi_c++.h"
 #include "graph.h"
 
@@ -67,13 +68,30 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g)
 void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
 {
   int n = g->nr_nodes;
-  // add additional flow variable (many) f[v][i][j]
-  GRBVar***f = new GRBVar**[n]; // commodity type, v
+
+  // step 1 : hash edge (i,j) to i*n+j = h1
+  // step 2 : hash every h1 to a number, resulting in exactly |E| variables
+
+  std::unordered_map<int,int> hash_edges;
+  int cur = 0;
+  for(int i = 0; i < n; ++i)
+    for(int j : g->nb(i))
+      hash_edges.insert(std::make_pair(i*n+j, cur++));
+
+  // debug
+/*  for(int i = 0; i < n; ++i)
+    for(int j : g->nb(i))
+      printf("edge (%d,%d) hashed as %d\n", i, j, hash_edges[i*n+j]);
+*/
+
+  // get number of edges
+  int nr_edges = hash_edges.size();
+
+  // add additional flow variable (many) f[v][i,j]
+  GRBVar**f = new GRBVar*[n]; // commodity type, v
   for(int v = 0; v < n; ++v)
   {
-    f[v] = new GRBVar*[n]; // from node, i
-    for(int i = 0; i < n; ++i)
-      f[v][i] = model->addVars(n, GRB_BINARY); // to node, j
+    f[v] = model->addVars(nr_edges, GRB_BINARY); // the edge
   }
 
   model->update();
@@ -88,8 +106,8 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
       GRBLinExpr expr = 0;
       for(int nb_j : g->nb(j))
       {
-        expr += f[i][j][nb_j]; // in d_+ : edge (j -- nb_j)
-        expr -= f[i][nb_j][j]; // in d_- : edge (nb_j -- j)
+        expr += f[i][hash_edges[n*j+nb_j]]; // in d_+ : edge (j -- nb_j)
+        expr -= f[i][hash_edges[n*nb_j+j]]; // in d_- : edge (nb_j -- j)
       }
       model->addConstr(expr - x[i][j] == 0);
     }
@@ -100,7 +118,7 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
   {
     GRBLinExpr expr = 0;
     for(int nb_i : g->nb(i))
-      expr += f[i][i][nb_i]; // in d_+ : edge (i -- nb_i)
+      expr += f[i][hash_edges[n*i+nb_i]]; // in d_+ : edge (i -- nb_i)
     model->addConstr(expr == 0);
   }
 
@@ -112,7 +130,7 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
       {
         if(v == i || v == j)
           continue;
-        model->addConstr(f[v][i][j] - f[j][i][j] <= 0);
+        model->addConstr(f[v][hash_edges[n*i+j]] - f[j][hash_edges[n*i+j]] <= 0);
       }
 
   model->update();
