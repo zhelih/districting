@@ -90,9 +90,14 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
   // add additional flow variable (many) f[v][i,j]
   GRBVar**f = new GRBVar*[n]; // commodity type, v
   for(int v = 0; v < n; ++v)
-  {
-    f[v] = model->addVars(nr_edges, GRB_BINARY); // the edge
-  }
+    f[v] = model->addVars(nr_edges, GRB_CONTINUOUS); // the edge
+
+  // update variables to binary when j == v
+  for(int v = 0; v < n; ++v)
+    for(int i = 0; i < n; ++i)
+      for(int j : g->nb(i))
+        if(v == j)
+          f[v][hash_edges[n*i+j]].set(GRB_CharAttr_VType, GRB_BINARY);
 
   model->update();
 
