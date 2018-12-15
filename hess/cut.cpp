@@ -4,7 +4,7 @@
 
 void build_cut1(GRBModel* model, GRBVar** x, graph* g)
 {
-	// create n^2 variables, and set UB=0 for non-arcs
+	// create n^2 variables, and set UB=0
 	int n = g->nr_nodes;
 	
 	GRBVar** y = new GRBVar*[n];
