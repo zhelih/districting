@@ -13,6 +13,7 @@ void build_cut1(GRBModel* model, GRBVar** x, graph* g)
 		GRBVar *y_temp = new GRBVar[n];
 		for (int j = 0; j < n; ++j)
 		{
+			// set UBs to zero for all y vars
 			y_temp[j] = model->addVar(0.0, 0.0, 0.0, GRB_BINARY);
 		}
 		y[i] = y_temp;
@@ -24,6 +25,7 @@ void build_cut1(GRBModel* model, GRBVar** x, graph* g)
 		GRBLinExpr expr = 0;
 		for (int j : g->nb(i))
 		{
+			// set UBs to one for all arcs
 			y[j][i].set(GRB_DoubleAttr_UB, 1.0);
 			expr += y[j][i];
 		}
