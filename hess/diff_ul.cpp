@@ -22,10 +22,11 @@ GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, in
   for(int i = 0; i < n; ++i)
     x[i] = model->addVars(n, GRB_BINARY);
 
-  GRBVar* lu = model->addVars(2, GRB_CONTINUOUS);
+  GRBVar L = *model->addVars(1, GRB_CONTINUOUS);
+  GRBVar U = *model->addVars(1, GRB_CONTINUOUS);
   model->update();
 
-  model->setObjective(lu[1] - lu[0], GRB_MINIMIZE);
+  model->setObjective(U-L, GRB_MINIMIZE);
 
   // add constraints (36b)
   for(int i = 0; i < n; ++i)
@@ -49,8 +50,8 @@ GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, in
     for(int i = j; i < n; ++i)
       constr += population[i]*x[i][j];
     // add for j
-    model->addConstr(constr - lu[1] + p_bar * x[j][j] <= p_bar); // U
-    model->addConstr(constr - lu[0] - p_bar * x[j][j] >= -p_bar); // L
+    model->addConstr(constr - U + p_bar * x[j][j] <= p_bar);
+    model->addConstr(constr - L - p_bar * x[j][j] >= -p_bar);
   }
 
   // add contraints (36e)
@@ -59,9 +60,9 @@ GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, in
       model->addConstr(x[i][j] <= x[j][j]);
 
   // add constraint (36f)
-  model->addConstr(lu[0] <= p_bar);
+  model->addConstr(L <= p_bar);
   // add constraint (36g)
-  model->addConstr(lu[1] >= p_bar);
+  model->addConstr(U >= p_bar);
 
   model->update();
   model->write("debug_ul1.lp");
