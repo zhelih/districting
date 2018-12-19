@@ -9,12 +9,12 @@ class graph
 {
   private:
   std::vector<std::vector<int> > nb_;
+  bool is_edge(uint i, uint j) ;
   public:
   uint nr_nodes;
   graph(uint n);
   ~graph();
   void add_edge(uint i, uint j);
-  bool is_edge(uint i, uint j) ;
   std::vector<int>& nb(uint i) { return nb_[i]; }
   bool is_connected(); // TODO const;
 };

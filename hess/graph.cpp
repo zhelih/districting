@@ -67,6 +67,9 @@ graph* from_dimacs(const char* fname)
 
   printf("graph: %d nodes, %d edges\n", nr_nodes, nr_edges);
 
+  for(int i = 0; i < nr_nodes; ++i)
+    sort(g->nb(i).begin(), g->nb(i).end());
+
   fclose(f);
   return g;
 }
