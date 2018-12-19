@@ -1,5 +1,6 @@
 // source file for single and multi commodity flow formulations
 #include <unordered_map>
+#include <vector>
 #include "gurobi_c++.h"
 #include "graph.h"
 
@@ -145,5 +146,99 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
 
 void build_mcf2(GRBModel* model, GRBVar** x, graph* g)
 {
-  throw "Unimplemented!";
+  int n = g->nr_nodes;
+
+  // hash edges similarly to mcf1
+  std::unordered_map<int,int> hash_edges;
+  int cur = 0;
+  for(int i = 0; i < n; ++i)
+    for(int j : g->nb(i))
+      hash_edges.insert(std::make_pair(i*n+j, cur++));
+
+  // get number of edges
+  int nr_edges = hash_edges.size();
+
+  GRBVar ***f = new GRBVar**[n]; // f[ b ][ (i,j) ][ a ]
+  for(int i = 0; i < n; ++i)
+  {
+    f[i] = new GRBVar*[nr_edges];
+    for(int j = 0; j < nr_edges; ++j)
+      f[i][j] = model->addVars(n - g->nb(i).size() - 1, GRB_CONTINUOUS); // V = { i } u N(i) u (V \ N[i])
+  }
+
+  // preprocess V \ N[i] sets
+  std::vector<std::vector<int>> non_nbs(n);
+
+  for(int i = 0; i < n; ++i)
+  {
+    std::vector<bool> nb(n, false);
+    nb[i] = true;
+    for(int j : g->nb(i))
+      nb[j] = true;
+    nb.flip();
+    for(int j = 0; j < n; ++j)
+      if(nb[j])
+        non_nbs[i].push_back(j);
+
+    // check
+    if(non_nbs[i].size() != n - 1 - g->nb(i).size())
+      throw "Internal Error : non nb size for mcf2";
+  }
+
+
+  // add constraint (19b)
+  for(int b = 0; b < n; ++b)
+    for(int a_i = 0; a_i < n - 1 - g->nb(b).size(); ++a_i)
+    {
+      GRBLinExpr expr = 0;
+      for(int j : g->nb(b))
+      {
+        // b -- j in d+(b)
+        // j -- b in d-(b)
+        expr += f[b][hash_edges[b*n + j]][a_i];
+        expr -= f[b][hash_edges[j*n + b]][a_i];
+      }
+      model->addConstr(expr - x[non_nbs[b][a_i]][b] == 0);
+    }
+
+  // add constraint (19c)
+  for(int b = 0; b < n; ++b)
+    for(int a_i = 0; a_i < n - 1 - g->nb(b).size(); ++a_i)
+      for(int i = 0; i < n; ++i)
+      {
+        if(i == non_nbs[b][a_i] || i == b)
+          continue;
+        GRBLinExpr expr = 0;
+        for(int j : g->nb(i))
+        {
+          expr += f[b][hash_edges[i*n + j]][a_i];
+          expr -= f[b][hash_edges[j*n + i]][a_i];
+        }
+        model->addConstr(expr == 0);
+      }
+
+  // add constraint (19d)
+  for(int b = 0; b < n; ++b)
+    for(int a_i = 0; a_i < n - 1 - g->nb(b).size(); ++a_i)
+    {
+      GRBLinExpr expr = 0;
+      for(int j : g->nb(b))
+        expr += f[b][hash_edges[j*n + b]][a_i]; // j -- b
+      model->addConstr(expr == 0);
+    }
+
+  // add constraint (19e)
+  for(int b = 0; b < n; ++b)
+    for(int a_i = 0; a_i < n - 1 - g->nb(b).size(); ++a_i)
+      for(int j = 0; j < n; ++j)
+      {
+        if(j == b)
+          continue;
+        GRBLinExpr expr = 0;
+        for(int i : g->nb(j))
+          expr -= f[b][hash_edges[i*n + j]][a_i]; // i -- j
+        model->addConstr(expr - x[j][b] <= 0);
+      }
+
+
 }
