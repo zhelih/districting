@@ -6,6 +6,9 @@ districting: *.cpp *.h version.c
 version.c: ../.git/HEAD ../.git/index
 	echo "const char *gitversion = \"$(shell git describe --tags --always)\";" > $@
 
+gridgen: gridgen.cpp
+	g++ -Wall -Wextra graph.cpp gridgen.cpp -o gridgen -std=c++11
+
 clean:
 	rm ./districting
 	rm ./version.c

@@ -2,6 +2,8 @@
 # dir with test data (local)
 NJ/*
 data/*
+grids/*
 # executables
 districting
 version.c
+gridgen
