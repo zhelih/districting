@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
       if(j == 0)
         fprintf(f, "\n%d", i);
       int delta_x = abs((i % m) - (j % m));
-      int delta_y = abs((i % n) - (j % n));
+      int delta_y = abs((i / n) - (j / n));
       int dist = static_cast<int>(sqrt(delta_x*delta_x + delta_y*delta_y)*100.);
       fprintf(f, ",%d", dist);
     }
