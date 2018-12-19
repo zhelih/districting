@@ -20,7 +20,7 @@ GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, in
   // create n^2 variables
   GRBVar** x = new GRBVar*[n];
   for(int i = 0; i < n; ++i)
-    x[i] = model->addVars(n, GRB_BINARY);
+    x[i] = model->addVars(i+1, GRB_BINARY);
 
   GRBVar L = *model->addVars(1, GRB_CONTINUOUS);
   GRBVar U = *model->addVars(1, GRB_CONTINUOUS);
