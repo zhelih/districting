@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
   OPEN_AND_CHECK(prefix+".population");
   fprintf(f, "total pop = %d\n", m*n);
   for(int i = 0; i < m*n; ++i)
-    fprintf(f, "1\n");
+    fprintf(f, "%d 1\n", i);
   fclose(f);
 
   return 0;
