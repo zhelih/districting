@@ -79,10 +79,11 @@ GRBVar** build_UL_2(GRBModel* model, graph* g, const vector<int>& population, in
   for(int i = 0; i < n; ++i)
     x[i] = model->addVars(k, GRB_BINARY);
 
-  GRBVar* lu = model->addVars(2, GRB_CONTINUOUS); // L and U as variables
+  GRBVar L = *model->addVars(1, GRB_CONTINUOUS);
+  GRBVar U = *model->addVars(1, GRB_CONTINUOUS);
   model->update();
 
-  model->setObjective(lu[1] - lu[0], GRB_MINIMIZE);
+  model->setObjective(U - L, GRB_MINIMIZE);
 
   // add constraints (37b)
   for(int i = 0; i < n; ++i)
@@ -100,8 +101,8 @@ GRBVar** build_UL_2(GRBModel* model, graph* g, const vector<int>& population, in
     for(int i = 0; i < n; ++i)
       constr += population[i]*x[i][j];
     // add for j
-    model->addConstr(constr - lu[1] <= 0); // U
-    model->addConstr(constr - lu[0] >= 0); // L
+    model->addConstr(constr - U <= 0);
+    model->addConstr(constr - L >= 0);
   }
 
   // explicitly fix for zero
