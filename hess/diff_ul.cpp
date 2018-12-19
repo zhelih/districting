@@ -15,7 +15,7 @@ GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, in
   // compute p_bar
   double p_bar = 0.;
   for(int p: population)
-    p_bar += p / k;
+    p_bar += static_cast<double>(p) / static_cast<double>(k);
 
   // create n^2 variables
   GRBVar** x = new GRBVar*[n];
