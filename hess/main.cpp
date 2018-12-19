@@ -105,6 +105,9 @@ int main(int argc, char *argv[])
       exit(1);
     }
 
+    //TODO change user-interactive?
+    model.set(GRB_DoubleParam_TimeLimit, 5.);
+
     //optimize the model
     auto start = chrono::steady_clock::now();
     model.optimize();
