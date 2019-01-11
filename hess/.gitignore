@@ -5,5 +5,4 @@ data/*
 grids/*
 # executables
 districting
-version.c
 gridgen
