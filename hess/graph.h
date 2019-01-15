@@ -17,6 +17,8 @@ class graph
   void add_edge(uint i, uint j);
   std::vector<int>& nb(uint i) { return nb_[i]; }
   bool is_connected(); // TODO const;
+  // works as far as no pointers are members
+  graph* duplicate() const { return new graph(*this); }
 };
 
 graph* from_dimacs(const char* fname); // don't forget to delete
