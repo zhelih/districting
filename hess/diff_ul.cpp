@@ -18,13 +18,17 @@ GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, in
     p_bar += static_cast<double>(p) / static_cast<double>(k);
 
   // create n^2 variables
-  GRBVar** x = new GRBVar*[n];
+  GRBVar** x = new GRBVar*[n+1];
   for(int i = 0; i < n; ++i)
     x[i] = model->addVars(i+1, GRB_BINARY);
 
   GRBVar L = *model->addVars(1, GRB_CONTINUOUS);
   GRBVar U = *model->addVars(1, GRB_CONTINUOUS);
   model->update();
+
+  x[n] = new GRBVar[2];
+  x[n][0] = L;
+  x[n][1] = U;
 
   model->setObjective(U-L, GRB_MINIMIZE);
 
@@ -75,13 +79,17 @@ GRBVar** build_UL_2(GRBModel* model, graph* g, const vector<int>& population, in
 {
   int n = g->nr_nodes;
 
-  GRBVar** x = new GRBVar*[n];
+  GRBVar** x = new GRBVar*[n+1];
   for(int i = 0; i < n; ++i)
     x[i] = model->addVars(k, GRB_BINARY);
 
   GRBVar L = *model->addVars(1, GRB_CONTINUOUS);
   GRBVar U = *model->addVars(1, GRB_CONTINUOUS);
   model->update();
+
+  x[n] = new GRBVar[2];
+  x[n][0] = L;
+  x[n][1] = U;
 
   model->setObjective(U - L, GRB_MINIMIZE);
 
