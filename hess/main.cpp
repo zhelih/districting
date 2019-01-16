@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
     if(arg_model != "ul1" && arg_model != "ul2")
       x = build_hess(&model, g, dist, population, L, U, k);
 
-    Cut2Callback* cb2 = 0;
+    HessCallback* cb = 0;
 
     if(arg_model == "scf")
       build_scf(&model, x, g);
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
     else if(arg_model == "cut1")
       build_cut1(&model, x, g);
     else if(arg_model == "cut2")
-      cb2 = build_cut2(&model, x, g);
+      cb = build_cut2(&model, x, g);
     else if(arg_model == "ul1") {
       x = build_UL_1(&model, g, population, k);
       need_solution = false;
@@ -115,11 +115,11 @@ int main(int argc, char *argv[])
     model.optimize();
     chrono::duration<double> duration = chrono::steady_clock::now() - start;
     printf("Time elapsed: %lf seconds\n", duration.count());
-    if(cb2)
+    if(cb)
     {
-      printf("Number of callbacks: %d\n", cb2->numCallbacks);
-      printf("Time in callbacks: %lf seconds\n", cb2->callbackTime);
-      delete cb2;
+      printf("Number of callbacks: %d\n", cb->numCallbacks);
+      printf("Time in callbacks: %lf seconds\n", cb->callbackTime);
+      delete cb;
     }
 
     // will remain temporary for script run

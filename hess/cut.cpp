@@ -145,6 +145,29 @@ void build_cut1(GRBModel* model, GRBVar** x, graph* g)
 	cerr << "Number of lazy cuts : " << cb->numLazyCuts << endl;
 }
 
+class Cut2Callback: public HessCallback
+{
+  // memory for a callback
+  private:
+    int* visited; // dfs marks
+    int* aci; // A(C_i) set
+    std::vector<int> s; // stack for DFS
+  public:
+    Cut2Callback(GRBVar** grb_x_, graph *g_) : HessCallback(grb_x_, g_)
+    {
+      visited = new int[n];
+      aci = new int[n];
+      s.reserve(n);
+    }
+    virtual ~Cut2Callback()
+    {
+      delete [] aci;
+      delete [] visited;
+    }
+  protected:
+    void callback();
+};
+
 void Cut2Callback::callback()
 {
 	using namespace std;
@@ -155,9 +178,7 @@ void Cut2Callback::callback()
 			numCallbacks++;
 			auto start = chrono::steady_clock::now();
 
-			for (int i = 0; i < n; ++i)
-				for (int j = 0; j < n; ++j)
-					x[i][j] = getSolution(grb_x[i][j]);
+      populate_x(); // from HessCallback
 
 			// try clusterheads
 			bool done = false;
@@ -235,7 +256,7 @@ void Cut2Callback::callback()
 	}
 }
 
-Cut2Callback* build_cut2(GRBModel* model, GRBVar** x, graph* g)
+HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g)
 {
 	model->getEnv().set(GRB_IntParam_LazyConstraints, 1); // turns off presolve!!!
 	Cut2Callback* cb = new Cut2Callback(x, g);
