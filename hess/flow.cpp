@@ -236,7 +236,7 @@ void build_mcf2(GRBModel* model, GRBVar** x, graph* g)
           continue;
         GRBLinExpr expr = 0;
         for(int i : g->nb(j))
-          expr -= f[b][hash_edges[i*n + j]][a_i]; // i -- j
+          expr += f[b][hash_edges[i*n + j]][a_i]; // i -- j
         model->addConstr(expr - x[j][b] <= 0);
       }
 
