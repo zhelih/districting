@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     else if(arg_model == "mcf2")
       build_mcf2(&model, x, g);
     else if(arg_model == "cut1")
-      build_cut1(&model, x, g);
+      cb = build_cut1(&model, x, g);
     else if(arg_model == "cut2")
       cb = build_cut2(&model, x, g);
     else if(arg_model == "ul1") {

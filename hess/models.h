@@ -48,25 +48,8 @@ protected:
   }
 };
 
-//Lazy constraints for solving CUT1 in political redistricting
-class Cut1Callback: public GRBCallback
-{
-private:
-  GRBVar **varsx;
-  GRBVar **varsy;
-  graph* g1;
-public:
-  Cut1Callback(GRBVar **xvars, GRBVar **yvars, graph *g);
-  virtual ~Cut1Callback() {}
-  long numCallbacks;
-  double TotalCallbackTime;
-  long numLazyCuts;
-protected:
-  void callback();
-};
-
-void build_cut1(GRBModel* model, GRBVar** x, graph* g);
-
+// @return callback for delete only
+HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g);
 HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g);
 
 // add UL1 & UL2 instance and return x variables
