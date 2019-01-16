@@ -6,7 +6,7 @@
 #include <sstream>
 #include <vector>
 #include <map>
-#include "Models.h"
+#include "models.h"
 #include "gurobi_c++.h"
 #include <ctime>
 #include <memory>
