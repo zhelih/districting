@@ -21,13 +21,13 @@ private:
   GRBVar **varsy;
   graph* g1;
 public:
-	LazyConstraints(GRBVar **xvars, GRBVar **yvars, graph *g);
+  LazyConstraints(GRBVar **xvars, GRBVar **yvars, graph *g);
   virtual ~LazyConstraints() {}
-	long numCallbacks;
-	double TotalCallbackTime;
-	long numLazyCuts;
+  long numCallbacks;
+  double TotalCallbackTime;
+  long numLazyCuts;
 protected:
-	void callback();
+  void callback();
 };
 
 #endif
