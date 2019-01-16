@@ -87,8 +87,6 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
 	for (int v = 0; v < n; ++v)
 		f[v] = model->addVars(nr_edges, GRB_CONTINUOUS); // the edge
 
-	
-
 	// add constraint (16b)
 	for (int i = 0; i < n; ++i)
 	{
