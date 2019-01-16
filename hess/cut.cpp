@@ -10,7 +10,7 @@ void build_cut1(GRBModel* model, GRBVar** x, graph* g)
 	// create n^2 variables, and set UB=0
 	int n = g->nr_nodes;
 	model->getEnv().set(GRB_IntParam_LazyConstraints, 1);
-	GRBVar** y = new GRBVar*[n];
+	GRBVar** y = new GRBVar*[n]; //FIXME ever deleted?
 	for (int i = 0; i < n; ++i)
 	{
 		GRBVar *y_temp = new GRBVar[n];
@@ -34,8 +34,9 @@ void build_cut1(GRBModel* model, GRBVar** x, graph* g)
 		}
 		model->addConstr(expr + x[i][i] == 1);
 	}
-	LazyConstraints cb = LazyConstraints(x, y, g);	// tell Gurobi which function generates the lazy cuts.
-	model->setCallback(&cb);
+  //FIXME delete
+	LazyConstraints* cb = new LazyConstraints(x, y, g);	// tell Gurobi which function generates the lazy cuts.
+	model->setCallback(cb);
 	model->update();
 	//optimize the model
 	//model->optimize();
