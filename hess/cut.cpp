@@ -131,7 +131,8 @@ class Cut2Callback: public GRBCallback
                         visited[nb_cur] = 1;
                         if(aci[nb_cur])
                           expr += grb_x[nb_cur][i];
-                      } else s.push_back(nb_cur);
+                        else s.push_back(nb_cur);
+                      }
                     }
                   }
                   expr -= grb_x[j][i]; // RHS
