@@ -15,6 +15,24 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g);
 void build_mcf1(GRBModel* model, GRBVar** x, graph* g);
 void build_mcf2(GRBModel* model, GRBVar** x, graph* g);
 // add CUT constraints to model with hess variables x (lazy)
+
+//Lazy constraints for solving CUT1 in political redistricting
+class Cut1Callback: public GRBCallback
+{
+private:
+  GRBVar **varsx;
+  GRBVar **varsy;
+  graph* g1;
+public:
+  Cut1Callback(GRBVar **xvars, GRBVar **yvars, graph *g);
+  virtual ~Cut1Callback() {}
+  long numCallbacks;
+  double TotalCallbackTime;
+  long numLazyCuts;
+protected:
+  void callback();
+};
+
 void build_cut1(GRBModel* model, GRBVar** x, graph* g);
 
 class Cut2Callback: public GRBCallback
