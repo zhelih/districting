@@ -84,6 +84,8 @@ int main(int argc, char *argv[])
     if(arg_model != "ul1" && arg_model != "ul2")
       x = build_hess(&model, g, dist, population, L, U, k);
 
+    Cut2Callback* cb2 = 0;
+
     if(arg_model == "scf")
       build_scf(&model, x, g);
     else if(arg_model == "mcf1")
@@ -93,7 +95,7 @@ int main(int argc, char *argv[])
     else if(arg_model == "cut1")
       build_cut1(&model, x, g);
     else if(arg_model == "cut2")
-      build_cut2(&model, x, g);
+      cb2 = build_cut2(&model, x, g);
     else if(arg_model == "ul1") {
       x = build_UL_1(&model, g, population, k);
       need_solution = false;
@@ -106,17 +108,24 @@ int main(int argc, char *argv[])
     }
 
     //TODO change user-interactive?
-    model.set(GRB_DoubleParam_TimeLimit, 5.);
+  //  model.set(GRB_DoubleParam_TimeLimit, 3600.);
 
     //optimize the model
     auto start = chrono::steady_clock::now();
     model.optimize();
     chrono::duration<double> duration = chrono::steady_clock::now() - start;
     printf("Time elapsed: %lf seconds\n", duration.count());
+    if(cb2)
+    {
+      printf("Number of callbacks: %d\n", cb2->numCallbacks);
+      printf("Time in callbacks: %lf seconds\n", cb2->callbackTime);
+      delete cb2;
+    }
 
     // will remain temporary for script run
     double objval = model.get(GRB_DoubleAttr_ObjVal);
-    printf("qwerky567: Objective value: %lf (%e), Percentage from total: %lf (%e), time: %lf seconds\n", objval, objval, objval / ((double)total_pop), objval / ((double)total_pop), duration.count());
+//    printf("qwerky567: Objective value: %lf (%e), time: %lf seconds\n", objval, objval, duration.count());
+//    printf("qwerky567: L = %.4lf, U = %.4lf\n", x[g->nr_nodes][0].get(GRB_DoubleAttr_X), x[g->nr_nodes][1].get(GRB_DoubleAttr_X));
 
     if(need_solution) {
       vector<int> sol;

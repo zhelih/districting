@@ -1,6 +1,7 @@
 // source file for cut based formulations
 #include "graph.h"
 #include "gurobi_c++.h"
+#include "models.h"
 #include <chrono>
 
 void build_cut1(GRBModel* model, GRBVar** x, graph* g)
@@ -34,42 +35,8 @@ void build_cut1(GRBModel* model, GRBVar** x, graph* g)
 	}
 }
 
-class Cut2Callback: public GRBCallback
-{
-  // memory for a callback
-  private:
-    double **x; // x values
-    int* visited; // dfs marks
-    int* aci; // A(C_i) set
-    GRBVar** grb_x; // x variables
-    graph* g;
-    int n;
-    std::vector<int> s; // stack for DFS
-  public:
-    int numCallbacks; // number of callback calls
-    double callbackTime; // cumulative time in callbacks
-
-    Cut2Callback(GRBVar** grb_x_, graph *g_) : grb_x(grb_x_), g(g_), numCallbacks(0), callbackTime(0.)
-    {
-      n = g->nr_nodes;
-      x = new double*[n];
-      for(int i = 0; i < n; ++i)
-        x[i] = new double[n];
-      visited = new int[n];
-      aci = new int[n];
-      s.reserve(n);
-    }
-    virtual ~Cut2Callback() //FIXME never called
-    {
-      delete [] aci;
-      delete [] visited;
-      for(int i = 0; i < n; ++i)
-        delete [] x[i];
-      delete [] x;
-    }
-  protected:
-    void callback()
-    {
+void Cut2Callback::callback()
+   {
       using namespace std;
       try
       {
@@ -155,7 +122,6 @@ class Cut2Callback: public GRBCallback
         fprintf(stderr, "Error during callback\n");
       }
     }
-};
 
 Cut2Callback* build_cut2(GRBModel* model, GRBVar** x, graph* g)
 {
