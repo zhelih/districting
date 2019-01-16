@@ -38,13 +38,11 @@ void build_cut1(GRBModel* model, GRBVar** x, graph* g)
 	LazyConstraints* cb = new LazyConstraints(x, y, g);	// tell Gurobi which function generates the lazy cuts.
 	model->setCallback(cb);
 	model->update();
-	//optimize the model
-	//model->optimize();
 
-	cerr << endl;
-	cerr << "Number of callbacks : " << LazyConstraints::numCallbacks << endl;
-	cerr << "Time in callbacks : " << LazyConstraints::TotalCallbackTime << endl;
-	cerr << "Number of lazy cuts : " << LazyConstraints::numLazyCuts << endl;
+  cerr << endl;
+	cerr << "Number of callbacks : " << cb->numCallbacks << endl;
+	cerr << "Time in callbacks : " << cb->TotalCallbackTime << endl;
+	cerr << "Number of lazy cuts : " << cb->numLazyCuts << endl;
 }
 
 void Cut2Callback::callback()

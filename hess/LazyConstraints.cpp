@@ -13,29 +13,20 @@
 #include <vector>
 using namespace std;
 
-long LazyConstraints::numCallbacks = 0;
-double LazyConstraints::TotalCallbackTime = 0;
-long LazyConstraints::numLazyCuts = 0;
 
-
-GRBVar **varsx;
-GRBVar **varsy;
-graph *g1;
-
-
-LazyConstraints::LazyConstraints(GRBVar **xvars, GRBVar **yvars, graph *g)
+LazyConstraints::LazyConstraints(GRBVar **xvars, GRBVar **yvars, graph *g): g1(g)
 {
 	varsx = xvars;
 	varsy = yvars;
-	g1=g->duplicate();
+  numCallbacks = 0L;
+  TotalCallbackTime = 0.;
+  numLazyCuts = 0L;
 };
 
 void LazyConstraints::callback() {
 	try {
-		//cerr << "Hi" << endl;
 		if (where == GRB_CB_MIPSOL) // Found an integer ``solution'' that satisfies all vertex cut constraints so far.
 		{
-
 			numCallbacks++;
 			time_t start = clock();
 
@@ -68,7 +59,7 @@ void LazyConstraints::callback() {
 				//do a BFS
 				vector<int> children, parents;
 				children.push_back(i);
-				for (; !children.empty(); )
+				while(!children.empty())
 				{ //do BFS
 					parents = children;
 					children.clear();

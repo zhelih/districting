@@ -14,17 +14,20 @@
 #include "graph.h"
 
 
-extern double copy_time;
-using namespace std;
-
 class LazyConstraints : public GRBCallback //Lazy constraints for solving CUT1 in political redistricting
 {
+private:
+  GRBVar **varsx;
+  GRBVar **varsy;
+  graph* g1;
 public:
 	LazyConstraints(GRBVar **xvars, GRBVar **yvars, graph *g);
+  virtual ~LazyConstraints() {}
+	long numCallbacks;
+	double TotalCallbackTime;
+	long numLazyCuts;
+protected:
 	void callback();
-	static long numCallbacks;
-	static double TotalCallbackTime;
-	static long numLazyCuts;
 };
 
 #endif
