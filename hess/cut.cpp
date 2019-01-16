@@ -10,12 +10,17 @@ class Cut1Callback: public HessCallback
 private:
   GRBVar **varsy;
   double **y;
+  vector<int> S;
+  vector<int> children;
+  vector<int> parents;
 public:
-  Cut1Callback(GRBVar **xvars, GRBVar **yvars, graph *g): HessCallback(xvars, g), varsy(yvars)
+  Cut1Callback(GRBVar **xvars, GRBVar **yvars, graph *g): HessCallback(xvars, g), varsy(yvars), S(n, false)
   {
     y = new double*[n];
     for(int i = 0; i < n; ++i)
       y[i] = new double[n];
+    children.reserve(n);
+    parents.reserve(n);
   }
   virtual ~Cut1Callback()
   {
@@ -45,8 +50,9 @@ void Cut1Callback::callback()
 
       for (int i = 0; i < n; ++i)
       {
-        int root;
-        vector<bool> S(n, false);
+        int root = -1;
+        for(int j = 0; j < n; ++j)
+          S[j] = false;
         for (int q = 0; q < n; q++)
         {
           if (q == i)
@@ -54,17 +60,16 @@ void Cut1Callback::callback()
           if (x[i][q] > 0.5)
             root = q;
         }
-        //do a BFS
-        vector<int> children, parents;
+        //  do a BFS
+        children.clear();
         children.push_back(i);
         while(!children.empty())
-        { //do BFS
-          parents = children;
+        { // do BFS
+          parents = children; // FIXME copy
           children.clear();
-          for (int u = 0; u<parents.size(); ++u)
-          { //for each parent, examine the children
+          for (int u = 0; u < parents.size(); ++u)
+          { // for each parent, examine the children
             int p = parents[u];
-            //int j = -1;
             for (int v : g->nb(p))
             {
               if (!S[v] && y[v][p] > 0.5)
@@ -75,6 +80,7 @@ void Cut1Callback::callback()
             }
           }
         }
+        if(root < 0) throw "root < 0";
         if (S[root]) continue;
         GRBLinExpr expr1 = 0;
         GRBLinExpr expr2 = 0;
@@ -88,7 +94,6 @@ void Cut1Callback::callback()
           if (!S[q]) continue;
           for (int u : g->nb(q))
           {
-            //int u = g1.adj[q][j];
             if (!S[u])
               expr2 += varsy[u][q];
           }
@@ -142,7 +147,7 @@ HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g)
     }
     model->addConstr(expr + x[i][i] == 1);
   }
-  //FIXME delete
+
   Cut1Callback* cb = new Cut1Callback(x, y, g); // tell Gurobi which function generates the lazy cuts.
   model->setCallback(cb);
   model->update();
