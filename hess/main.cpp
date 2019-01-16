@@ -119,6 +119,7 @@ int main(int argc, char *argv[])
     {
       printf("Number of callbacks: %d\n", cb->numCallbacks);
       printf("Time in callbacks: %lf seconds\n", cb->callbackTime);
+      printf("Number of lazy constraints generated: %d\n", cb->numLazyCuts);
       delete cb;
     }
 

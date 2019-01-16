@@ -9,35 +9,40 @@ class Cut1Callback: public HessCallback
 {
 private:
   GRBVar **varsy;
+  double **y;
 public:
-  Cut1Callback(GRBVar **xvars, GRBVar **yvars, graph *g);
-  virtual ~Cut1Callback() {}
+  Cut1Callback(GRBVar **xvars, GRBVar **yvars, graph *g): HessCallback(xvars, g), varsy(yvars)
+  {
+    y = new double*[n];
+    for(int i = 0; i < n; ++i)
+      y[i] = new double[n];
+  }
+  virtual ~Cut1Callback()
+  {
+    for(int i = 0; i < n; ++i)
+      delete [] y[i];
+    delete [] y;
+  }
 protected:
   void callback();
 };
 
-Cut1Callback::Cut1Callback(GRBVar **xvars, GRBVar **yvars, graph *g): HessCallback(xvars, g) 
+void Cut1Callback::callback()
 {
-  varsy = yvars; // :D naming
-}
-
-void Cut1Callback::callback() {
   using namespace std;
-  try {
+  try
+  {
     if (where == GRB_CB_MIPSOL) // Found an integer ``solution'' that satisfies all vertex cut constraints so far.
     {
       numCallbacks++;
-      time_t start = clock();
+      auto start = chrono::steady_clock::now();
 
       populate_x(); // from HessCallback 
 
-      double **Y = new double*[n];
       for (int i = 0; i < n; ++i)
-      {
-        Y[i] = new double[n];
         for (int j = 0; j < n; ++j)
-          Y[i][j] = (getSolution(varsy[i][j]) > 0.5) ? 1 : 0;
-      }
+          y[i][j] = getSolution(varsy[i][j]);
+
       for (int i = 0; i < n; ++i)
       {
         int root;
@@ -62,7 +67,7 @@ void Cut1Callback::callback() {
             //int j = -1;
             for (int v : g->nb(p))
             {
-              if (!S[v] && Y[v][p])
+              if (!S[v] && y[v][p] > 0.5)
               { //can only use vertices in S
                 S[v] = true;
                 children.push_back(v);
@@ -93,8 +98,8 @@ void Cut1Callback::callback() {
         numLazyCuts++;
       }
 
-      callbackTime += (double)(clock() - start) / CLOCKS_PER_SEC;
-      delete[] Y;
+      chrono::duration<double> d = chrono::steady_clock::now() - start;
+      callbackTime += d.count();
     }
   }
   catch (GRBException e)
@@ -236,6 +241,7 @@ void Cut2Callback::callback()
               }
               expr -= grb_x[j][i]; // RHS
               addLazy(expr >= 0);
+              numLazyCuts++;
               done = true;
               break;
             }
