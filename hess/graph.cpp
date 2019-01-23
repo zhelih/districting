@@ -62,6 +62,11 @@ graph* from_dimacs(const char* fname)
       from--; to--;
 #endif
       g->add_edge(from, to);//, weight);
+    } else if(buf[0] == 'c' && buf[2] == 'k')
+    {
+      int k;
+      sscanf(buf, "c k %d", &k);
+      g->set_k(k);
     }
   }
 
@@ -74,9 +79,8 @@ graph* from_dimacs(const char* fname)
   return g;
 }
 
-graph::graph(uint n)
+graph::graph(uint n) : k(0), nr_nodes(n)
 {
-  nr_nodes = n;
   nb_.resize(n);
 }
 

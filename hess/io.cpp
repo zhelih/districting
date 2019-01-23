@@ -2,6 +2,7 @@
 #include "io.h"
 #include <vector>
 #include <cstdio>
+#include <cstring>
 #include "gurobi_c++.h"
 
 using namespace std;
@@ -102,4 +103,11 @@ void calculate_UL(const vector<int> population, int k, int* L, int* U)
     total_pop += p;
   *U = static_cast<float>(total_pop / k) * 1.005;
   *L = static_cast<float>(total_pop / k) * 0.995;
+}
+
+int read_auto_int(const char* arg, int def)
+{
+  if(strcmp(arg, "auto"))
+    return std::atoi(arg);
+  return def;
 }
