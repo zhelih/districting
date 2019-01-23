@@ -94,3 +94,12 @@ void printf_solution(const vector<int>& sol, const char* fname)
       fclose(f);
   }
 }
+
+void calculate_UL(const vector<int> population, int k, int* L, int* U)
+{
+  int total_pop = 0;
+  for(int p : population)
+    total_pop += p;
+  *U = static_cast<float>(total_pop / k) * 1.005;
+  *L = static_cast<float>(total_pop / k) * 0.995;
+}

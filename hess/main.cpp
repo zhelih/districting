@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
   ios::sync_with_stdio(1);
   printf("Districting, build %s\n", gitversion);
   if(argc < 8) {
-    printf("Usage: %s <dimacs> <distance> <population> <L> <U> <k> <model>\n\
+    printf("Usage: %s <dimacs> <distance> <population> <L|auto> <U|auto> <k> <model>\n\
     Available models:\n\
     \thess\t\tHess model\n\
     \tscf\t\tHess model with SCF\n\
@@ -33,11 +33,13 @@ int main(int argc, char *argv[])
   char* dimacs_fname = argv[1];
   char* distance_fname = argv[2];
   char* population_fname = argv[3];
-  int L = std::stoi(argv[4]);
-  int U = std::stoi(argv[5]);
+  int L = 0;
+  if(strcmp(argv[4], "auto"))
+    L = std::stoi(argv[4]);
+  int U = 0;
+  if(strcmp(argv[5], "auto"))
+    U = std::stoi(argv[5]);
   int k = std::stoi(argv[6]);
-  printf("Model input: L = %d, U = %d, k = %d\n", L, U, k);
-
 
   // read inputs
   graph* g = 0;
@@ -45,6 +47,11 @@ int main(int argc, char *argv[])
   vector<int> population;
   if(read_input_data(dimacs_fname, distance_fname, population_fname, g, dist, population))
     return 1; // failure
+
+  if(L == 0 && U == 0)
+    calculate_UL(population, k, &L, &U);
+
+  printf("Model input: L = %d, U = %d, k = %d\n", L, U, k);
 
   // check connectivity
   if(!g->is_connected())
