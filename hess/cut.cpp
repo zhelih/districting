@@ -38,7 +38,7 @@ void Cut1Callback::callback()
 	using namespace std;
 	try
 	{
-		if (where == GRB_CB_MIPSOL) // Found an integer ``solution'' that satisfies all cut constraints so far.
+		if (where == GRB_CB_MIPSOL) // Found an integer ``solution'' that satisfies all vertex cut constraints so far.
 		{
 			numCallbacks++;
 			auto start = chrono::steady_clock::now();
