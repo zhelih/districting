@@ -1,4 +1,4 @@
-// source file for cut based formulation
+// source file for cut based formulations
 #include "graph.h"
 #include "gurobi_c++.h"
 #include "models.h"
