@@ -112,13 +112,15 @@ int main(int argc, char *argv[])
     }
 
     //TODO change user-interactive?
-  //  model.set(GRB_DoubleParam_TimeLimit, 3600.);
+    model.set(GRB_DoubleParam_TimeLimit, 3600.); // 1 hour
+    model.set(GRB_IntParam_Threads, 10);
+    model.set(GRB_DoubleParam_NodefileStart, 10); // 10 GB
 
     //optimize the model
     auto start = chrono::steady_clock::now();
     model.optimize();
     chrono::duration<double> duration = chrono::steady_clock::now() - start;
-    printf("Time elapsed: %lf seconds\n", duration.count());
+    printf("Time elapsed: %lf seconds\n", duration.count()); // TODO use gurobi Runtime model attr
     if(cb)
     {
       printf("Number of callbacks: %d\n", cb->numCallbacks);
@@ -129,8 +131,11 @@ int main(int argc, char *argv[])
 
     // will remain temporary for script run
     double objval = model.get(GRB_DoubleAttr_ObjVal);
-//    printf("qwerky567: Objective value: %lf (%e), time: %lf seconds\n", objval, objval, duration.count());
-//    printf("qwerky567: L = %.4lf, U = %.4lf\n", x[g->nr_nodes][0].get(GRB_DoubleAttr_X), x[g->nr_nodes][1].get(GRB_DoubleAttr_X));
+    printf("qwerky567: Objective value: %lf (%e), time: %lf seconds, MIP gap: %.2lf%%, Bound: %lf\n", objval, objval, duration.count(), model.get(GRB_DoubleAttr_MIPGap)*100., model.get(GRB_DoubleAttr_ObjBound));
+    if(model.get(GRB_IntAttr_SolCount) > 0)
+      printf("qwerky567: sol: L = %.4lf, U = %.4lf\n", x[g->nr_nodes][0].get(GRB_DoubleAttr_X), x[g->nr_nodes][1].get(GRB_DoubleAttr_X));
+    else
+      printf("qwerly567: sol: no incumbent solution found!\n");
 
     if(need_solution) {
       vector<int> sol;
