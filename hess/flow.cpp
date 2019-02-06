@@ -66,6 +66,62 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g)
     model->write("debug_scf.lp");
 }
 
+void build_mcf0(GRBModel* model, GRBVar** x, graph* g)
+{
+    int n = g->nr_nodes;
+
+    // step 1 : hash edge (i,j) to i*n+j = h1
+    // step 2 : hash every h1 to a number, resulting in exactly |E| variables
+
+    std::unordered_map<int, int> hash_edges;
+    int cur = 0;
+    for (int i = 0; i < n; ++i)
+        for (int j : g->nb(i))
+            hash_edges.insert(std::make_pair(i*n + j, cur++));
+
+    // get number of edges
+    int nr_edges = hash_edges.size();
+
+    // add flow variables f[v][i,j]
+    GRBVar**f = new GRBVar*[n]; // commodity type, v
+    for (int v = 0; v < n; ++v)
+        f[v] = model->addVars(nr_edges, GRB_CONTINUOUS); // the edge
+
+    // add constraint (16b)
+    for (int j = 0; j < n; ++j)
+    {
+        for (int i = 0; i < n; ++i)
+        {
+            if (i == j) continue;
+            GRBLinExpr expr = 0;
+            for (int nb_i : g->nb(i))
+            {
+                expr += f[j][hash_edges[n*nb_i + i]]; // in d^- : edge (nb_i -- i)
+                expr -= f[j][hash_edges[n*i + nb_i]]; // in d^+ : edge (i -- nb_i)
+            }
+            model->addConstr(expr == x[i][j]);
+        }
+    }
+
+    // add constraint (16c)
+    for (int j = 0; j < n; ++j)
+    {
+        for (int i = 0; i < n; ++i)
+        {
+            if (i == j) continue;
+            GRBLinExpr expr = 0;
+            for (int nb_i : g->nb(i))
+                expr += f[j][hash_edges[n*nb_i + i]]; // in d^- : edge (nb_i -- i)
+            model->addConstr(expr <= (n - 1) * x[i][j]);
+        }
+    }
+
+    // add constraint (16d) -- actually just fix individual vars to zero
+    for (int j = 0; j < n; ++j)
+        for (int i : g->nb(j))
+            f[j][hash_edges[n*i + j]].set(GRB_DoubleAttr_UB, 0.); // in d^+ : edge (nb_j -- j)
+}
+
 void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
 {
     int n = g->nr_nodes;
@@ -209,60 +265,4 @@ void build_mcf2(GRBModel* model, GRBVar** x, graph* g)
                     expr += f[b][hash_edges[i*n + j]][a_i]; // i -- j
                 model->addConstr(expr <= x[j][b]);
             }
-}
-
-void build_shirabe(GRBModel* model, GRBVar** x, graph* g)
-{
-    int n = g->nr_nodes;
-
-    // step 1 : hash edge (i,j) to i*n+j = h1
-    // step 2 : hash every h1 to a number, resulting in exactly |E| variables
-
-    std::unordered_map<int, int> hash_edges;
-    int cur = 0;
-    for (int i = 0; i < n; ++i)
-        for (int j : g->nb(i))
-            hash_edges.insert(std::make_pair(i*n + j, cur++));
-
-    // get number of edges
-    int nr_edges = hash_edges.size();
-
-    // add flow variables f[v][i,j]
-    GRBVar**f = new GRBVar*[n]; // commodity type, v
-    for (int v = 0; v < n; ++v)
-        f[v] = model->addVars(nr_edges, GRB_CONTINUOUS); // the edge
-
-    // add constraint (38b)
-    for (int j = 0; j < n; ++j)
-    {
-        for (int i = 0; i < n; ++i)
-        {
-            if (i == j) continue;
-            GRBLinExpr expr = 0;
-            for (int nb_i : g->nb(i))
-            {
-                expr += f[j][hash_edges[n*nb_i + i]]; // in d^- : edge (nb_i -- i)
-                expr -= f[j][hash_edges[n*i + nb_i]]; // in d^+ : edge (i -- nb_i)
-            }
-            model->addConstr(expr == x[i][j]);
-        }
-    }
-
-    // add constraint (38c)
-    for (int j = 0; j < n; ++j)
-    {
-        for (int i = 0; i < n; ++i)
-        {
-            if (i == j) continue;
-            GRBLinExpr expr = 0;
-            for (int nb_i : g->nb(i))
-                expr += f[j][hash_edges[n*nb_i + i]]; // in d^- : edge (nb_i -- i)
-            model->addConstr(expr <= (n-1) * x[i][j]);
-        }
-    }
-
-    // add constraint (38d) -- actually just fix individual vars to zero
-    for (int j = 0; j < n; ++j)
-        for (int i : g->nb(j))
-            f[j][hash_edges[n*i + j]].set(GRB_DoubleAttr_UB, 0.); // in d^+ : edge (nb_j -- j)
 }
