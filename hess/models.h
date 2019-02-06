@@ -12,9 +12,9 @@ GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<int> >& dist,
 // add SCF constraints to model with hess variables x
 void build_scf(GRBModel* model, GRBVar** x, graph* g);
 // add MCF constraints to model with hess variables x
+void build_mcf0(GRBModel* model, GRBVar** x, graph* g);
 void build_mcf1(GRBModel* model, GRBVar** x, graph* g);
 void build_mcf2(GRBModel* model, GRBVar** x, graph* g);
-void build_shirabe(GRBModel* model, GRBVar** x, graph* g);
 // add CUT constraints to model with hess variables x (lazy)
 class HessCallback : public GRBCallback
 {
