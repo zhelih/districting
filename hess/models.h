@@ -14,38 +14,39 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g);
 // add MCF constraints to model with hess variables x
 void build_mcf1(GRBModel* model, GRBVar** x, graph* g);
 void build_mcf2(GRBModel* model, GRBVar** x, graph* g);
+void build_shirabe(GRBModel* model, GRBVar** x, graph* g);
 // add CUT constraints to model with hess variables x (lazy)
 class HessCallback : public GRBCallback
 {
 protected:
-  GRBVar** grb_x; // x variables
-  double** x; // x values
-  graph* g; // graph pointer
-  int n; // g->nr_nodes
+    GRBVar** grb_x; // x variables
+    double** x; // x values
+    graph* g; // graph pointer
+    int n; // g->nr_nodes
 public:
-  int numCallbacks; // number of callback calls
-  double callbackTime; // cumulative time in callbacks
-  int numLazyCuts;
-  HessCallback(GRBVar** grb_x_, graph* g_) : grb_x(grb_x_), g(g_), numCallbacks(0), callbackTime(0.), numLazyCuts(0)
-  {
-    n = g->nr_nodes;
-    x = new double*[n];
-    for(int i = 0; i < n; ++i)
-      x[i] = new double[n];
-  }
-  virtual ~HessCallback()
-  {
-    for(int i = 0; i < n; ++i)
-      delete [] x[i];
-    delete [] x;
-  }
+    int numCallbacks; // number of callback calls
+    double callbackTime; // cumulative time in callbacks
+    int numLazyCuts;
+    HessCallback(GRBVar** grb_x_, graph* g_) : grb_x(grb_x_), g(g_), numCallbacks(0), callbackTime(0.), numLazyCuts(0)
+    {
+        n = g->nr_nodes;
+        x = new double*[n];
+        for (int i = 0; i < n; ++i)
+            x[i] = new double[n];
+    }
+    virtual ~HessCallback()
+    {
+        for (int i = 0; i < n; ++i)
+            delete[] x[i];
+        delete[] x;
+    }
 protected:
-  void populate_x()
-  {
-    for(int i = 0; i < n; ++i)
-      for(int j = 0; j < n; ++j)
-        x[i][j] = getSolution(grb_x[i][j]);
-  }
+    void populate_x()
+    {
+        for (int i = 0; i < n; ++i)
+            for (int j = 0; j < n; ++j)
+                x[i][j] = getSolution(grb_x[i][j]);
+    }
 };
 
 // @return callback for delete only
