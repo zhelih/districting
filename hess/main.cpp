@@ -92,6 +92,8 @@ int main(int argc, char *argv[])
 
         if (arg_model == "scf")
             build_scf(&model, x, g);
+        else if (arg_model == "mcf0")
+            build_mcf0(&model, x, g);
         else if (arg_model == "mcf1")
             build_mcf1(&model, x, g);
         else if (arg_model == "mcf2")
@@ -100,8 +102,6 @@ int main(int argc, char *argv[])
             cb = build_cut1(&model, x, g);
         else if (arg_model == "cut2")
             cb = build_cut2(&model, x, g);
-        else if (arg_model == "shirabe")
-            build_shirabe(&model, x, g);
         else if (arg_model == "ul1") {
             x = build_UL_1(&model, g, population, k);
             need_solution = false;
@@ -134,18 +134,18 @@ int main(int argc, char *argv[])
         }
 
         // will remain temporary for script run
-        if(model.get(GRB_IntAttr_Status) == 3) // infeasible
-          printf("qwerky567: model is infeasible\n");
+        if (model.get(GRB_IntAttr_Status) == 3) // infeasible
+            printf("qwerky567: model is infeasible\n");
         else {
 
-//        double objval = model.get(GRB_DoubleAttr_ObjVal);
-//        printf("qwerky567: Objective value: %lf (%e), time: %lf seconds, MIP gap: %.2lf%%, Bound: %lf\n", objval, objval, duration.count(), model.get(GRB_DoubleAttr_MIPGap)*100., model.get(GRB_DoubleAttr_ObjBound));
+            //        double objval = model.get(GRB_DoubleAttr_ObjVal);
+            //        printf("qwerky567: Objective value: %lf (%e), time: %lf seconds, MIP gap: %.2lf%%, Bound: %lf\n", objval, objval, duration.count(), model.get(GRB_DoubleAttr_MIPGap)*100., model.get(GRB_DoubleAttr_ObjBound));
 
-        // will remain temporary for script run
-        //if(model.get(GRB_IntAttr_SolCount) > 0)
-        //  printf("qwerky567: sol: L = %.4lf, U = %.4lf\n", x[g->nr_nodes][0].get(GRB_DoubleAttr_X), x[g->nr_nodes][1].get(GRB_DoubleAttr_X));
-        //else
-        //  printf("qwerly567: sol: no incumbent solution found!\n");
+            // will remain temporary for script run
+            //if(model.get(GRB_IntAttr_SolCount) > 0)
+            //  printf("qwerky567: sol: L = %.4lf, U = %.4lf\n", x[g->nr_nodes][0].get(GRB_DoubleAttr_X), x[g->nr_nodes][1].get(GRB_DoubleAttr_X));
+            //else
+            //  printf("qwerly567: sol: no incumbent solution found!\n");
         }
 
         if (need_solution) {
