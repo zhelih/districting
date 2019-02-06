@@ -130,13 +130,18 @@ int main(int argc, char *argv[])
     }
 
     // will remain temporary for script run
+    if(model.get(GRB_IntAttr_Status) == 3) // infeasible
+      printf("qwerky567: model is infeasible\n");
+    else {
+
     double objval = model.get(GRB_DoubleAttr_ObjVal);
     printf("qwerky567: Objective value: %lf (%e), time: %lf seconds, MIP gap: %.2lf%%, Bound: %lf\n", objval, objval, duration.count(), model.get(GRB_DoubleAttr_MIPGap)*100., model.get(GRB_DoubleAttr_ObjBound));
-    if(model.get(GRB_IntAttr_SolCount) > 0)
+/*    if(model.get(GRB_IntAttr_SolCount) > 0)
       printf("qwerky567: sol: L = %.4lf, U = %.4lf\n", x[g->nr_nodes][0].get(GRB_DoubleAttr_X), x[g->nr_nodes][1].get(GRB_DoubleAttr_X));
     else
       printf("qwerly567: sol: no incumbent solution found!\n");
-
+*/
+    }
     if(need_solution) {
       vector<int> sol;
       translate_solution(x, sol, g->nr_nodes);
