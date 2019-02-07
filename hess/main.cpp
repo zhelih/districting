@@ -119,6 +119,8 @@ int main(int argc, char *argv[])
         model.set(GRB_DoubleParam_TimeLimit, 3600.); // 1 hour
         model.set(GRB_IntParam_Threads, 10);
         model.set(GRB_DoubleParam_NodefileStart, 10); // 10 GB
+        model.set(GRB_IntParam_Method, 3);
+        model.set(GRB_DoubleParam_MIPGap, 0);
 
                                                       //optimize the model
         auto start = chrono::steady_clock::now();
