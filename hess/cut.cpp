@@ -64,7 +64,7 @@ void Cut1Callback::callback()
                     int cur = children.back(); children.pop_back();
                     for (int nb_cur : g->nb(cur))
                     {
-                        if (!R[nb_cur] && (y[nb_cur][cur] > 0.5 || y[cur][nb_cur] > 0.5))
+                        if (!R[nb_cur] && y[nb_cur][cur] + y[cur][nb_cur] > 0.5)
                         { //can only use vertices in S
                             R[nb_cur] = true;
                             children.push_back(nb_cur);
