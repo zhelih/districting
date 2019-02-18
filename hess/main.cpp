@@ -142,15 +142,17 @@ int main(int argc, char *argv[])
 
 #ifdef DO_BATCH_OUTPUT
 
+        printf("qwerky567: %s, %d, %d, %d, %.2lf", dimacs_fname, k, L, U, duration.count());
+
         // will remain temporary for script run
         if (model.get(GRB_IntAttr_Status) == 3) // infeasible
-            printf("qwerky567: model is infeasible\n");
+            printf(",infeasible,,");
         else {
 
             double objval = model.get(GRB_DoubleAttr_ObjVal);
-            long nodecount = static_cast<long>(model.get(GRB_DoubleAttr_NodeCount));
             double mipgap = model.get(GRB_DoubleAttr_MIPGap)*100.;
             double objbound = model.get(GRB_DoubleAttr_ObjBound);
+
 
             // no incumbent solution was found, these values do no make sense
             if(model.get(GRB_IntAttr_SolCount) == 0) {
@@ -158,26 +160,30 @@ int main(int argc, char *argv[])
               objbound = 0.;
             }
 
-            int num_callbacks = 0;
-            double time_callbacks = 0.;
-            int num_lazy = 0;
-            if(cb) {
-              num_callbacks = cb->numCallbacks;
-              time_callbacks = cb->callbackTime;
-              num_lazy = cb->numLazyCuts;
-            }
-            // state, k l u obj time mipgap objbound nodes callback x3
-            printf("qwerky567: %s, %d, %d, %d, %.2lf, %.2lf, %.2lf%%, %.2lf, %ld, %d, %.2lf, %d\n", dimacs_fname, k, L, U, objval, duration.count(), mipgap, objbound, nodecount, num_callbacks, time_callbacks, num_lazy);
-
-            // will remain temporary for script run
-            //if(model.get(GRB_IntAttr_SolCount) > 0)
-            //  printf("qwerky567: sol: L = %.4lf, U = %.4lf\n", x[g->nr_nodes][0].get(GRB_DoubleAttr_X), x[g->nr_nodes][1].get(GRB_DoubleAttr_X));
-            //else
-            //  printf("qwerly567: sol: no incumbent solution found!\n");
+            printf(", %.2lf, %.2lf, %.2lf", objval, mipgap, objbound);
         }
+
+         long nodecount = static_cast<long>(model.get(GRB_DoubleAttr_NodeCount));
+
+         int num_callbacks = 0;
+         double time_callbacks = 0.;
+         int num_lazy = 0;
+         if(cb) {
+           num_callbacks = cb->numCallbacks;
+           time_callbacks = cb->callbackTime;
+           num_lazy = cb->numLazyCuts;
+         }
+         // state, k l u time obj mipgap objbound nodes callback x3
+         printf(", %ld, %d, %.2lf, %d\n", nodecount, num_callbacks, time_callbacks, num_lazy);
+
+         // will remain temporary for script run
+         //if(model.get(GRB_IntAttr_SolCount) > 0)
+         //  printf("qwerky567: sol: L = %.4lf, U = %.4lf\n", x[g->nr_nodes][0].get(GRB_DoubleAttr_X), x[g->nr_nodes][1].get(GRB_DoubleAttr_X));
+         //else
+         //  printf("qwerly567: sol: no incumbent solution found!\n");
 #endif
 
-        if (need_solution) {
+        if (need_solution && model.get(GRB_IntAttr_Status) != 3) {
             vector<int> sol;
             translate_solution(x, sol, g->nr_nodes);
             printf_solution(sol, "districting.out");
