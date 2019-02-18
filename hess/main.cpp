@@ -12,6 +12,8 @@
 using namespace std;
 extern const char* gitversion;
 
+#define DO_BATCH_OUTPUT
+
 int main(int argc, char *argv[])
 {
     ios::sync_with_stdio(1);
@@ -54,6 +56,9 @@ int main(int argc, char *argv[])
     if (!g->is_connected())
     {
         printf("Problem is infeasible (not connected!)\n");
+#ifdef DO_BATCH_OUTPUT
+        printf("qwerky567: %s, disconnected\n", dimacs_fname);
+#endif
         return 1;
     }
 
@@ -135,13 +140,34 @@ int main(int argc, char *argv[])
             delete cb;
         }
 
+#ifdef DO_BATCH_OUTPUT
+
         // will remain temporary for script run
         if (model.get(GRB_IntAttr_Status) == 3) // infeasible
             printf("qwerky567: model is infeasible\n");
         else {
 
-            //        double objval = model.get(GRB_DoubleAttr_ObjVal);
-            //        printf("qwerky567: Objective value: %lf (%e), time: %lf seconds, MIP gap: %.2lf%%, Bound: %lf\n", objval, objval, duration.count(), model.get(GRB_DoubleAttr_MIPGap)*100., model.get(GRB_DoubleAttr_ObjBound));
+            double objval = model.get(GRB_DoubleAttr_ObjVal);
+            long nodecount = static_cast<long>(model.get(GRB_DoubleAttr_NodeCount));
+            double mipgap = model.get(GRB_DoubleAttr_MIPGap)*100.;
+            double objbound = model.get(GRB_DoubleAttr_ObjBound);
+
+            // no incumbent solution was found, these values do no make sense
+            if(model.get(GRB_IntAttr_SolCount) == 0) {
+              mipgap = 100.;
+              objbound = 0.;
+            }
+
+            int num_callbacks = 0;
+            double time_callbacks = 0.;
+            int num_lazy = 0;
+            if(cb) {
+              num_callbacks = cb->numCallbacks;
+              time_callbacks = cb->callbackTime;
+              num_lazy = cb->numLazyCuts;
+            }
+            // state, k l u obj time mipgap objbound nodes callback x3
+            printf("qwerky567: %s, %d, %d, %d, %.2lf, %.2lf, %.2lf%%, %.2lf, %ld, %d, %.2lf, %d\n", dimacs_fname, k, L, U, objval, duration.count(), mipgap, objbound, nodecount, num_callbacks, time_callbacks, num_lazy);
 
             // will remain temporary for script run
             //if(model.get(GRB_IntAttr_SolCount) > 0)
@@ -149,6 +175,7 @@ int main(int argc, char *argv[])
             //else
             //  printf("qwerly567: sol: no incumbent solution found!\n");
         }
+#endif
 
         if (need_solution) {
             vector<int> sol;
