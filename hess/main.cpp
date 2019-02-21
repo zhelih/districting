@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 
 #ifdef DO_BATCH_OUTPUT
 
-        printf("qwerky567: %s, %d, %d, %d, %.2lf", dimacs_fname, k, L, U, duration.count());
+        printf("qwerky567: %s, %d, %d, %d, %d, %.2lf", dimacs_fname, k, g->nr_nodes, L, U, duration.count());
 
         // output overtly
         int max_pv = population[0];
@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
            time_callbacks = cb->callbackTime;
            num_lazy = cb->numLazyCuts;
          }
-         // state, k l u time obj mipgap objbound nodes callback x3
+         // state, k n l u time obj mipgap objbound nodes callback x3
          printf(", %ld, %d, %.2lf, %d\n", nodecount, num_callbacks, time_callbacks, num_lazy);
 
          // will remain temporary for script run
