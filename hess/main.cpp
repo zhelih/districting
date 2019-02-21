@@ -144,6 +144,13 @@ int main(int argc, char *argv[])
 
         printf("qwerky567: %s, %d, %d, %d, %.2lf", dimacs_fname, k, L, U, duration.count());
 
+        // output overtly
+        int max_pv = population[0];
+        for(int pv : population)
+          max_pv = max(max_pv, pv);
+
+        printf(",%.2lf", static_cast<double>(max_pv) / static_cast<double>(U));
+
         // will remain temporary for script run
         if (model.get(GRB_IntAttr_Status) == 3) // infeasible
             printf(",infeasible,,");
@@ -155,9 +162,10 @@ int main(int argc, char *argv[])
 
 
             // no incumbent solution was found, these values do no make sense
-            if(model.get(GRB_IntAttr_SolCount) == 0) {
+            if(model.get(GRB_IntAttr_SolCount) == 0)
+            {
               mipgap = 100.;
-              objbound = 0.;
+              objval = 0.;
             }
 
             printf(", %.2lf, %.2lf, %.2lf", objval, mipgap, objbound);
