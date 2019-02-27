@@ -1,4 +1,7 @@
 #  Copyright 2018 Eugene Lykhovyd
+#  Select the shapefile layer
+#  Run the script
+#  Go to layer properties, select categorized fill, then press classify
 from qgis.utils import iface
 from PyQt4.QtCore import QVariant
 
