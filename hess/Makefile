@@ -9,6 +9,9 @@ version.c: ../.git/HEAD ../.git/index
 gridgen: gridgen.cpp
 	g++ -Wall -Wextra graph.cpp gridgen.cpp -o gridgen -std=c++11
 
+translate: translate.cpp
+	g++ -Wall -Wextra translate.cpp -o translate -std=c++11
+
 clean:
 	rm ./districting
 	rm ./version.c
