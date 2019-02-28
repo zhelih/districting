@@ -19,9 +19,10 @@ with open(DISTRICT_FILE) as f:
 
 layer = iface.activeLayer()
 layer.startEditing()
-layer.dataProvider().addAttributes(
-        [QgsField(NEW_DISTRICT_FIELD, QVariant.Int)])
-layer.updateFields()
+if -1 == layer.fields().indexFromName(NEW_DISTRICT_FIELD):
+    layer.dataProvider().addAttributes(
+            [QgsField(NEW_DISTRICT_FIELD, QVariant.Int)])
+    layer.updateFields()
 
 # loop through all GEOIDs
 for f in layer.getFeatures():
