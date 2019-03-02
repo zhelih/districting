@@ -1,9 +1,10 @@
 #include <cstdio>
 #include <vector>
+#include <string>
 
 using namespace std;
 
-void scan_file(vector<int>& out, const char* fname)
+void scan_file(vector<string>& out, const char* fname)
 {
   //TODO newbie checks?
   FILE *f = fopen(fname, "r");
@@ -16,8 +17,8 @@ void scan_file(vector<int>& out, const char* fname)
   int dummy;
   while(fscanf(f, "%d ", &dummy) != EOF)
   {
-    int data;
-    fscanf(f, "%d ", &data);
+    char data[1023];
+    fscanf(f, "%s ", data);
     out.push_back(data);
   }
   fclose(f);
@@ -32,8 +33,8 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  vector<int> geoids;
-  vector<int> districts;
+  vector<string> geoids;
+  vector<string> districts;
 
   scan_file(districts, argv[1]);
   scan_file(geoids, argv[2]);
@@ -53,7 +54,7 @@ int main(int argc, char* argv[])
     out = fopen("translation.out", "w");
 
   for(unsigned int i = 0; i < geoids.size(); ++i)
-    fprintf(out, "%d %d\n", geoids[i], districts[i]);
+    fprintf(out, "%s %s\n", geoids[i].c_str(), districts[i].c_str());
 
   fclose(out);
 
