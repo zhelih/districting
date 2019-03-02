@@ -10,11 +10,11 @@ using namespace std;
 // build hess model and return x variables
 GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<int> >& dist, const vector<int>& population, int L, int U, int k);
 // add SCF constraints to model with hess variables x
-void build_scf(GRBModel* model, GRBVar** x, graph* g);
+void build_scf(GRBModel* model, GRBVar** x, graph* g, vector<int> stem);
 // add MCF constraints to model with hess variables x
-void build_mcf0(GRBModel* model, GRBVar** x, graph* g);
-void build_mcf1(GRBModel* model, GRBVar** x, graph* g);
-void build_mcf2(GRBModel* model, GRBVar** x, graph* g);
+void build_mcf0(GRBModel* model, GRBVar** x, graph* g, vector<int> stem);
+void build_mcf1(GRBModel* model, GRBVar** x, graph* g, vector<int> stem);
+void build_mcf2(GRBModel* model, GRBVar** x, graph* g, vector<int> stem);
 // add CUT constraints to model with hess variables x (lazy)
 class HessCallback : public GRBCallback
 {
@@ -50,8 +50,8 @@ protected:
 };
 
 // @return callback for delete only
-HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g);
-HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g);
+HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g, vector<int> stem);
+HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g, vector<int> stem);
 
 // add UL1 & UL2 instance and return x variables
 GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, int k);
