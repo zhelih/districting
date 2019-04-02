@@ -111,6 +111,10 @@ int main(int argc, char *argv[])
         if (arg_model != "ul1" && arg_model != "ul2")
             x = build_hess(&model, g, dist, population, L, U, k);
 
+        // push GUROBI to branch over clusterheads
+        for(int i = 0; i < g->nr_nodes; ++i)
+          x[i][i].set(GRB_IntAttr_BranchPriority, 1);
+
         HessCallback* cb = 0;
 
         if (arg_model == "scf")
