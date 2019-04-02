@@ -53,6 +53,8 @@ int main(int argc, char *argv[])
 
     printf("Model input: L = %d, U = %d, k = %d\n", L, U, k);
 
+    g->connect(dist);
+
     // check connectivity
     if (!g->is_connected())
     {
@@ -164,7 +166,7 @@ int main(int argc, char *argv[])
         int max_pv = population[0];
         for (int pv : population)
             max_pv = max(max_pv, pv);
-       
+
 
         printf(",%.2lf", static_cast<double>(max_pv) / static_cast<double>(U));
 

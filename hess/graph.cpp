@@ -5,6 +5,9 @@
 #include <vector>
 #include <algorithm>
 #include <set>
+#include <stack>
+
+#include "rank.hpp"
 
 using namespace std;
 
@@ -303,4 +306,110 @@ vector<int> graph::preprocess(vector<int>& new_population, vector<bool>& deleted
     cout << "numOfNodeMerge: " << numOfNodeMerge << endl;
     cout << "numOfEdgeDel: " << numOfEdgeDel << endl;
     return stem;
+}
+
+void graph::connect(const vector<vector<int>>& dist)
+{
+
+  struct t_edge {
+    int v1_graph;
+    int v2_graph;
+
+    int v1_comp;
+    int v2_comp;
+
+    int dist;
+  };
+
+  // run DFS to find connected components
+  vector<int> comp(nr_nodes); // [i] component
+  int nr_comp = 0; // number of connected components
+  stack<int> s; // stack for the DFS
+  vector<int> visited(nr_nodes, 0);
+  for(int i = 0; i < nr_nodes; ++i) // start DFS
+  {
+    if(!visited[i])
+    {
+      s.push(i);
+      while(!s.empty())
+      {
+        int v = s.top(); s.pop();
+        if(!visited[v])
+        {
+          visited[v] = true;
+          comp[v] = nr_comp;
+          for(int nb_v : nb(v))
+          {
+            if(!visited[nb_v])
+              s.push(nb_v);
+          }
+        }
+      }
+      nr_comp++;
+    }
+  }
+
+  fprintf(stderr, "nr_comp = %d\n", nr_comp);
+
+  if(nr_comp == 1)
+    printf("Graph is connected.\n");
+  else
+  {
+    printf("Input graph is disconnected; adding these edges to make it connected:");
+    vector<t_edge*> edges;
+    // construct components reverse map for calculating distances
+    vector<vector<int>> comp_rev(nr_comp);
+    for(int i = 0; i < nr_nodes; ++i)
+      comp_rev[comp[i]].push_back(i);
+    // create the edge set
+
+    // for every two components
+    for(int comp1 = 0; comp1 < nr_comp; ++comp1)
+      for(int comp2 = comp1+1; comp2 < nr_comp; ++comp2)
+      {
+        int c1_v_min = comp_rev[comp1][0]; int c2_v_min = comp_rev[comp2][0]; int d_min = dist[c1_v_min][c2_v_min];
+        for(int c1_v : comp_rev[comp1])
+          for(int c2_v : comp_rev[comp2])
+            if(dist[c1_v][c2_v] < d_min)
+            {
+              c1_v_min = c1_v;
+              c2_v_min = c2_v;
+              d_min = dist[c1_v][c2_v];
+            }
+
+        t_edge* edge = new t_edge;
+        edge->v1_graph = c1_v_min;
+        edge->v2_graph = c2_v_min;
+        edge->v1_comp = comp1;
+        edge->v2_comp = comp2;
+        edge->dist = d_min;
+        edges.push_back(edge);
+      }
+    // union-find for components
+    union_of_sets u;
+    u.dad = new int[nr_comp];
+    u.rank = new int[nr_comp];
+    for(int i = 0; i < nr_comp; ++i)
+      MakeSet(u, i);
+
+    // kruskal
+    sort(edges.begin(), edges.end(), [](t_edge* e1, t_edge* e2) { return e1->dist < e2->dist; });
+    for(t_edge* e : edges)
+    {
+      int r1 = Find(u, e->v1_comp);
+      int r2 = Find(u, e->v2_comp);
+      if(r1 != r2)
+      {
+        Union(u, r1, r2);
+        add_edge(e->v1_graph, e->v2_graph);
+        printf(" { %d, %d }", e->v1_graph, e->v2_graph);
+      }
+    }
+    printf("\n");
+
+    delete [] u.dad;
+    delete [] u.rank;
+    for(t_edge* e : edges)
+      delete e;
+  }
 }
