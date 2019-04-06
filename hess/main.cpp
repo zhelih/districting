@@ -97,8 +97,70 @@ int main(int argc, char *argv[])
         stem = g1->preprocess(new_population, deleted, L, U);
     }
 
-     //clean edges of the input graph G
-     g->edgeClean(population, U);
+    //clean edges of the input graph G
+    g->edgeClean(population, U);
+
+    //apply the merging preprocess and get the clusters
+    vector<vector<int>> clusters;
+
+
+    //apply Lagrangian algorithm
+
+    vector<vector<double>> w(g->nr_nodes,vector<double>(g->nr_nodes)); // this is the weight matrix in the objective function
+    
+    for (int i = 0; i < g->nr_nodes; i++)
+        for (int j = 0; j < g->nr_nodes; j++)
+            w[i][j] = ((double)dist[i][j] / 1000.) * ((double)dist[i][j] / 1000.) * population[i];
+
+    vector<vector<bool>> F_0(g->nr_nodes, vector<bool>(g->nr_nodes,false)); // define matrix F_0
+    vector<vector<bool>> F_1(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_1
+     
+    //vector<double> lambda(g->nr_nodes,0.);
+    //vector<double> upsilon(g->nr_nodes,0.);
+    //vector<double> alpha(g->nr_nodes);
+
+    double *x = new double[3 * g->nr_nodes];
+    double *alpha = x;
+    double *lambda = x + g->nr_nodes;
+    double *upsilon = x + 2 * g->nr_nodes;
+
+    for (int i = 0; i < g->nr_nodes; i++)
+    {
+        lambda[i] = 0;
+        upsilon[i] = 0;
+    }
+
+
+    double minAlpha;
+    for (int i = 0; i < g->nr_nodes; i++)
+    {
+        minAlpha = numeric_limits<double>::infinity();
+        for (int j = 0; j < g->nr_nodes; j++)
+        {
+            if (w[j][i] < minAlpha)
+                minAlpha = w[j][i];
+        }
+        alpha[i] = minAlpha;
+    }
+    vector<bool> S(g->nr_nodes, false);
+
+    vector<vector<double>> w_hat(g->nr_nodes, vector<double>(g->nr_nodes));
+    vector<double> W(g->nr_nodes, 0);
+
+    //solve inner problem
+    S = solveInnerProblem(g, x, F_0, F_1, L, U, k, clusters, w, w_hat, W, population);
+
+    for (int i = 0; i < g->nr_nodes; i++)
+        cout << "vertex " << i << " , " << S[i] << endl;
+
+    //define Lagrange function L(alpha, lambda, upsilon, F_0, F_1)
+    vector<vector<double>> Lagrange(3);
+    for (int i = 0; i < 3; i++)
+    {
+        Lagrange[i].resize(g->nr_nodes);
+    }
+
+
 
     try {
         // initialize environment and create an empty model
@@ -112,8 +174,8 @@ int main(int argc, char *argv[])
             x = build_hess(&model, g, dist, population, L, U, k);
 
         // push GUROBI to branch over clusterheads
-        for(int i = 0; i < g->nr_nodes; ++i)
-          x[i][i].set(GRB_IntAttr_BranchPriority, 1);
+        for (int i = 0; i < g->nr_nodes; ++i)
+            x[i][i].set(GRB_IntAttr_BranchPriority, 1);
 
         HessCallback* cb = 0;
 
