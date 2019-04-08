@@ -57,7 +57,9 @@ HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g, vector<int> stem
 GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, int k);
 GRBVar** build_UL_2(GRBModel* model, graph* g, const vector<int>& population, int k);
 
-vector<bool> solveInnerProblem(graph* g, double* x, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1, int L, int U, int k, const vector<vector<int>>& clusters, const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, const vector<int>& population);
+vector<bool> solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
+    int L, int U, int k, const vector<vector<int>>& clusters, const vector<int>& population,
+    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W);
 
 
 #endif
