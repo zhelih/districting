@@ -21,13 +21,10 @@ vector<bool> solveInnerProblem(graph* g, double* multipliers, vector<vector<bool
     const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W)
 {
     vector<bool> S(g->nr_nodes, false);
-    // pass just "x" (the lagrangian concatenation of (alpha, lambda, upsilon) and inside of function create pointers to the subarrays, like Eugene mentioned.
+
     double *alpha = multipliers;
     double *lambda = multipliers + g->nr_nodes;
     double *upsilon = multipliers + 2 * g->nr_nodes;
-    // don't create w_hat from scratch each time. allocating a new set of memory for it each time will be time-consuming. Pass it as an argument?
-
-    
 
     for (int i = 0; i < g->nr_nodes; i++)
     {
@@ -38,19 +35,18 @@ vector<bool> solveInnerProblem(graph* g, double* multipliers, vector<vector<bool
             if (i == j)
                 w_hat[i][j] = w[i][j] - alpha[i] - lambda[j] * pOverL + upsilon[j] * pOverU + lambda[j] - upsilon[j];
             else
-            {
                 w_hat[i][j] = w[i][j] - alpha[i] - lambda[j] * pOverL + upsilon[j] * pOverU;
-            }
         }
     }
-
 
     //compute W_j for each vertex j \in V
     for (int c = 0; c < clusters.size(); c++)
     {
         for (int v = 0; v < clusters[c].size(); v++)
         {
+            
             int j = clusters[c][v];
+            
             W[j] = 0;
             //sum up \hat{w}_ij in the first term
             for (int c1 = 0; c1 < clusters.size(); c1++)
@@ -80,7 +76,6 @@ vector<bool> solveInnerProblem(graph* g, double* multipliers, vector<vector<bool
         }
     }
 
-
     //find number of fixed centers 
     int fixed = 0;
 
@@ -89,7 +84,6 @@ vector<bool> solveInnerProblem(graph* g, double* multipliers, vector<vector<bool
       if (F_1[i][i])
         fixed++;
     }
-
 
     //solve the reduced Lagrangian
     vector<int> W_indices(W.size()); 
