@@ -9,14 +9,22 @@
 
 using namespace std;
 
+#ifndef min
+#define min(a,b) (((a)<(b))?(a):(b))
+#endif
+#ifndef max
+#define max(a,b) (((a)>(b))?(a):(b))
+#endif
 
-vector<bool> solveInnerProblem(graph* g, double* x, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1, int L, int U, int k, const vector<vector<int>>& clusters, const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, const vector<int>& population)
+vector<bool> solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1, 
+    int L, int U, int k, const vector<vector<int>>& clusters, const vector<int>& population,
+    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W)
 {
     vector<bool> S(g->nr_nodes, false);
     // pass just "x" (the lagrangian concatenation of (alpha, lambda, upsilon) and inside of function create pointers to the subarrays, like Eugene mentioned.
-    double *alpha = x;
-    double *lambda = x + g->nr_nodes;
-    double *upsilon = x + 2 * g->nr_nodes;
+    double *alpha = multipliers;
+    double *lambda = multipliers + g->nr_nodes;
+    double *upsilon = multipliers + 2 * g->nr_nodes;
     // don't create w_hat from scratch each time. allocating a new set of memory for it each time will be time-consuming. Pass it as an argument?
 
     
@@ -43,18 +51,18 @@ vector<bool> solveInnerProblem(graph* g, double* x, vector<vector<bool>>& F_0, v
         for (int v = 0; v < clusters[c].size(); v++)
         {
             int j = clusters[c][v];
-            //sum up \hat{w}_ij in the first term for all i \in \hat C 
-            for (int u = 0; u < clusters[c].size(); u++)
+            W[j] = 0;
+            //sum up \hat{w}_ij in the first term
+            for (int c1 = 0; c1 < clusters.size(); c1++)
             {
-                int i = clusters[c][u];
-                if (F_1[i][j]) continue;
-                W[j] += w_hat[i][j];
-            }
-            //sum up \hat{w}_ij in the first term for all (i,j )\in F_1
-            for (int i = 0; i < g->nr_nodes; i++)
-            {
-                if (F_1[i][j])
-                    W[j] += w_hat[i][j];
+                if (c1 == c || F_1[clusters[c1][0]][j])
+                {
+                    for (int h = 0; h < clusters[c1].size(); h++)
+                    {
+                        int a = clusters[c1][h];
+                        W[j] += w_hat[a][j];
+                    }
+                }
             }
             //sum up \hat{w}_ij in the second term
             for (int l = 0; l < clusters.size(); l++)
@@ -67,8 +75,7 @@ vector<bool> solveInnerProblem(graph* g, double* x, vector<vector<bool>>& F_0, v
                     if (!F_0[a][j] && !F_1[a][j])
                         sum += w_hat[a][j];
                 }
-                if (sum > 0)
-                    W[j] += sum;
+                W[j] += min(sum, 0);
             }
         }
     }
@@ -79,34 +86,19 @@ vector<bool> solveInnerProblem(graph* g, double* x, vector<vector<bool>>& F_0, v
 
     for (int i = 0; i < g->nr_nodes; i++)
     {
-        for (int j = 0; j < g->nr_nodes; j++)
-        {
-            if (i != j) continue;
-            if (F_1[i][i])
-                fixed++;
-        }
+      if (F_1[i][i])
+        fixed++;
     }
 
 
     //solve the reduced Lagrangian
-    vector<double> W_prime(g->nr_nodes, 0);
-    W_prime = W;
+    vector<int> W_indices(W.size()); 
+    for (size_t i = 0; i < W.size(); ++i) 
+        W_indices[i] = i;
+    sort(W_indices.begin(), W_indices.end(), [&](int i1, int i2) { return W[i1] < W[i2]; });
 
-    sort(W_prime.begin(), W_prime.end());
-
-    vector<bool> selected(g->nr_nodes, false);
-    int counter = 0;
     for (int i = 0; i < k - fixed; i++)
-    {
-        for (int j = 0; j < g->nr_nodes; j++)
-        {
-            if (W_prime[i] == W[j] && !selected[j] && counter < k - fixed)
-            {
-                selected[j] = true;
-                S[j] = true;
-                counter++;
-            }
-        }
-    }
+        S[W_indices[i]] = true;
+
     return S;
 }
