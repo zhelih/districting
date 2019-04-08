@@ -101,11 +101,13 @@ int main(int argc, char *argv[])
     g->edgeClean(population, U);
 
     //apply the merging preprocess and get the clusters
-    vector<vector<int>> clusters;
+    vector<vector<int>> clusters(g->nr_nodes);
 
+    //For now, each vertex is a cluster
+    for (int i = 0; i < g->nr_nodes; i++)
+        clusters[i].push_back(i);
 
     //apply Lagrangian algorithm
-
     vector<vector<double>> w(g->nr_nodes, vector<double>(g->nr_nodes)); // this is the weight matrix in the objective function
 
     for (int i = 0; i < g->nr_nodes; i++)
