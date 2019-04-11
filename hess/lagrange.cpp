@@ -5,7 +5,7 @@
 #include <iostream>
 #include "graph.h"
 #include "gurobi_c++.h"
-#include "Models.h"
+#include "models.h"
 
 using namespace std;
 
