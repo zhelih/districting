@@ -26,8 +26,10 @@ int read_input_data(const char* dimacs_fname, const char* distance_fname, const 
     }
     // file contains the first row as a header row, skip it
     // also skip the first element in each row (node id)
-    char buf[3000]; //dummy
+    char buf[50000]; //dummy
     fgets(buf, sizeof(buf), f); // skip first line
+    if(strlen(buf) >= sizeof(buf)-5)
+      printf("WARNING: Possible buffer overlow!\n");
     dist.resize(g->nr_nodes);
     for(int i = 0; i < g->nr_nodes; ++i)
     {
