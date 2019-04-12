@@ -127,11 +127,11 @@ int main(int argc, char *argv[])
         lambda[i] = 0;
         upsilon[i] = 0;
     }
-    
-    double minAlpha;
+
+    double minAlpha = 0;
     for (int i = 0; i < g->nr_nodes; i++)
     {
-        minAlpha = numeric_limits<double>::infinity();
+        minAlpha = w[0][i];
         for (int j = 0; j < g->nr_nodes; j++)
         {
             if (w[j][i] < minAlpha)
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
     vector<double> W(g->nr_nodes, 0);
 
     //solve inner problem
-    S = solveInnerProblem(g, multipliers, F_0, F_1, L, U, k, clusters, population, w, w_hat, W);
+    solveInnerProblem(g, multipliers, F_0, F_1, L, U, k, clusters, population, w, w_hat, W, S);
 
     for (int i = 0; i < g->nr_nodes; i++)
         cout << "vertex " << i << " , " << S[i] << endl;

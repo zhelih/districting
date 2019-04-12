@@ -16,11 +16,12 @@ using namespace std;
 #define max(a,b) (((a)>(b))?(a):(b))
 #endif
 
-vector<bool> solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1, 
+void solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1, 
     int L, int U, int k, const vector<vector<int>>& clusters, const vector<int>& population,
-    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W)
+    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, vector<bool>& S)
 {
-    vector<bool> S(g->nr_nodes, false);
+    for(int i = 0; i < g->nr_nodes; ++i)
+      S[i] = false;
 
     double *alpha = multipliers;
     double *lambda = multipliers + g->nr_nodes;
@@ -44,9 +45,8 @@ vector<bool> solveInnerProblem(graph* g, double* multipliers, vector<vector<bool
     {
         for (int v = 0; v < clusters[c].size(); v++)
         {
-            
             int j = clusters[c][v];
-            
+
             W[j] = 0;
             //sum up \hat{w}_ij in the first term
             for (int c1 = 0; c1 < clusters.size(); c1++)
@@ -94,5 +94,4 @@ vector<bool> solveInnerProblem(graph* g, double* multipliers, vector<vector<bool
     for (int i = 0; i < k - fixed; i++)
         S[W_indices[i]] = true;
 
-    return S;
 }
