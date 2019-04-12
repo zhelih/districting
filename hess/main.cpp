@@ -10,6 +10,8 @@
 #include <cstring>
 #include <chrono>
 
+#include "ralg/ralg.h"
+
 #ifndef sign
 #define sign(x) (((x)>0)?1:((x)==0)?0:(-1))
 #endif
@@ -166,16 +168,44 @@ int main(int argc, char *argv[])
       // revert the grads if needed
       for(int i = g->nr_nodes; i < 3*g->nr_nodes; ++i)
         grad[i] = sign(x[i])*grad[i];
+
+      return false;
+      //return true;
     };
 
     // run ralg
-    // ralg(cb_grad_func);
+    int dim = 3*g->nr_nodes;
+    double * x0 = new double[dim];
+    for(int i = 0; i < dim; ++i)
+      x0[i] = 1.; // whatever
+    double* res = new double[dim];
+    ralg(&defaultOptions, cb_grad_func, dim, x0, res, RALG_MAX);
+    delete [] x0;
+    delete [] res;
+
+    /********* solve a problem for fun with ralg */
+    double tx0[2] = { -30, 10 }; double tres[2];
+    ralg_options opts = defaultOptions; opts.output_iter = 1;
+    ralg(&opts,
+          [](const double* x, double& f, double* grad) -> bool
+          {
+            f = 1000*(x[0]-3)*(x[0]-3) + x[1]*x[1];
+            grad[0] = 1000*2*(x[0]-3);
+            grad[1] = 2*x[1];
+            f = -f; grad[0] = -grad[0]; grad[1] = -grad[1];
+            return true;
+          },
+          2,
+          tx0,
+          tres, RALG_MAX);
+    printf("for inv 1000(x-3)^2 + y^2 -> max the answer is %.2lf %.2lf\n", tres[0], tres[1]);
 
     //solve inner problem
     solveInnerProblem(g, multipliers, F_0, F_1, L, U, k, clusters, population, w, w_hat, W, S);
 
-    for (int i = 0; i < g->nr_nodes; i++)
-        cout << "vertex " << i << " , " << S[i] << endl;
+    //FIXME floods the output
+    /*for (int i = 0; i < g->nr_nodes; i++)
+        cout << "vertex " << i << " , " << S[i] << endl;*/
 
     try {
         // initialize environment and create an empty model
