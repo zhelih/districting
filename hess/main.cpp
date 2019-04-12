@@ -10,6 +10,14 @@
 #include <cstring>
 #include <chrono>
 
+#ifndef sign
+#define sign(x) (((x)>0)?1:((x)==0)?0:(-1))
+#endif
+
+#ifndef abs
+#define abs(x) (((x)>0)?(x):(-(x)))
+#endif
+
 using namespace std;
 //extern const char* gitversion;
 
@@ -143,6 +151,25 @@ int main(int argc, char *argv[])
 
     vector<vector<double>> w_hat(g->nr_nodes, vector<double>(g->nr_nodes));
     vector<double> W(g->nr_nodes, 0);
+
+    auto cb_grad_func = [g, L, U, k, &population, &w](const double* x_, double& f_val, double* grad) {
+      // map lambda and upsilon
+
+      // this is a real slowdown
+      vector<double> x(x_, x_+3*g->nr_nodes);
+      for(int i = g->nr_nodes; i < 3*g->nr_nodes; ++i)
+        x[i] = abs(x[i]);
+
+      // calculate here the gradient and obj value
+      // solveInnerProblem(g, x.data(), ?, ?, L, U, k, ?, population, w, ?, ? ?);
+
+      // revert the grads if needed
+      for(int i = g->nr_nodes; i < 3*g->nr_nodes; ++i)
+        grad[i] = sign(x[i])*grad[i];
+    };
+
+    // run ralg
+    // ralg(cb_grad_func);
 
     //solve inner problem
     solveInnerProblem(g, multipliers, F_0, F_1, L, U, k, clusters, population, w, w_hat, W, S);
