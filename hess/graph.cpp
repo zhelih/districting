@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <set>
 #include <stack>
-
 #include "rank.hpp"
 
 using namespace std;
@@ -167,7 +166,7 @@ bool graph::is_edge(uint i, uint j)
     return false;
 }
 
-void graph::edgeClean(vector<int>& population, int U)
+void graph::edgeClean(const vector<int>& population, int U)
 {
     int numEdgeClean = 0;
     //remove unnecessary edges in input graph G
@@ -202,23 +201,23 @@ void graph::clean(vector<int>& new_population, vector<bool>& deleted, int L, int
         }
     }
 
-    //remove unnecessary edges in the auxiliary graph
-    for (int i = 0; i < nr_nodes; i++)
-    {
-        bool applyBreak = false;
-        for (int j : nb(i))
-        {
-            if (new_population[i] + new_population[j] > U)
-            {
-                remove_edge(i, j);
-                numOfEdgeDel++;
-                applyBreak = true;
-                break;
-            }
-        }
-        if (applyBreak == true)
-            i--;
-    }
+    ////remove unnecessary edges in the auxiliary graph
+    //for (int i = 0; i < nr_nodes; i++)
+    //{
+    //    bool applyBreak = false;
+    //    for (int j : nb(i))
+    //    {
+    //        if (new_population[i] + new_population[j] > U)
+    //        {
+    //            remove_edge(i, j);
+    //            numOfEdgeDel++;
+    //            applyBreak = true;
+    //            break;
+    //        }
+    //    }
+    //    if (applyBreak == true)
+    //        i--;
+    //}
 
     //find underpopulated connected components in the auxiliary graph
     vector<bool> visited(nr_nodes, false);
@@ -277,36 +276,308 @@ vector<int> graph::findUnderPopulatedLeaves(vector<int> new_population, vector<b
     return leaves;
 }
 
-vector<int> graph::preprocess(vector<int>& new_population, vector<bool>& deleted, int L, int U)
+vector<vector<int>> preprocess(graph* g, vector<int>& new_population, vector<int>& stem, int L, int U, const vector<int>& population)
 {
+    vector<vector<int>> clusters;
     int numOfEdgeDel = 0;
     int numOfNodeMerge = 0;
-    clean(new_population, deleted, L, U, numOfEdgeDel, numOfNodeMerge);
-    vector<int> stem(nr_nodes, -1);
-    vector<int> leaves = findUnderPopulatedLeaves(new_population, deleted, L);
-    while (!leaves.empty())
+    //clean edges of the input graph G (step 1)
+    g->edgeClean(population, U);
+
+    //initialization of stem (step 2)
+    for (int i = 0; i < g->nr_nodes; i++)
+        stem[i] = i;
+
+    //duplicate the input graph g (step 3)
+    graph* g1 = 0;
+    g1 = g->duplicate();
+
+    //compute the biconnected components (step 4) 
+    vector<vector<int>> preClusters;
+    vector<int> AV(g->nr_nodes);
+    vector<int> underpopulatedLeaves;
+    vector<bool> deletedNodes(g->nr_nodes, false);
+    preClusters = FindBiconnectedComponents(g1, AV, deletedNodes);
+    vector<bool> activePreClusters (preClusters.size(), true);
+    
+    //find underpopulated leaves
+    underpopulatedLeaves = findUnderPopulatedCompLeaves(preClusters, new_population, population, AV, activePreClusters, L);
+
+    //step 5
+    while (!underpopulatedLeaves.empty())
     {
-        int cur = leaves.back(); leaves.pop_back();
-        int potStem;
-        for (int j : nb(cur))
+        //select an underpopulated leaf
+        int cur = underpopulatedLeaves.back(); 
+        
+        //update the population of stem (step 7)
+        int s;
+        int sum = 0;
+        int delcounter = 0;
+        for (int i = 0; i < preClusters[cur].size(); i++)
         {
-            if (deleted[j] == true)
-                continue;
-            potStem = j;
+            if (AV[preClusters[cur][i]] > 1)
+                s = preClusters[cur][i];
+            else
+            {
+                sum += new_population[preClusters[cur][i]];
+                new_population[preClusters[cur][i]] = 0;
+                deletedNodes[preClusters[cur][i]] = true;
+                delcounter++;
+            }
+                
         }
-        stem[cur] = potStem;
-        new_population[potStem] += new_population[cur];
-        deleted[cur] = true;
-        numOfNodeMerge++;
-        remove_edge(cur, potStem);
-        numOfEdgeDel++;
-        clean(new_population, deleted, L, U, numOfEdgeDel, numOfNodeMerge);
-        leaves = findUnderPopulatedLeaves(new_population, deleted, L);
+        new_population[s] += sum;
+
+        //update the vector stem (steps 8 and 9)
+        int counter = 0;
+        for (int i = 0; i < preClusters[cur].size(); i++)
+        {
+            
+            if (preClusters[cur][i] == s)
+            {
+                //cerr << "Hellloooo" << endl;
+                continue;
+            }
+            counter++;
+            stem[preClusters[cur][i]] = s;
+        }
+
+        // cleaning in steps 11-13
+        for (int v : g1->nb(s))
+        {
+            if (new_population[v] + new_population[s] > U)
+            {
+                g1->remove_edge(v, s);
+                g->remove_edge(v, s);
+            }
+        }
+
+        preClusters = FindBiconnectedComponents(g1, AV, deletedNodes);
+
+
+        for (int i = 0; i < preClusters.size(); i++)
+            activePreClusters[i] = true;
+
+        for (int i = 0; i < preClusters.size(); i++)
+        {
+            int counter = 0;
+            for (int j = 0; j < preClusters[i].size(); j++)
+            {
+                if (deletedNodes[preClusters[i][j]])
+                    counter++;
+            }
+            if (counter == preClusters[i].size() - 1)
+                activePreClusters[i] = false;
+        }
+        underpopulatedLeaves = findUnderPopulatedCompLeaves(preClusters, new_population, population, AV, activePreClusters, L);
     }
-    cout << "numOfNodeMerge: " << numOfNodeMerge << endl;
-    cout << "numOfEdgeDel: " << numOfEdgeDel << endl;
-    return stem;
+
+    //translate stem to set family \mathcal{C} 
+    graph* g2 = new graph(g->nr_nodes);
+
+    for (int i = 0; i < g2->nr_nodes; i++)
+        if (stem[i] != i)
+            g2->add_edge(stem[i],i);
+
+    vector<bool> R(g2->nr_nodes, false);
+    for (int i = 0; i < g2->nr_nodes; i++)
+    {
+        if (stem[i] != i || R[i]) continue;
+        //do a DFS to find nodes that are reachable from i
+        R[i] = true;
+        vector<int> children;
+        vector<int> oneCluster;
+        oneCluster.push_back(i);
+        children.push_back(i);
+        while (!children.empty())
+        { //do DFS
+            int cur = children.back(); children.pop_back();
+            for (int nb_cur : g2->nb(cur))
+            {
+                if (!R[nb_cur])
+                {
+                    R[nb_cur] = true;
+                    children.push_back(nb_cur);
+                    oneCluster.push_back(nb_cur);
+                }
+            }
+        }
+        clusters.push_back(oneCluster);
+    }
+    //cerr << "Size of cluster: " << clusters.size() << endl;
+    
+
+    for (int i = 0; i < g2->nr_nodes; i++)
+    {
+        cerr << "stem of " << i << " is " << stem[i] << endl;
+    }
+
+    cerr << "Size of Cluster: " << clusters.size() << endl;;
+
+    for (int i = 0; i < clusters.size(); i++)
+    {
+        cerr << "This is cluster: "<< i << endl;
+        for (int j = 0; j < clusters[i].size(); j++)
+        {
+            cerr << clusters[i][j] << endl;
+        }
+    }
+
+
+    g1->clean(new_population, deletedNodes, L, U, numOfEdgeDel, numOfNodeMerge);
+
+    ////check overt feasibility (step 15)
+    //for (int v = 0; v < g->nr_nodes; v++)
+    //{
+    //    if (new_population[v] > U)
+    //    {
+    //        printf("The instance is overt infeasible!\n");
+    //        exit(0);
+    //    }
+    //}
+
+    ////check if a connected component of H' is underpopulated (step 16)
+    //vector<bool> Reached(g1->nr_nodes, false);
+    //vector<int> connectedComponent;
+    //for (int i = 0; i < g1->nr_nodes; i++)
+    //{
+    //    if (deletedNodes[i] || Reached[i]) continue;
+    //    //do a DFS to find nodes that are reachable from i
+    //    Reached[i] = true;
+    //    vector<int> children;
+    //    //vector<int> oneCluster;
+    //    connectedComponent.push_back(i);
+    //    children.push_back(i);
+    //    while (!children.empty())
+    //    { //do DFS
+    //        int cur = children.back(); children.pop_back();
+    //        for (int nb_cur : g1->nb(cur))
+    //        {
+    //            if (deletedNodes[nb_cur]) continue;
+    //            if (!Reached[nb_cur])
+    //            {
+    //                Reached[nb_cur] = true;
+    //                children.push_back(nb_cur);
+    //                connectedComponent.push_back(nb_cur);
+    //            }
+    //        }
+    //    }
+    //    int sum = 0;
+    //    for (int j = 0; j < connectedComponent.size(); j++)
+    //        sum += new_population[j];
+    //    if (sum < L)
+    //    {
+    //        printf("The instance is overt infeasible!\n");
+    //        exit(0);
+    //    }
+    //}
+    return clusters;
 }
+
+vector<int> findUnderPopulatedCompLeaves(vector<vector<int>>& preClusters, vector<int>& new_population, const vector<int>& population, vector<int>& AV, vector<bool>& activePreClusters, int L)
+{
+    vector<int> S;
+    for (int i = 0; i < preClusters.size(); i++)
+    {
+        if (!activePreClusters[i]) continue;
+        int noneOneCounter = 0;
+        int noneOne;
+        int sum = 0;
+        for (int j = 0; j < preClusters[i].size(); j++)
+        {
+            if (AV[preClusters[i][j]] != 1)
+            {
+                noneOneCounter++;
+                noneOne = preClusters[i][j];
+            }
+            sum += new_population[preClusters[i][j]];
+        }
+        if (noneOneCounter == 1 && sum < L)
+            S.push_back(i);
+    }
+    return S;
+}
+
+vector< vector<int> > FindBiconnectedComponents(graph* g, vector<int> &AV, vector<bool> &deletedNodes)
+{
+    /* I tried to use the naming conventions presented in Tarjan's 1972 paper.
+    I assume that the graph is connected, so that only one call to the recursion is necessary. */
+
+    // declare vars
+    int u = -1, v = 0, i = 0;
+    vector<int> number(g->nr_nodes, (int)-1);
+    vector<int> lowopt(g->nr_nodes, g->nr_nodes);
+    vector< vector<int> > BC;		// biconnected components
+    stack<int> le, re;				// used to store a stack of edges. le is "left edge" and re is "right edge". An edge is stored (le[i],re[i]). 
+
+                                    // perform DFS-based algorithm
+    Bico_Sub(v, u, i, g, number, lowopt, le, re, BC, deletedNodes);
+
+    vector<int> countComp(g->nr_nodes, 0);
+    for (int p = 0; p < BC.size(); p++) // count how many components each vertex belongs to
+        for (int q = 0; q < BC[p].size(); q++)
+            countComp[BC[p][q]]++;
+
+    vector<int> AV_temp(g->nr_nodes);
+    AV = AV_temp;
+    for (int p = 0; p < g->nr_nodes; p++) // if a vertex belongs to >1 component, then it is a cut vertex
+            AV[p] = countComp[p];
+
+    return BC;
+}
+
+void Bico_Sub(int v, int u, int &i, graph* g, vector<int> &number, vector<int> &lowopt, stack<int> &le, stack<int> &re, vector< vector<int>> &BC, vector<bool> &deletedNodes)
+{
+    i++;
+    number[v] = i;
+    lowopt[v] = number[v];
+    int w;
+    for (int w : g->nb(v))
+    {
+        if (deletedNodes[v] || deletedNodes[w]) continue;
+        if (number[w] == -1)
+        {
+            le.push(v);
+            re.push(w);
+            Bico_Sub(w, v, i, g, number, lowopt, le, re, BC, deletedNodes);
+            lowopt[v] = (int)min(lowopt[v], lowopt[w]);
+            if (lowopt[w] >= number[v])
+            {
+                vector<int> temp_BC;
+                vector<bool> bBC(g->nr_nodes, false);
+                while (!le.empty() && !re.empty() && number[le.top()] >= number[w])
+                {
+                    bBC[le.top()] = true;
+                    bBC[re.top()] = true;
+                    le.pop();
+                    re.pop();
+                }
+                if (!le.empty() && le.top() == v)
+                {
+                    bBC[le.top()] = true;
+                    bBC[re.top()] = true;
+                    le.pop();
+                    re.pop();
+                }
+                else
+                {
+                    cout << "ERROR: edge (v,w) not on top of stack" << endl;
+                }
+                for (int p = 0; p < g->nr_nodes; p++)
+                    if (bBC[p])
+                        temp_BC.push_back(p);
+                BC.push_back(temp_BC);
+            }
+        }
+        else if (number[w] < number[v] && w != u)
+        {
+            le.push(v);
+            re.push(w);
+            lowopt[v] = min(lowopt[v], number[w]);
+        }
+    }
+}
+
 
 void graph::connect(const vector<vector<int>>& dist)
 {
@@ -348,6 +619,9 @@ void graph::connect(const vector<vector<int>>& dist)
             nr_comp++;
         }
     }
+
+    //for (int i = 0; i < nr_nodes; i++)
+    //    cerr <<"vertex " <<i<<" : " << comp[i] << endl;
 
     fprintf(stderr, "nr_comp = %d\n", nr_comp);
 
