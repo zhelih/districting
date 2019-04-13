@@ -94,28 +94,15 @@ int main(int argc, char *argv[])
 
     string arg_model = argv[argc - 1];
 
-    // finding infeasible instances
-    vector<int> stem(g->nr_nodes, -1);
-
-    if (arg_model == "scf" || arg_model == "mcf0" || arg_model == "mcf1" || arg_model == "mcf2" || arg_model == "cut1" || arg_model == "cut2")
-    {
-        graph* g1 = 0;
-        g1 = g->duplicate();
-        vector<int> new_population;
-        vector<bool> deleted(g1->nr_nodes, false);
-        new_population = population;
-        stem = g1->preprocess(new_population, deleted, L, U);
-    }
-
-    //clean edges of the input graph G
-    g->edgeClean(population, U);
-
     //apply the merging preprocess and get the clusters
-    vector<vector<int>> clusters(g->nr_nodes);
-
-    //For now, each vertex is a cluster
-    for (int i = 0; i < g->nr_nodes; i++)
-        clusters[i].push_back(i);
+    vector<vector<int>> clusters;
+    vector<int> stem (g->nr_nodes);
+    if (arg_model == "scf" || arg_model == "mcf0" || arg_model == "mcf1" || arg_model == "mcf2" || arg_model == "cut1" || arg_model == "cut2")
+    {       
+        vector<int> new_population;
+        new_population = population;
+        clusters = preprocess(g, new_population, stem, L, U, population);
+    }
 
     //apply Lagrangian algorithm
     vector<vector<double>> w(g->nr_nodes, vector<double>(g->nr_nodes)); // this is the weight matrix in the objective function
