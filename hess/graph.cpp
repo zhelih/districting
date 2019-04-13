@@ -405,7 +405,6 @@ vector<vector<int>> preprocess(graph* g, vector<int>& new_population, vector<int
         clusters.push_back(oneCluster);
     }
     //cerr << "Size of cluster: " << clusters.size() << endl;
-    
 
     for (int i = 0; i < g2->nr_nodes; i++)
     {
@@ -422,55 +421,9 @@ vector<vector<int>> preprocess(graph* g, vector<int>& new_population, vector<int
             cerr << clusters[i][j] << endl;
         }
     }
-
-
+    //cleaning steps 15 and 16
     g1->clean(new_population, deletedNodes, L, U, numOfEdgeDel, numOfNodeMerge);
 
-    ////check overt feasibility (step 15)
-    //for (int v = 0; v < g->nr_nodes; v++)
-    //{
-    //    if (new_population[v] > U)
-    //    {
-    //        printf("The instance is overt infeasible!\n");
-    //        exit(0);
-    //    }
-    //}
-
-    ////check if a connected component of H' is underpopulated (step 16)
-    //vector<bool> Reached(g1->nr_nodes, false);
-    //vector<int> connectedComponent;
-    //for (int i = 0; i < g1->nr_nodes; i++)
-    //{
-    //    if (deletedNodes[i] || Reached[i]) continue;
-    //    //do a DFS to find nodes that are reachable from i
-    //    Reached[i] = true;
-    //    vector<int> children;
-    //    //vector<int> oneCluster;
-    //    connectedComponent.push_back(i);
-    //    children.push_back(i);
-    //    while (!children.empty())
-    //    { //do DFS
-    //        int cur = children.back(); children.pop_back();
-    //        for (int nb_cur : g1->nb(cur))
-    //        {
-    //            if (deletedNodes[nb_cur]) continue;
-    //            if (!Reached[nb_cur])
-    //            {
-    //                Reached[nb_cur] = true;
-    //                children.push_back(nb_cur);
-    //                connectedComponent.push_back(nb_cur);
-    //            }
-    //        }
-    //    }
-    //    int sum = 0;
-    //    for (int j = 0; j < connectedComponent.size(); j++)
-    //        sum += new_population[j];
-    //    if (sum < L)
-    //    {
-    //        printf("The instance is overt infeasible!\n");
-    //        exit(0);
-    //    }
-    //}
     return clusters;
 }
 
