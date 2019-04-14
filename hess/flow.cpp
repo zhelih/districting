@@ -4,18 +4,22 @@
 #include "gurobi_c++.h"
 #include "graph.h"
 
-void build_scf(GRBModel* model, GRBVar** x, graph* g, vector<int> stem)
+void build_scf(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters)
 {
     // create n^2 variables for arcs, presolve will eliminate unused
     int n = g->nr_nodes;
 
-    // strengthening by stem inequalities
+    // strengthening by merging
     for (int v = 0; v < n; ++v)
     {
-        for (int i = 0; i < n; ++i)
+        for (int i = 0; i < clusters.size(); ++i)
         {
-            if (stem[i] != -1)
-                model->addConstr(x[i][v] - x[stem[i]][v] == 0);
+            int articulation = clusters[i][0];
+            for (int j = 1; j < clusters[i].size(); j++)
+            {
+                int cur = clusters[i][j];
+                model->addConstr(x[cur][v] - x[articulation][v] == 0);
+            }
         }
     }
 
@@ -76,17 +80,21 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g, vector<int> stem)
     model->write("debug_scf.lp");
 }
 
-void build_mcf0(GRBModel* model, GRBVar** x, graph* g, vector<int> stem)
+void build_mcf0(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters)
 {
     int n = g->nr_nodes;
 
-    // strengthening by stem inequalities
+    // strengthening by merging
     for (int v = 0; v < n; ++v)
     {
-        for (int i = 0; i < n; ++i)
+        for (int i = 0; i < clusters.size(); ++i)
         {
-            if (stem[i] != -1)
-                model->addConstr(x[i][v] - x[stem[i]][v] == 0);
+            int articulation = clusters[i][0];
+            for (int j = 1; j < clusters[i].size(); j++)
+            {
+                int cur = clusters[i][j];
+                model->addConstr(x[cur][v] - x[articulation][v] == 0);
+            }
         }
     }
 
@@ -142,17 +150,21 @@ void build_mcf0(GRBModel* model, GRBVar** x, graph* g, vector<int> stem)
             f[j][hash_edges[n*i + j]].set(GRB_DoubleAttr_UB, 0.); // in d^+ : edge (nb_j -- j)
 }
 
-void build_mcf1(GRBModel* model, GRBVar** x, graph* g, vector<int> stem)
+void build_mcf1(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters)
 {
     int n = g->nr_nodes;
 
-    // strengthening by stem inequalities
+    // strengthening by merging
     for (int v = 0; v < n; ++v)
     {
-        for (int i = 0; i < n; ++i)
+        for (int i = 0; i < clusters.size(); ++i)
         {
-            if (stem[i] != -1)
-                model->addConstr(x[i][v] - x[stem[i]][v] == 0);
+            int articulation = clusters[i][0];
+            for (int j = 1; j < clusters[i].size(); j++)
+            {
+                int cur = clusters[i][j];
+                model->addConstr(x[cur][v] - x[articulation][v] == 0);
+            }
         }
     }
 
@@ -173,7 +185,7 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g, vector<int> stem)
     for (int v = 0; v < n; ++v)
         f[v] = model->addVars(nr_edges, GRB_CONTINUOUS); // the edge
 
-    // add constraint (16b)
+                                 // add constraint (16b)
     for (int i = 0; i < n; ++i)
     {
         for (int j = 0; j < n; ++j)
@@ -209,17 +221,21 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g, vector<int> stem)
             f[j][hash_edges[n*i + j]].set(GRB_CharAttr_VType, GRB_BINARY);
 }
 
-void build_mcf2(GRBModel* model, GRBVar** x, graph* g, vector<int> stem)
+void build_mcf2(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters)
 {
     int n = g->nr_nodes;
 
-    // strengthening by stem inequalities
+    // strengthening by merging
     for (int v = 0; v < n; ++v)
     {
-        for (int i = 0; i < n; ++i)
+        for (int i = 0; i < clusters.size(); ++i)
         {
-            if (stem[i] != -1)
-                model->addConstr(x[i][v] - x[stem[i]][v] == 0);
+            int articulation = clusters[i][0];
+            for (int j = 1; j < clusters[i].size(); j++)
+            {
+                int cur = clusters[i][j];
+                model->addConstr(x[cur][v] - x[articulation][v] == 0);
+            }
         }
     }
 
