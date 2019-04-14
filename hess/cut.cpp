@@ -105,18 +105,22 @@ void Cut1Callback::callback()
     }
 }
 
-HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g, vector<int> stem)
+HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters)
 {
     // create n^2 variables, and set UB=0
     model->getEnv().set(GRB_IntParam_LazyConstraints, 1);
-    // strengthening by stem inequalities
     int n = g->nr_nodes;
+    // strengthening by merging
     for (int v = 0; v < n; ++v)
     {
-        for (int i = 0; i < n; ++i)
+        for (int i = 0; i < clusters.size(); ++i)
         {
-            if (stem[i] != -1)
-                model->addConstr(x[i][v] - x[stem[i]][v] == 0);
+            int articulation = clusters[i][0];
+            for (int j = 1; j < clusters[i].size(); j++)
+            {
+                int cur = clusters[i][j];
+                model->addConstr(x[cur][v] - x[articulation][v] == 0);
+            }
         }
     }
 
@@ -263,17 +267,21 @@ void Cut2Callback::callback()
     }
 }
 
-HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g, vector<int> stem)
+HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters)
 {
     model->getEnv().set(GRB_IntParam_LazyConstraints, 1); // turns off presolve!!!
     int n = g->nr_nodes;
-    // strengthening by stem inequalities
+    // strengthening by merging
     for (int v = 0; v < n; ++v)
     {
-        for (int i = 0; i < n; ++i)
+        for (int i = 0; i < clusters.size(); ++i)
         {
-            if(stem[i] != -1)
-                model->addConstr(x[i][v] - x[stem[i]][v] == 0);
+            int articulation = clusters[i][0];
+            for (int j = 1; j < clusters[i].size(); j++)
+            {
+                int cur = clusters[i][j];
+                model->addConstr(x[cur][v] - x[articulation][v] == 0);
+            }
         }
     }
     Cut2Callback* cb = new Cut2Callback(x, g);
