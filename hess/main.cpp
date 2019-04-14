@@ -10,7 +10,7 @@
 #include <cstring>
 #include <chrono>
 
-#include "ralg/ralg.h"
+#include "ralg.h"
 
 #ifndef sign
 #define sign(x) (((x)>0)?1:((x)==0)?0:(-1))
@@ -98,7 +98,6 @@ int main(int argc, char *argv[])
     vector<vector<int>> clusters;
     if (arg_model == "scf" || arg_model == "mcf0" || arg_model == "mcf1" || arg_model == "mcf2" || arg_model == "cut1" || arg_model == "cut2")
     {
-        printf("Preprocessing the graph...\n");
         vector<int> new_population;
         new_population = population;
         clusters = preprocess(g, new_population, L, U, population);
@@ -107,8 +106,8 @@ int main(int argc, char *argv[])
     //apply Lagrangian algorithm
     vector<vector<double>> w(g->nr_nodes, vector<double>(g->nr_nodes)); // this is the weight matrix in the objective function
 
-    for (int i = 0; i < g->nr_nodes; i++)
-        for (int j = 0; j < g->nr_nodes; j++)
+    for (int i = 0; i < g->nr_nodes; ++i)
+        for (int j = 0; j < g->nr_nodes; ++j)
             w[i][j] = ((double)dist[i][j] / 1000.) * ((double)dist[i][j] / 1000.) * population[i];
 
     vector<vector<bool>> F_0(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_0
@@ -172,7 +171,7 @@ int main(int argc, char *argv[])
     solveInnerProblem(g, multipliers, F_0, F_1, L, U, k, clusters, population, w, w_hat, W, S);
 
     //FIXME floods the output
-    /*for (int i = 0; i < g->nr_nodes; i++)
+    /*for (int i = 0; i < g->nr_nodes; ++i)
         cout << "vertex " << i << " , " << S[i] << endl;*/
 
     try {
@@ -192,21 +191,18 @@ int main(int argc, char *argv[])
 
         HessCallback* cb = 0;
 
-        if(arg_model != "hess" && arg_model != "ul1" && arg_model != "ul2")
-          strengthen_hess(&model, x, g, clusters);
-
         if (arg_model == "scf")
-            build_scf(&model, x, g);
+            build_scf(&model, x, g, clusters);
         else if (arg_model == "mcf0")
-            build_mcf0(&model, x, g);
+            build_mcf0(&model, x, g, clusters);
         else if (arg_model == "mcf1")
-            build_mcf1(&model, x, g);
+            build_mcf1(&model, x, g, clusters);
         else if (arg_model == "mcf2")
-            build_mcf2(&model, x, g);
+            build_mcf2(&model, x, g, clusters);
         else if (arg_model == "cut1")
-            cb = build_cut1(&model, x, g);
+            cb = build_cut1(&model, x, g, clusters);
         else if (arg_model == "cut2")
-            cb = build_cut2(&model, x, g);
+            cb = build_cut2(&model, x, g, clusters);
         else if (arg_model == "ul1") {
             x = build_UL_1(&model, g, population, k);
             need_solution = false;
