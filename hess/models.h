@@ -10,11 +10,11 @@ using namespace std;
 // build hess model and return x variables
 GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<int> >& dist, const vector<int>& population, int L, int U, int k);
 // add SCF constraints to model with hess variables x
-void build_scf(GRBModel* model, GRBVar** x, graph* g, vector<int> stem);
+void build_scf(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters);
 // add MCF constraints to model with hess variables x
-void build_mcf0(GRBModel* model, GRBVar** x, graph* g, vector<int> stem);
-void build_mcf1(GRBModel* model, GRBVar** x, graph* g, vector<int> stem);
-void build_mcf2(GRBModel* model, GRBVar** x, graph* g, vector<int> stem);
+void build_mcf0(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters);
+void build_mcf1(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters);
+void build_mcf2(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters);
 // add CUT constraints to model with hess variables x (lazy)
 class HessCallback : public GRBCallback
 {
@@ -50,16 +50,20 @@ protected:
 };
 
 // @return callback for delete only
-HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g, vector<int> stem);
-HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g, vector<int> stem);
+HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters);
+HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters);
 
 // add UL1 & UL2 instance and return x variables
 GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, int k);
 GRBVar** build_UL_2(GRBModel* model, graph* g, const vector<int>& population, int k);
 
+//Lagrangian functions
 void solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
     int L, int U, int k, const vector<vector<int>>& clusters, const vector<int>& population,
     const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, vector<bool>& S);
 
+//Preprocess functions
+vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int U, const vector<int>& population);
+vector<int> FindMergableBiconnectedComponent(vector<vector<int>>& preClusters, vector<int>& new_population, const vector<int>& population, vector<int>& AV, vector<bool>& activePreClusters, int L);
 
 #endif
