@@ -10,7 +10,7 @@
 #include <cstring>
 #include <chrono>
 
-#include "ralg/ralg.h"
+#include "ralg.h"
 
 #ifndef sign
 #define sign(x) (((x)>0)?1:((x)==0)?0:(-1))
@@ -96,12 +96,11 @@ int main(int argc, char *argv[])
 
     //apply the merging preprocess and get the clusters
     vector<vector<int>> clusters;
-    vector<int> stem (g->nr_nodes);
     if (arg_model == "scf" || arg_model == "mcf0" || arg_model == "mcf1" || arg_model == "mcf2" || arg_model == "cut1" || arg_model == "cut2")
-    {       
+    {
         vector<int> new_population;
         new_population = population;
-        clusters = preprocess(g, new_population, stem, L, U, population);
+        clusters = preprocess(g, new_population, L, U, population);
     }
 
     //apply Lagrangian algorithm
@@ -115,76 +114,57 @@ int main(int argc, char *argv[])
     vector<vector<bool>> F_1(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_1
 
     double *multipliers = new double[3 * g->nr_nodes];
-    double *alpha = multipliers;
-    double *lambda = multipliers + g->nr_nodes;
-    double *upsilon = multipliers + 2 * g->nr_nodes;
 
-    for (int i = 0; i < g->nr_nodes; i++)
-    {
-        lambda[i] = 0;
-        upsilon[i] = 0;
-    }
 
-    double minAlpha = 0;
-    for (int i = 0; i < g->nr_nodes; i++)
-    {
-        minAlpha = w[0][i];
-        for (int j = 0; j < g->nr_nodes; j++)
-        {
-            if (w[j][i] < minAlpha)
-                minAlpha = w[j][i];
-        }
-        alpha[i] = minAlpha;
-    }
     vector<bool> S(g->nr_nodes, false);
 
     vector<vector<double>> w_hat(g->nr_nodes, vector<double>(g->nr_nodes));
     vector<double> W(g->nr_nodes, 0);
 
     auto cb_grad_func = [g, L, U, k, &population, &w](const double* x_, double& f_val, double* grad) {
-      // map lambda and upsilon
+        // map lambda and upsilon
 
-      // this is a real slowdown
-      vector<double> x(x_, x_+3*g->nr_nodes);
-      for(int i = g->nr_nodes; i < 3*g->nr_nodes; ++i)
-        x[i] = abs(x[i]);
+        // this is a real slowdown
+        vector<double> x(x_, x_ + 3 * g->nr_nodes);
+        for (int i = g->nr_nodes; i < 3 * g->nr_nodes; ++i)
+            x[i] = abs(x[i]);
 
-      // calculate here the gradient and obj value
-      // solveInnerProblem(g, x.data(), ?, ?, L, U, k, ?, population, w, ?, ? ?);
+        // calculate here the gradient and obj value
+        // solveInnerProblem(g, x.data(), ?, ?, L, U, k, ?, population, w, ?, ? ?);
 
-      // revert the grads if needed
-      for(int i = g->nr_nodes; i < 3*g->nr_nodes; ++i)
-        grad[i] = sign(x[i])*grad[i];
+        // revert the grads if needed
+        for (int i = g->nr_nodes; i < 3 * g->nr_nodes; ++i)
+            grad[i] = sign(x[i])*grad[i];
 
-      return false;
-      //return true;
+        return false;
+        //return true;
     };
 
     // run ralg
-    int dim = 3*g->nr_nodes;
+    int dim = 3 * g->nr_nodes;
     double * x0 = new double[dim];
-    for(int i = 0; i < dim; ++i)
-      x0[i] = 1.; // whatever
+    for (int i = 0; i < dim; ++i)
+        x0[i] = 1.; // whatever
     double* res = new double[dim];
     ralg(&defaultOptions, cb_grad_func, dim, x0, res, RALG_MAX);
-    delete [] x0;
-    delete [] res;
+    delete[] x0;
+    delete[] res;
 
     /********* solve a problem for fun with ralg */
     double tx0[2] = { -30, 10 }; double tres[2];
     ralg_options opts = defaultOptions; opts.output_iter = 1;
     ralg(&opts,
-          [](const double* x, double& f, double* grad) -> bool
-          {
-            f = 1000*(x[0]-3)*(x[0]-3) + x[1]*x[1];
-            grad[0] = 1000*2*(x[0]-3);
-            grad[1] = 2*x[1];
-            f = -f; grad[0] = -grad[0]; grad[1] = -grad[1];
-            return true;
-          },
-          2,
-          tx0,
-          tres, RALG_MAX);
+        [](const double* x, double& f, double* grad) -> bool
+    {
+        f = 1000 * (x[0] - 3)*(x[0] - 3) + x[1] * x[1];
+        grad[0] = 1000 * 2 * (x[0] - 3);
+        grad[1] = 2 * x[1];
+        f = -f; grad[0] = -grad[0]; grad[1] = -grad[1];
+        return true;
+    },
+        2,
+        tx0,
+        tres, RALG_MAX);
     printf("for inv 1000(x-3)^2 + y^2 -> max the answer is %.2lf %.2lf\n", tres[0], tres[1]);
 
     //solve inner problem
@@ -212,17 +192,17 @@ int main(int argc, char *argv[])
         HessCallback* cb = 0;
 
         if (arg_model == "scf")
-            build_scf(&model, x, g, stem);
+            build_scf(&model, x, g, clusters);
         else if (arg_model == "mcf0")
-            build_mcf0(&model, x, g, stem);
+            build_mcf0(&model, x, g, clusters);
         else if (arg_model == "mcf1")
-            build_mcf1(&model, x, g, stem);
+            build_mcf1(&model, x, g, clusters);
         else if (arg_model == "mcf2")
-            build_mcf2(&model, x, g, stem);
+            build_mcf2(&model, x, g, clusters);
         else if (arg_model == "cut1")
-            cb = build_cut1(&model, x, g, stem);
+            cb = build_cut1(&model, x, g, clusters);
         else if (arg_model == "cut2")
-            cb = build_cut2(&model, x, g, stem);
+            cb = build_cut2(&model, x, g, clusters);
         else if (arg_model == "ul1") {
             x = build_UL_1(&model, g, population, k);
             need_solution = false;
