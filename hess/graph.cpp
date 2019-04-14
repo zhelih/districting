@@ -166,27 +166,35 @@ bool graph::is_edge(uint i, uint j)
     return false;
 }
 
+// assuming number of edges to clean <<< number of all edges
 void graph::edgeClean(const vector<int>& population, int U)
 {
     int numEdgeClean = 0;
-    //remove unnecessary edges in input graph G
-    for (int i = 0; i < nr_nodes; i++)
-    {
-        bool applyBreak = false;
-        for (int j : nb(i))
-        {
-            if (population[i] + population[j] > U)
+    vector<int> nr_deleted(nr_nodes, 0);
+
+    // O(m)
+    for (int i = 0; i < nr_nodes; ++i)
+        for (int j = 0; j < nb_[i].size(); ++j)
+            if (population[i] + population[nb_[i][j]] > U)
             {
-                remove_edge(i, j);
                 numEdgeClean++;
-                applyBreak = true;
-                break;
+                nb_[i][j] = -1;
+                nr_deleted[i] += 1;
             }
+
+    // now clean -1's from nb_
+    // O(deleted)
+    for (int i = 0; i < nr_nodes; ++i)
+        if (nr_deleted[i])
+        {
+            int count = 0;
+            for (int j = 0; j < nb_[i].size(); ++j)
+                if (nb_[i][j] != -1)
+                    swap(nb_[i][count++], nb_[i][j]);
+            nb_[i].resize(nb_[i].size() - nr_deleted[i]);
         }
-        if (applyBreak == true)
-            i--;
-    }
-    cout << "# of cleaned edges: " << numEdgeClean << endl;
+
+    cout << "# of cleaned edges: " << numEdgeClean / 2 << endl;
 }
 
 void graph::clean(vector<int>& new_population, vector<bool>& deleted, int L, int U, int& numOfEdgeDel, int& numOfNodeMerge)

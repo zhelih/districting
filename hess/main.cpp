@@ -98,6 +98,7 @@ int main(int argc, char *argv[])
     vector<vector<int>> clusters;
     if (arg_model == "scf" || arg_model == "mcf0" || arg_model == "mcf1" || arg_model == "mcf2" || arg_model == "cut1" || arg_model == "cut2")
     {
+        printf("Preprocessing the graph...\n");
         vector<int> new_population;
         new_population = population;
         clusters = preprocess(g, new_population, L, U, population);
