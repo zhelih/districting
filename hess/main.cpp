@@ -192,18 +192,21 @@ int main(int argc, char *argv[])
 
         HessCallback* cb = 0;
 
+        if(arg_model != "hess" && arg_model != "ul1" && arg_model != "ul2")
+          strengthen_hess(&model, x, g, clusters);
+
         if (arg_model == "scf")
-            build_scf(&model, x, g, clusters);
+            build_scf(&model, x, g);
         else if (arg_model == "mcf0")
-            build_mcf0(&model, x, g, clusters);
+            build_mcf0(&model, x, g);
         else if (arg_model == "mcf1")
-            build_mcf1(&model, x, g, clusters);
+            build_mcf1(&model, x, g);
         else if (arg_model == "mcf2")
-            build_mcf2(&model, x, g, clusters);
+            build_mcf2(&model, x, g);
         else if (arg_model == "cut1")
-            cb = build_cut1(&model, x, g, clusters);
+            cb = build_cut1(&model, x, g);
         else if (arg_model == "cut2")
-            cb = build_cut2(&model, x, g, clusters);
+            cb = build_cut2(&model, x, g);
         else if (arg_model == "ul1") {
             x = build_UL_1(&model, g, population, k);
             need_solution = false;
