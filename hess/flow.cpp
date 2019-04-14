@@ -4,10 +4,24 @@
 #include "gurobi_c++.h"
 #include "graph.h"
 
-void build_scf(GRBModel* model, GRBVar** x, graph* g)
+void build_scf(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters)
 {
     // create n^2 variables for arcs, presolve will eliminate unused
     int n = g->nr_nodes;
+
+    // strengthening by merging
+    for (int v = 0; v < n; ++v)
+    {
+        for (int i = 0; i < clusters.size(); ++i)
+        {
+            int articulation = clusters[i][0];
+            for (int j = 1; j < clusters[i].size(); ++j)
+            {
+                int cur = clusters[i][j];
+                model->addConstr(x[cur][v] - x[articulation][v] == 0);
+            }
+        }
+    }
 
     GRBVar** y = new GRBVar*[n];
     for (int i = 0; i < n; ++i)
@@ -66,9 +80,23 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g)
     model->write("debug_scf.lp");
 }
 
-void build_mcf0(GRBModel* model, GRBVar** x, graph* g)
+void build_mcf0(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters)
 {
     int n = g->nr_nodes;
+
+    // strengthening by merging
+    for (int v = 0; v < n; ++v)
+    {
+        for (int i = 0; i < clusters.size(); ++i)
+        {
+            int articulation = clusters[i][0];
+            for (int j = 1; j < clusters[i].size(); ++j)
+            {
+                int cur = clusters[i][j];
+                model->addConstr(x[cur][v] - x[articulation][v] == 0);
+            }
+        }
+    }
 
     // step 1 : hash edge (i,j) to i*n+j = h1
     // step 2 : hash every h1 to a number, resulting in exactly |E| variables
@@ -122,9 +150,23 @@ void build_mcf0(GRBModel* model, GRBVar** x, graph* g)
             f[j][hash_edges[n*i + j]].set(GRB_DoubleAttr_UB, 0.); // in d^+ : edge (nb_j -- j)
 }
 
-void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
+void build_mcf1(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters)
 {
     int n = g->nr_nodes;
+
+    // strengthening by merging
+    for (int v = 0; v < n; ++v)
+    {
+        for (int i = 0; i < clusters.size(); ++i)
+        {
+            int articulation = clusters[i][0];
+            for (int j = 1; j < clusters[i].size(); ++j)
+            {
+                int cur = clusters[i][j];
+                model->addConstr(x[cur][v] - x[articulation][v] == 0);
+            }
+        }
+    }
 
     // step 1 : hash edge (i,j) to i*n+j = h1
     // step 2 : hash every h1 to a number, resulting in exactly |E| variables
@@ -179,11 +221,25 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
             f[j][hash_edges[n*i + j]].set(GRB_CharAttr_VType, GRB_BINARY);
 }
 
-void build_mcf2(GRBModel* model, GRBVar** x, graph* g)
+void build_mcf2(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters)
 {
     int n = g->nr_nodes;
 
-        // hash edges similarly to mcf1
+    // strengthening by merging
+    for (int v = 0; v < n; ++v)
+    {
+        for (int i = 0; i < clusters.size(); ++i)
+        {
+            int articulation = clusters[i][0];
+            for (int j = 1; j < clusters[i].size(); ++j)
+            {
+                int cur = clusters[i][j];
+                model->addConstr(x[cur][v] - x[articulation][v] == 0);
+            }
+        }
+    }
+
+    // hash edges similarly to mcf1
     std::unordered_map<int, int> hash_edges;
     int cur = 0;
     for (int i = 0; i < n; ++i)
@@ -265,21 +321,4 @@ void build_mcf2(GRBModel* model, GRBVar** x, graph* g)
                     expr += f[b][hash_edges[i*n + j]][a_i]; // i -- j
                 model->addConstr(expr <= x[j][b]);
             }
-}
-
-void strengthen_hess(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters)
-{
-    // strengthening by merging
-    for (int v = 0; v < g->nr_nodes; ++v)
-    {
-        for (int i = 0; i < clusters.size(); ++i)
-        {
-            int articulation = clusters[i][0];
-            for (int j = 1; j < clusters[i].size(); ++j)
-            {
-                int cur = clusters[i][j];
-                model->addConstr(x[cur][v] - x[articulation][v] == 0);
-            }
-        }
-    }
 }
