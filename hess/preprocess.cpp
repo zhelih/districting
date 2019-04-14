@@ -19,7 +19,7 @@ vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int
     g->edgeClean(population, U);
 
     //initialization of stem (step 2)
-    for (int i = 0; i < g->nr_nodes; i++)
+    for (int i = 0; i < g->nr_nodes; ++i)
         stem[i] = i;
 
     //duplicate the input graph g (step 3)
@@ -48,7 +48,7 @@ vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int
         int s;
         int curNode;
         int sum = 0;
-        for (int i = 0; i < biconnectedComponents[cur].size(); i++)
+        for (int i = 0; i < biconnectedComponents[cur].size(); ++i)
         {
             curNode = biconnectedComponents[cur][i];
             if (AV[curNode] > 1)
@@ -64,12 +64,12 @@ vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int
 
         //update the vector stem (steps 8 and 9)
         int counter = 0;
-        for (int i = 0; i < biconnectedComponents[cur].size(); i++)
+        for (int i = 0; i < biconnectedComponents[cur].size(); ++i)
         {
 
             if (biconnectedComponents[cur][i] == s)
                 continue;
-            counter++;
+            ++counter;
             stem[biconnectedComponents[cur][i]] = s;
         }
 
@@ -85,16 +85,16 @@ vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int
 
         biconnectedComponents = FindBiconnectedComponents(g1, AV, deletedNodes);
 
-        for (int i = 0; i < biconnectedComponents.size(); i++)
+        for (int i = 0; i < biconnectedComponents.size(); ++i)
             activeBiconnectedComponents[i] = true;
 
-        for (int i = 0; i < biconnectedComponents.size(); i++)
+        for (int i = 0; i < biconnectedComponents.size(); ++i)
         {
             int counter = 0;
-            for (int j = 0; j < biconnectedComponents[i].size(); j++)
+            for (int j = 0; j < biconnectedComponents[i].size(); ++j)
             {
                 if (deletedNodes[biconnectedComponents[i][j]])
-                    counter++;
+                    ++counter;
             }
             if (counter == biconnectedComponents[i].size() - 1)
                 activeBiconnectedComponents[i] = false;
@@ -106,12 +106,12 @@ vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int
     //translate stem to set family \mathcal{C} 
     graph* g2 = new graph(g->nr_nodes);
 
-    for (int i = 0; i < g2->nr_nodes; i++)
+    for (int i = 0; i < g2->nr_nodes; ++i)
         if (stem[i] != i)
             g2->add_edge(stem[i], i);
 
     vector<bool> R(g2->nr_nodes, false);
-    for (int i = 0; i < g2->nr_nodes; i++)
+    for (int i = 0; i < g2->nr_nodes; ++i)
     {
         if (stem[i] != i || R[i]) continue;
         //do a DFS to find nodes that are reachable from i
@@ -136,7 +136,7 @@ vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int
         clusters.push_back(oneCluster);
     }
     //cerr << "Size of cluster: " << clusters.size() << endl;
-
+/*
     for (int i = 0; i < g2->nr_nodes; i++)
     {
         cerr << "stem of " << i << " is " << stem[i] << endl;
@@ -151,7 +151,7 @@ vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int
         {
             cerr << clusters[i][j] << endl;
         }
-    }
+    }*/
     //cleaning steps 15 and 16
     g1->clean(new_population, deletedNodes, L, U, numOfEdgeDel, numOfNodeMerge);
 
@@ -161,17 +161,17 @@ vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int
 vector<int> FindMergableBiconnectedComponent(vector<vector<int>>& biconnectedComponents, vector<int>& new_population, const vector<int>& population, vector<int>& AV, vector<bool>& activeBiconnectedComponents, int L)
 {
     vector<int> S;
-    for (int i = 0; i < biconnectedComponents.size(); i++)
+    for (int i = 0; i < biconnectedComponents.size(); ++i)
     {
         if (!activeBiconnectedComponents[i]) continue;
         int noneOneCounter = 0;
         int noneOne;
         int sum = 0;
-        for (int j = 0; j < biconnectedComponents[i].size(); j++)
+        for (int j = 0; j < biconnectedComponents[i].size(); ++j)
         {
             if (AV[biconnectedComponents[i][j]] != 1)
             {
-                noneOneCounter++;
+                ++noneOneCounter;
                 noneOne = biconnectedComponents[i][j];
             }
             sum += new_population[biconnectedComponents[i][j]];

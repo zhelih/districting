@@ -40,7 +40,7 @@ void Cut1Callback::callback()
     {
         if (where == GRB_CB_MIPSOL) // Found an integer ``solution'' that satisfies all cut constraints so far.
         {
-            numCallbacks++;
+            ++numCallbacks;
             auto start = chrono::steady_clock::now();
 
             populate_x(); // from HessCallback 
@@ -51,7 +51,7 @@ void Cut1Callback::callback()
                 int root;
                 vector<bool> R(n, false);
                 R[i] = true;
-                for (int j = 0; j < n; j++)
+                for (int j = 0; j < n; ++j)
                 {
                     if (x[i][j] > 0.5)
                         root = j;
@@ -73,7 +73,7 @@ void Cut1Callback::callback()
                 }
                 if (R[root]) continue;
                 GRBLinExpr expr = 0;
-                for (int j = 0; j < n; j++)
+                for (int j = 0; j < n; ++j)
                 {
                     if (R[j])
                     {
@@ -87,7 +87,7 @@ void Cut1Callback::callback()
                 }
                 //Adding Lazycuts
                 addLazy(expr >= 1);
-                numLazyCuts++;
+                ++numLazyCuts;
             }
 
             chrono::duration<double> d = chrono::steady_clock::now() - start;
@@ -116,7 +116,7 @@ HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g, vector<vector<in
         for (int i = 0; i < clusters.size(); ++i)
         {
             int articulation = clusters[i][0];
-            for (int j = 1; j < clusters[i].size(); j++)
+            for (int j = 1; j < clusters[i].size(); ++j)
             {
                 int cur = clusters[i][j];
                 model->addConstr(x[cur][v] - x[articulation][v] == 0);
@@ -186,7 +186,7 @@ void Cut2Callback::callback()
     {
         if (where == GRB_CB_MIPSOL)
         {
-            numCallbacks++;
+            ++numCallbacks;
             auto start = chrono::steady_clock::now();
 
             populate_x(); // from HessCallback
@@ -246,7 +246,7 @@ void Cut2Callback::callback()
                             }
                             expr -= grb_x[j][i]; // RHS
                             addLazy(expr >= 0);
-                            numLazyCuts++;
+                            ++numLazyCuts;
                             done = true;
                             break;
                         }
@@ -277,7 +277,7 @@ HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g, vector<vector<in
         for (int i = 0; i < clusters.size(); ++i)
         {
             int articulation = clusters[i][0];
-            for (int j = 1; j < clusters[i].size(); j++)
+            for (int j = 1; j < clusters[i].size(); ++j)
             {
                 int cur = clusters[i][j];
                 model->addConstr(x[cur][v] - x[articulation][v] == 0);

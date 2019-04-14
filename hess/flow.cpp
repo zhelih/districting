@@ -15,7 +15,7 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clust
         for (int i = 0; i < clusters.size(); ++i)
         {
             int articulation = clusters[i][0];
-            for (int j = 1; j < clusters[i].size(); j++)
+            for (int j = 1; j < clusters[i].size(); ++j)
             {
                 int cur = clusters[i][j];
                 model->addConstr(x[cur][v] - x[articulation][v] == 0);
@@ -90,7 +90,7 @@ void build_mcf0(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clus
         for (int i = 0; i < clusters.size(); ++i)
         {
             int articulation = clusters[i][0];
-            for (int j = 1; j < clusters[i].size(); j++)
+            for (int j = 1; j < clusters[i].size(); ++j)
             {
                 int cur = clusters[i][j];
                 model->addConstr(x[cur][v] - x[articulation][v] == 0);
@@ -160,7 +160,7 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clus
         for (int i = 0; i < clusters.size(); ++i)
         {
             int articulation = clusters[i][0];
-            for (int j = 1; j < clusters[i].size(); j++)
+            for (int j = 1; j < clusters[i].size(); ++j)
             {
                 int cur = clusters[i][j];
                 model->addConstr(x[cur][v] - x[articulation][v] == 0);
@@ -231,7 +231,7 @@ void build_mcf2(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clus
         for (int i = 0; i < clusters.size(); ++i)
         {
             int articulation = clusters[i][0];
-            for (int j = 1; j < clusters[i].size(); j++)
+            for (int j = 1; j < clusters[i].size(); ++j)
             {
                 int cur = clusters[i][j];
                 model->addConstr(x[cur][v] - x[articulation][v] == 0);

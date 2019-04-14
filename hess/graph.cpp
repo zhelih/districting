@@ -110,7 +110,7 @@ void graph::remove_edge(uint i, uint j)
     {
         if (v == j)
             break;
-        it++;
+        ++it;
     }
     nb(i).erase(nb(i).begin() + it);
 
@@ -119,7 +119,7 @@ void graph::remove_edge(uint i, uint j)
     {
         if (v == i)
             break;
-        it++;
+        ++it;
     }
     nb(j).erase(nb(j).begin() + it);
 }
@@ -177,7 +177,7 @@ void graph::edgeClean(const vector<int>& population, int U)
         for (int j = 0; j < nb_[i].size(); ++j)
             if (population[i] + population[nb_[i][j]] > U)
             {
-                numEdgeClean++;
+                ++numEdgeClean;
                 nb_[i][j] = -1;
                 nr_deleted[i] += 1;
             }
@@ -200,7 +200,7 @@ void graph::edgeClean(const vector<int>& population, int U)
 void graph::clean(vector<int>& new_population, vector<bool>& deleted, int L, int U, int& numOfEdgeDel, int& numOfNodeMerge)
 {
     //check overt feasibility
-    for (int v = 0; v < nr_nodes; v++)
+    for (int v = 0; v < nr_nodes; ++v)
     {
         if (new_population[v] > U)
         {
@@ -230,7 +230,7 @@ void graph::clean(vector<int>& new_population, vector<bool>& deleted, int L, int
     //find underpopulated connected components in the auxiliary graph
     vector<bool> visited(nr_nodes, false);
     int it = 0;
-    for (int i = 0; i < nr_nodes; i++)
+    for (int i = 0; i < nr_nodes; ++i)
     {
         if (deleted[i] == true)
             continue;
@@ -265,7 +265,7 @@ void graph::clean(vector<int>& new_population, vector<bool>& deleted, int L, int
 vector<int> graph::findUnderPopulatedLeaves(vector<int> new_population, vector<bool> deleted, int L)
 {
     vector<int> leaves;
-    for (int i = 0; i < nr_nodes; i++)
+    for (int i = 0; i < nr_nodes; ++i)
     {
         if (deleted[i] == true)
             continue;
@@ -274,7 +274,7 @@ vector<int> graph::findUnderPopulatedLeaves(vector<int> new_population, vector<b
         {
             if (deleted[j] == true)
                 continue;
-            numNeigh++;
+            ++numNeigh;
         }
         if (numNeigh == 1 && new_population[i] < L)
         {
@@ -304,13 +304,13 @@ vector< vector<int> > FindBiconnectedComponents(graph* g, vector<int> &AV, vecto
     Bico_Sub(v, u, i, g, number, lowopt, le, re, BC, deletedNodes);
 
     vector<int> countComp(g->nr_nodes, 0);
-    for (int p = 0; p < BC.size(); p++) // count how many components each vertex belongs to
-        for (int q = 0; q < BC[p].size(); q++)
-            countComp[BC[p][q]]++;
+    for (int p = 0; p < BC.size(); ++p) // count how many components each vertex belongs to
+        for (int q = 0; q < BC[p].size(); ++q)
+            ++countComp[BC[p][q]];
 
     vector<int> AV_temp(g->nr_nodes);
     AV = AV_temp;
-    for (int p = 0; p < g->nr_nodes; p++) // if a vertex belongs to >1 component, then it is a cut vertex
+    for (int p = 0; p < g->nr_nodes; ++p) // if a vertex belongs to >1 component, then it is a cut vertex
         AV[p] = countComp[p];
 
     return BC;
@@ -318,7 +318,7 @@ vector< vector<int> > FindBiconnectedComponents(graph* g, vector<int> &AV, vecto
 
 void Bico_Sub(int v, int u, int &i, graph* g, vector<int> &number, vector<int> &lowopt, stack<int> &le, stack<int> &re, vector< vector<int>> &BC, vector<bool> &deletedNodes)
 {
-    i++;
+    ++i;
     number[v] = i;
     lowopt[v] = number[v];
     int w;
@@ -353,7 +353,7 @@ void Bico_Sub(int v, int u, int &i, graph* g, vector<int> &number, vector<int> &
                 {
                     cout << "ERROR: edge (v,w) not on top of stack" << endl;
                 }
-                for (int p = 0; p < g->nr_nodes; p++)
+                for (int p = 0; p < g->nr_nodes; ++p)
                     if (bBC[p])
                         temp_BC.push_back(p);
                 BC.push_back(temp_BC);
@@ -406,7 +406,7 @@ void graph::connect(const vector<vector<int>>& dist)
                     }
                 }
             }
-            nr_comp++;
+            ++nr_comp;
         }
     }
 
