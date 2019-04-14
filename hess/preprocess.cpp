@@ -1,4 +1,4 @@
-// source file for preprocess algorithm
+// source file for lagrangian relaxation model
 #include <cstdio>
 #include <vector>
 #include <algorithm>
@@ -69,7 +69,7 @@ vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int
 
             if (biconnectedComponents[cur][i] == s)
                 continue;
-            counter++;
+            ++counter;
             stem[biconnectedComponents[cur][i]] = s;
         }
 
@@ -94,7 +94,7 @@ vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int
             for (int j = 0; j < biconnectedComponents[i].size(); ++j)
             {
                 if (deletedNodes[biconnectedComponents[i][j]])
-                    counter++;
+                    ++counter;
             }
             if (counter == biconnectedComponents[i].size() - 1)
                 activeBiconnectedComponents[i] = false;
@@ -136,22 +136,22 @@ vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int
         clusters.push_back(oneCluster);
     }
     //cerr << "Size of cluster: " << clusters.size() << endl;
-
-    for (int i = 0; i < g2->nr_nodes; ++i)
+/*
+    for (int i = 0; i < g2->nr_nodes; i++)
     {
         cerr << "stem of " << i << " is " << stem[i] << endl;
     }
 
     cerr << "Size of Cluster: " << clusters.size() << endl;;
 
-    for (int i = 0; i < clusters.size(); ++i)
+    for (int i = 0; i < clusters.size(); i++)
     {
         cerr << "This is cluster: " << i << endl;
-        for (int j = 0; j < clusters[i].size(); ++j)
+        for (int j = 0; j < clusters[i].size(); j++)
         {
             cerr << clusters[i][j] << endl;
         }
-    }
+    }*/
     //cleaning steps 15 and 16
     g1->clean(new_population, deletedNodes, L, U, numOfEdgeDel, numOfNodeMerge);
 
@@ -171,7 +171,7 @@ vector<int> FindMergableBiconnectedComponent(vector<vector<int>>& biconnectedCom
         {
             if (AV[biconnectedComponents[i][j]] != 1)
             {
-                noneOneCounter++;
+                ++noneOneCounter;
                 noneOne = biconnectedComponents[i][j];
             }
             sum += new_population[biconnectedComponents[i][j]];

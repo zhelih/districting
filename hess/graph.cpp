@@ -110,7 +110,7 @@ void graph::remove_edge(uint i, uint j)
     {
         if (v == j)
             break;
-        it++;
+        ++it;
     }
     nb(i).erase(nb(i).begin() + it);
 
@@ -119,7 +119,7 @@ void graph::remove_edge(uint i, uint j)
     {
         if (v == i)
             break;
-        it++;
+        ++it;
     }
     nb(j).erase(nb(j).begin() + it);
 }
@@ -166,27 +166,35 @@ bool graph::is_edge(uint i, uint j)
     return false;
 }
 
+// assuming number of edges to clean <<< number of all edges
 void graph::edgeClean(const vector<int>& population, int U)
 {
     int numEdgeClean = 0;
-    //remove unnecessary edges in input graph G
+    vector<int> nr_deleted(nr_nodes, 0);
+
+    // O(m)
     for (int i = 0; i < nr_nodes; ++i)
-    {
-        bool applyBreak = false;
-        for (int j : nb(i))
-        {
-            if (population[i] + population[j] > U)
+        for (int j = 0; j < nb_[i].size(); ++j)
+            if (population[i] + population[nb_[i][j]] > U)
             {
-                remove_edge(i, j);
-                numEdgeClean++;
-                applyBreak = true;
-                break;
+                ++numEdgeClean;
+                nb_[i][j] = -1;
+                nr_deleted[i] += 1;
             }
+
+    // now clean -1's from nb_
+    // O(deleted)
+    for (int i = 0; i < nr_nodes; ++i)
+        if (nr_deleted[i])
+        {
+            int count = 0;
+            for (int j = 0; j < nb_[i].size(); ++j)
+                if (nb_[i][j] != -1)
+                    swap(nb_[i][count++], nb_[i][j]);
+            nb_[i].resize(nb_[i].size() - nr_deleted[i]);
         }
-        if (applyBreak == true)
-            i--;
-    }
-    cout << "# of cleaned edges: " << numEdgeClean << endl;
+
+    cout << "# of cleaned edges: " << numEdgeClean / 2 << endl;
 }
 
 void graph::clean(vector<int>& new_population, vector<bool>& deleted, int L, int U, int& numOfEdgeDel, int& numOfNodeMerge)
@@ -202,7 +210,7 @@ void graph::clean(vector<int>& new_population, vector<bool>& deleted, int L, int
     }
 
     ////remove unnecessary edges in the auxiliary graph
-    //for (int i = 0; i < nr_nodes; ++i)
+    //for (int i = 0; i < nr_nodes; i++)
     //{
     //    bool applyBreak = false;
     //    for (int j : nb(i))
@@ -266,7 +274,7 @@ vector<int> graph::findUnderPopulatedLeaves(vector<int> new_population, vector<b
         {
             if (deleted[j] == true)
                 continue;
-            numNeigh++;
+            ++numNeigh;
         }
         if (numNeigh == 1 && new_population[i] < L)
         {
@@ -298,7 +306,7 @@ vector< vector<int> > FindBiconnectedComponents(graph* g, vector<int> &AV, vecto
     vector<int> countComp(g->nr_nodes, 0);
     for (int p = 0; p < BC.size(); ++p) // count how many components each vertex belongs to
         for (int q = 0; q < BC[p].size(); ++q)
-            countComp[BC[p][q]]++;
+            ++countComp[BC[p][q]];
 
     vector<int> AV_temp(g->nr_nodes);
     AV = AV_temp;
@@ -310,7 +318,7 @@ vector< vector<int> > FindBiconnectedComponents(graph* g, vector<int> &AV, vecto
 
 void Bico_Sub(int v, int u, int &i, graph* g, vector<int> &number, vector<int> &lowopt, stack<int> &le, stack<int> &re, vector< vector<int>> &BC, vector<bool> &deletedNodes)
 {
-    i++;
+    ++i;
     number[v] = i;
     lowopt[v] = number[v];
     int w;
@@ -398,11 +406,11 @@ void graph::connect(const vector<vector<int>>& dist)
                     }
                 }
             }
-            nr_comp++;
+            ++nr_comp;
         }
     }
 
-    //for (int i = 0; i < nr_nodes; ++i)
+    //for (int i = 0; i < nr_nodes; i++)
     //    cerr <<"vertex " <<i<<" : " << comp[i] << endl;
 
     fprintf(stderr, "nr_comp = %d\n", nr_comp);
