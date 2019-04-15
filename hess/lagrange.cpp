@@ -16,12 +16,21 @@ using namespace std;
 #define max(a,b) (((a)>(b))?(a):(b))
 #endif
 
-void solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1, 
+void solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
     int L, int U, int k, const vector<vector<int>>& clusters, const vector<int>& population,
-    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, vector<bool>& S)
+    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, vector <vector<bool>>& S)
 {
-    for(int i = 0; i < g->nr_nodes; ++i)
-      S[i] = false;
+    for (int i = 0; i < g->nr_nodes; ++i)
+    {
+        for (int j = 0; j < g->nr_nodes; ++j)
+        {
+            if(F_1[i][j])
+                S[i][j] = true;
+            else
+                S[i][j] = false;
+        }
+    }
+
 
     double *alpha = multipliers;
     double *lambda = multipliers + g->nr_nodes;
@@ -81,17 +90,51 @@ void solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0,
 
     for (int i = 0; i < g->nr_nodes; i++)
     {
-      if (F_1[i][i])
-        fixed++;
+        if (F_1[i][i])
+            fixed++;
     }
 
     //solve the reduced Lagrangian
-    vector<int> W_indices(W.size()); 
-    for (size_t i = 0; i < W.size(); ++i) 
+    vector<int> W_indices(W.size());
+    for (size_t i = 0; i < W.size(); ++i)
         W_indices[i] = i;
     sort(W_indices.begin(), W_indices.end(), [&](int i1, int i2) { return W[i1] < W[i2]; });
 
     for (int i = 0; i < k - fixed; i++)
-        S[W_indices[i]] = true;
+        S[W_indices[i]][W_indices[i]] = true;
 
+    //find clusters with non-negative w_hat_{Cj}
+    vector<bool> nonpositiveCluster(clusters.size(), false);
+
+    for (int j = 0; j < g->nr_nodes; ++j)
+    {
+        if (!S[j][j]) continue;
+        for (int c = 0; c < clusters.size(); ++c)
+        {
+            double sum = 0;
+            for (int b = 0; b < clusters[c].size(); ++b)
+            {
+                int i = clusters[c][b];
+                sum += w_hat[i][j];
+            }
+            if (sum <= 0)
+                nonpositiveCluster[c] = true;
+        }
+    }
+
+    // fix S[i][j] for all i \in C (i != j) if w_hat_{Cj} is nonnegative
+    for (int j = 0; j < g->nr_nodes; ++j)
+    {
+        if (!S[j][j]) continue;
+        for (int c = 0; c < clusters.size(); ++c)
+        {
+            if (!nonpositiveCluster[c]) continue;
+            for (int b = 0; b < clusters[c].size(); ++b)
+            {
+                int i = clusters[c][b];
+                if (i == j || F_1[i][j]) continue;
+                S[i][j] = true;
+            }
+        }
+    }
 }
