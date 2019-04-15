@@ -10,7 +10,7 @@
 #include <cstring>
 #include <chrono>
 
-#include "ralg/ralg.h"
+#include "ralg.h"
 
 #ifndef sign
 #define sign(x) (((x)>0)?1:((x)==0)?0:(-1))
@@ -117,7 +117,9 @@ int main(int argc, char *argv[])
     double *multipliers = new double[3 * g->nr_nodes];
 
 
-    vector<bool> S(g->nr_nodes, false);
+    vector <vector<bool>> S(g->nr_nodes, vector<bool>(g->nr_nodes));
+
+
 
     vector<vector<double>> w_hat(g->nr_nodes, vector<double>(g->nr_nodes));
     vector<double> W(g->nr_nodes, 0);
@@ -192,8 +194,8 @@ int main(int argc, char *argv[])
 
         HessCallback* cb = 0;
 
-        if(arg_model != "hess" && arg_model != "ul1" && arg_model != "ul2")
-          strengthen_hess(&model, x, g, clusters);
+        if (arg_model != "hess" && arg_model != "ul1" && arg_model != "ul2")
+            strengthen_hess(&model, x, g, clusters);
 
         if (arg_model == "scf")
             build_scf(&model, x, g);
