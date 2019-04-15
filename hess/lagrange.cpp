@@ -116,11 +116,10 @@ void solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0,
                 i = clusters[c][b];
                 sum += w_hat[i][j];
             }
-            if (sum > 0) continue;
+            if (sum > 0 || F_0[clusters[c][0]][j]) continue;
             for (int b = 0; b < clusters[c].size(); ++b)
             {
                 i = clusters[c][b];
-                if (i == j || F_1[i][j]) continue;
                 S[i][j] = true;
             }
         }
