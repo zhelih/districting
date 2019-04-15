@@ -20,18 +20,6 @@ void solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0,
     int L, int U, int k, const vector<vector<int>>& clusters, const vector<int>& population,
     const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, vector <vector<bool>>& S)
 {
-    for (int i = 0; i < g->nr_nodes; ++i)
-    {
-        for (int j = 0; j < g->nr_nodes; ++j)
-        {
-            if(F_1[i][j])
-                S[i][j] = true;
-            else
-                S[i][j] = false;
-        }
-    }
-
-
     double *alpha = multipliers;
     double *lambda = multipliers + g->nr_nodes;
     double *upsilon = multipliers + 2 * g->nr_nodes;
@@ -99,6 +87,17 @@ void solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0,
     for (size_t i = 0; i < W.size(); ++i)
         W_indices[i] = i;
     sort(W_indices.begin(), W_indices.end(), [&](int i1, int i2) { return W[i1] < W[i2]; });
+
+    for (int i = 0; i < g->nr_nodes; ++i)
+    {
+        for (int j = 0; j < g->nr_nodes; ++j)
+        {
+            if (F_1[i][j])
+                S[i][j] = true;
+            else
+                S[i][j] = false;
+        }
+    }
 
     for (int i = 0; i < k - fixed; i++)
         S[W_indices[i]][W_indices[i]] = true;
