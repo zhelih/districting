@@ -103,35 +103,23 @@ void solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0,
     for (int i = 0; i < k - fixed; i++)
         S[W_indices[i]][W_indices[i]] = true;
 
-    //find clusters with non-negative w_hat_{Cj}
-    vector<bool> nonpositiveCluster(clusters.size(), false);
-
-    for (int j = 0; j < g->nr_nodes; ++j)
-    {
-        if (!S[j][j]) continue;
-        for (int c = 0; c < clusters.size(); ++c)
-        {
-            double sum = 0;
-            for (int b = 0; b < clusters[c].size(); ++b)
-            {
-                int i = clusters[c][b];
-                sum += w_hat[i][j];
-            }
-            if (sum <= 0)
-                nonpositiveCluster[c] = true;
-        }
-    }
-
     // fix S[i][j] for all i \in C (i != j) if w_hat_{Cj} is nonnegative
     for (int j = 0; j < g->nr_nodes; ++j)
     {
         if (!S[j][j]) continue;
         for (int c = 0; c < clusters.size(); ++c)
         {
-            if (!nonpositiveCluster[c]) continue;
+            double sum = 0;
+            int i;
             for (int b = 0; b < clusters[c].size(); ++b)
             {
-                int i = clusters[c][b];
+                i = clusters[c][b];
+                sum += w_hat[i][j];
+            }
+            if (sum > 0) continue;
+            for (int b = 0; b < clusters[c].size(); ++b)
+            {
+                i = clusters[c][b];
                 if (i == j || F_1[i][j]) continue;
                 S[i][j] = true;
             }
