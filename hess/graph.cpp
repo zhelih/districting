@@ -110,7 +110,7 @@ void graph::remove_edge(uint i, uint j)
     {
         if (v == j)
             break;
-        ++it;
+        it++;
     }
     nb(i).erase(nb(i).begin() + it);
 
@@ -119,7 +119,7 @@ void graph::remove_edge(uint i, uint j)
     {
         if (v == i)
             break;
-        ++it;
+        it++;
     }
     nb(j).erase(nb(j).begin() + it);
 }
@@ -166,35 +166,27 @@ bool graph::is_edge(uint i, uint j)
     return false;
 }
 
-// assuming number of edges to clean <<< number of all edges
 void graph::edgeClean(const vector<int>& population, int U)
 {
     int numEdgeClean = 0;
-    vector<int> nr_deleted(nr_nodes, 0);
-
-    // O(m)
+    //remove unnecessary edges in input graph G
     for (int i = 0; i < nr_nodes; ++i)
-        for (int j = 0; j < nb_[i].size(); ++j)
-            if (population[i] + population[nb_[i][j]] > U)
-            {
-                ++numEdgeClean;
-                nb_[i][j] = -1;
-                nr_deleted[i] += 1;
-            }
-
-    // now clean -1's from nb_
-    // O(deleted)
-    for (int i = 0; i < nr_nodes; ++i)
-        if (nr_deleted[i])
+    {
+        bool applyBreak = false;
+        for (int j : nb(i))
         {
-            int count = 0;
-            for (int j = 0; j < nb_[i].size(); ++j)
-                if (nb_[i][j] != -1)
-                    swap(nb_[i][count++], nb_[i][j]);
-            nb_[i].resize(nb_[i].size() - nr_deleted[i]);
+            if (population[i] + population[j] > U)
+            {
+                remove_edge(i, j);
+                numEdgeClean++;
+                applyBreak = true;
+                break;
+            }
         }
-
-    cout << "# of cleaned edges: " << numEdgeClean / 2 << endl;
+        if (applyBreak == true)
+            i--;
+    }
+    cout << "# of cleaned edges: " << numEdgeClean << endl;
 }
 
 void graph::clean(vector<int>& new_population, vector<bool>& deleted, int L, int U, int& numOfEdgeDel, int& numOfNodeMerge)
@@ -210,7 +202,7 @@ void graph::clean(vector<int>& new_population, vector<bool>& deleted, int L, int
     }
 
     ////remove unnecessary edges in the auxiliary graph
-    //for (int i = 0; i < nr_nodes; i++)
+    //for (int i = 0; i < nr_nodes; ++i)
     //{
     //    bool applyBreak = false;
     //    for (int j : nb(i))
@@ -262,63 +254,48 @@ void graph::clean(vector<int>& new_population, vector<bool>& deleted, int L, int
     }
 }
 
-vector<int> graph::findUnderPopulatedLeaves(vector<int> new_population, vector<bool> deleted, int L)
-{
-    vector<int> leaves;
-    for (int i = 0; i < nr_nodes; ++i)
-    {
-        if (deleted[i] == true)
-            continue;
-        int numNeigh = 0;
-        for (int j : nb(i))
-        {
-            if (deleted[j] == true)
-                continue;
-            ++numNeigh;
-        }
-        if (numNeigh == 1 && new_population[i] < L)
-        {
-            leaves.push_back(i);
-        }
-    }
-    return leaves;
-}
-
-
-
-
-
 vector< vector<int> > FindBiconnectedComponents(graph* g, vector<int> &AV, vector<bool> &deletedNodes)
 {
     /* I tried to use the naming conventions presented in Tarjan's 1972 paper.
     I assume that the graph is connected, so that only one call to the recursion is necessary. */
 
     // declare vars
-    int u = -1, v = 0, i = 0;
-    vector<int> number(g->nr_nodes, (int)-1);
-    vector<int> lowopt(g->nr_nodes, g->nr_nodes);
+ 
     vector< vector<int> > BC;		// biconnected components
     stack<int> le, re;				// used to store a stack of edges. le is "left edge" and re is "right edge". An edge is stored (le[i],re[i]). 
 
-                                    // perform DFS-based algorithm
-    Bico_Sub(v, u, i, g, number, lowopt, le, re, BC, deletedNodes);
+    //find connected components
+    vector<vector<int>> connectedComponents = FindConnectedComponents(g, deletedNodes);
 
-    vector<int> countComp(g->nr_nodes, 0);
-    for (int p = 0; p < BC.size(); ++p) // count how many components each vertex belongs to
-        for (int q = 0; q < BC[p].size(); ++q)
-            ++countComp[BC[p][q]];
+    //cerr << "# of connected components: " << connectedComponents.size() << endl;
 
-    vector<int> AV_temp(g->nr_nodes);
-    AV = AV_temp;
-    for (int p = 0; p < g->nr_nodes; ++p) // if a vertex belongs to >1 component, then it is a cut vertex
-        AV[p] = countComp[p];
+    //for each connected component, find biconnected components
+    for (int c = 0; c < connectedComponents.size(); ++c)
+    {
+        int v = connectedComponents[c][0];
+        int u = -1, i = 0;
+        vector<int> number(g->nr_nodes, (int)-1);
+        vector<int> lowopt(g->nr_nodes, g->nr_nodes);
 
+        // perform DFS-based algorithm
+        Bico_Sub(v, u, i, g, number, lowopt, le, re, BC, deletedNodes);
+
+        vector<int> countComp(g->nr_nodes, 0);
+        for (int p = 0; p < BC.size(); ++p) // count how many components each vertex belongs to
+            for (int q = 0; q < BC[p].size(); ++q)
+                countComp[BC[p][q]]++;
+
+        vector<int> AV_temp(g->nr_nodes);
+        AV = AV_temp;
+        for (int p = 0; p < g->nr_nodes; ++p) // if a vertex belongs to >1 component, then it is a cut vertex
+            AV[p] = countComp[p];
+    }
     return BC;
 }
 
 void Bico_Sub(int v, int u, int &i, graph* g, vector<int> &number, vector<int> &lowopt, stack<int> &le, stack<int> &re, vector< vector<int>> &BC, vector<bool> &deletedNodes)
 {
-    ++i;
+    i++;
     number[v] = i;
     lowopt[v] = number[v];
     int w;
@@ -406,11 +383,11 @@ void graph::connect(const vector<vector<int>>& dist)
                     }
                 }
             }
-            ++nr_comp;
+            nr_comp++;
         }
     }
 
-    //for (int i = 0; i < nr_nodes; i++)
+    //for (int i = 0; i < nr_nodes; ++i)
     //    cerr <<"vertex " <<i<<" : " << comp[i] << endl;
 
     fprintf(stderr, "nr_comp = %d\n", nr_comp);
@@ -476,4 +453,35 @@ void graph::connect(const vector<vector<int>>& dist)
         for (t_edge* e : edges)
             delete e;
     }
+}
+
+vector<vector<int>> FindConnectedComponents(graph* g, vector<bool> &deletedNodes)
+{
+    vector<vector<int>> connectedComponents;
+    vector<bool> reached(g->nr_nodes, false);
+    for (int i = 0; i < g->nr_nodes; ++i)
+    {
+        if (reached[i] || deletedNodes[i]) continue;
+        //do a DFS to find nodes that are reachable from i
+        reached[i] = true;
+        vector<int> children;
+        vector<int> oneComponent;
+        oneComponent.push_back(i);
+        children.push_back(i);
+        while (!children.empty())
+        { //do DFS
+            int cur = children.back(); children.pop_back();
+            for (int nb_cur : g->nb(cur))
+            {
+                if (!reached[nb_cur] && !deletedNodes[nb_cur])
+                {
+                    reached[nb_cur] = true;
+                    children.push_back(nb_cur);
+                    oneComponent.push_back(nb_cur);
+                }
+            }
+        }
+        connectedComponents.push_back(oneComponent);
+    }
+    return connectedComponents;
 }
