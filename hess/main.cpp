@@ -10,7 +10,7 @@
 #include <cstring>
 #include <chrono>
 
-#include "ralg.h"
+#include "ralg/ralg.h"
 
 #ifndef sign
 #define sign(x) (((x)>0)?1:((x)==0)?0:(-1))
@@ -124,23 +124,57 @@ int main(int argc, char *argv[])
     vector<vector<double>> w_hat(g->nr_nodes, vector<double>(g->nr_nodes));
     vector<double> W(g->nr_nodes, 0);
 
-    auto cb_grad_func = [g, L, U, k, &population, &w](const double* x_, double& f_val, double* grad) {
+    auto cb_grad_func = [g, L, U, k, &population, &w, &S, &F_0, &F_1, &W, &w_hat, &clusters](const double* x_, double& f_val, double* grad) {
         // map lambda and upsilon
+        f_val = 1;//TODO
+        double Ld = static_cast<double>(L);
+        double Ud = static_cast<double>(U);
 
         // this is a real slowdown
         vector<double> x(x_, x_ + 3 * g->nr_nodes);
+        for (int i = 0; i < g->nr_nodes; ++i)
+            x[i] = x_[i];
         for (int i = g->nr_nodes; i < 3 * g->nr_nodes; ++i)
-            x[i] = abs(x[i]);
+            x[i] = abs(x_[i]);
 
         // calculate here the gradient and obj value
-        // solveInnerProblem(g, x.data(), ?, ?, L, U, k, ?, population, w, ?, ? ?);
+        solveInnerProblem(g, x.data(), F_0, F_1, L, U, k, clusters, population, w, w_hat, W, S); //FIXME matrix copy, so bad
+
+        // A_i
+        for(int i = 0; i < g->nr_nodes; ++i)
+        {
+          grad[i] = 1;
+          for(int j = 0; j < g->nr_nodes; ++j)
+              grad[i] -= -S[i][j];
+        }
+        // \Lambda_j
+        for(int j = 0; j < g->nr_nodes; ++j)
+        {
+          grad[j+g->nr_nodes] = S[j][j];
+          for(int i = 0; i < g->nr_nodes; ++i)
+              grad[j+g->nr_nodes] -= static_cast<double>(population[i])/Ld*S[i][j];
+        }
+        // \Upsilon_j
+        for(int j = 0; j < g->nr_nodes; ++j)
+        {
+          grad[j+2*g->nr_nodes] = -S[j][j];
+          for(int i = 0; i < g->nr_nodes; ++i)
+            grad[j+2*g->nr_nodes] += static_cast<double>(population[i])/Ud*S[i][j];
+        }
+
+        //TODO adjust for 0?... why?...
 
         // revert the grads if needed
         for (int i = g->nr_nodes; i < 3 * g->nr_nodes; ++i)
-            grad[i] = sign(x[i])*grad[i];
+            grad[i] = sign(x_[i])*grad[i];
 
-        return false;
-        //return true;
+        /*printf("grad: ");
+        for(int i = 0; i < 3*g->nr_nodes; ++i)
+          printf(" %.2lf,", grad[i]);
+        printf("\n");*/
+
+        //return false;
+        return true;
     };
 
     // run ralg
@@ -149,29 +183,13 @@ int main(int argc, char *argv[])
     for (int i = 0; i < dim; ++i)
         x0[i] = 1.; // whatever
     double* res = new double[dim];
-    ralg(&defaultOptions, cb_grad_func, dim, x0, res, RALG_MAX);
-    delete[] x0;
-    delete[] res;
-
-    /********* solve a problem for fun with ralg */
-    double tx0[2] = { -30, 10 }; double tres[2];
-    ralg_options opts = defaultOptions; opts.output_iter = 1;
-    ralg(&opts,
-        [](const double* x, double& f, double* grad) -> bool
-    {
-        f = 1000 * (x[0] - 3)*(x[0] - 3) + x[1] * x[1];
-        grad[0] = 1000 * 2 * (x[0] - 3);
-        grad[1] = 2 * x[1];
-        f = -f; grad[0] = -grad[0]; grad[1] = -grad[1];
-        return true;
-    },
-        2,
-        tx0,
-        tres, RALG_MAX);
-    printf("for inv 1000(x-3)^2 + y^2 -> max the answer is %.2lf %.2lf\n", tres[0], tres[1]);
+    ralg_options opt = defaultOptions; opt.output_iter = 1;
+    ralg(&opt, cb_grad_func, dim, x0, res, RALG_MIN);
+    delete [] x0;
+    delete [] res;
 
     //solve inner problem
-    solveInnerProblem(g, multipliers, F_0, F_1, L, U, k, clusters, population, w, w_hat, W, S);
+    //solveInnerProblem(g, multipliers, F_0, F_1, L, U, k, clusters, population, w, w_hat, W, S);
 
     //FIXME floods the output
     /*for (int i = 0; i < g->nr_nodes; i++)
