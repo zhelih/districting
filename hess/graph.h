@@ -23,7 +23,6 @@ public:
     std::vector<int>& nb(uint i) { return nb_[i]; }
     bool is_connected(); // TODO const;
 
-    vector<int> findUnderPopulatedLeaves(vector<int> new_population, vector<bool> deleted, int L);
     void clean(vector<int>& new_population, vector<bool>& deleted, int L, int U, int& numOfEdgeDel, int& numOfNodeMerge);
     void edgeClean(const vector<int>& population, int U);
     //bool graph::deleteEdge(int i, int j);
@@ -37,6 +36,8 @@ public:
 vector<vector<int>> FindBiconnectedComponents(graph* g, vector<int> &AV, vector<bool> &deletedNodes);
 
 void Bico_Sub(int v, int u, int &i, graph* g, vector<int> &number, vector<int> &lowopt, stack<int> &le, stack<int> &re, vector< vector<int>> &BC, vector<bool> &deletedNodes);
+
+vector<vector<int>> FindConnectedComponents(graph* g, vector<bool> &deletedNodes);
 
 graph* from_dimacs(const char* fname); // don't forget to delete
 
