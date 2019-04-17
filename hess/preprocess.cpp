@@ -5,9 +5,11 @@
 #include <iostream>
 #include "graph.h"
 #include "gurobi_c++.h"
-#include "Models.h"
+#include "models.h"
 
 using namespace std;
+vector<vector<int>> FindClustersFromStemVector(graph* g, vector<int>& stem);
+
 
 int FindOneMergableBiconnectedComponent(vector<vector<int>>& biconnectedComponents, vector<int>& new_population, const vector<int>& population, vector<int>& AV, int L)
 {
