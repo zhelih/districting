@@ -58,9 +58,25 @@ GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, in
 GRBVar** build_UL_2(GRBModel* model, graph* g, const vector<int>& population, int k);
 
 //Lagrangian functions
-void solveInnerProblem(graph* g, const double* multipliers, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
+// input:
+//    g: graph pointer
+//    multipliers : 3|V| array of lagrangian multipliers [A,L,U]
+//    F_0 : vertices fixed x_jj = 0
+//    F_1 : vertices fixed x_jj = 1
+//    L : population lower limit
+//    U : population upper limit
+//    k : number of districts
+//    cluters : ?
+//    population : array i-th element is population of i-th node
+//    w : ?
+//    w_hat : ?
+//    W : ?
+//    S : solution of the inner problem for clusterheads
+//    grad : pointer to the resulting gradient
+//    f_val : resulting objective value
+void solveInnerProblem(graph* g, const double* multipliers, const vector<vector<bool>>& F_0, const vector<vector<bool>>& F_1,
     int L, int U, int k, const vector<vector<int>>& clusters, const vector<int>& population,
-    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, vector<vector<bool>>& S);
+    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, vector<bool>& S, double* grad, double& f_val);
 
 //Preprocess functions
 vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int U, const vector<int>& population);

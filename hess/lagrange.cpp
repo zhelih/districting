@@ -20,9 +20,9 @@ using namespace std;
 #endif
 
 
-void solveInnerProblem(graph* g, const double* multipliers, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
+void solveInnerProblem(graph* g, const double* multipliers, const vector<vector<bool>>& F_0, const vector<vector<bool>>& F_1,
     int L, int U, int k, const vector<vector<int>>& clusters, const vector<int>& population,
-    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, vector <vector<bool>>& S)
+    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, vector<bool>& S, double* grad, double& f_val)
 {
     const double *alpha = multipliers;
     const double *lambda = multipliers + g->nr_nodes;
@@ -92,28 +92,49 @@ void solveInnerProblem(graph* g, const double* multipliers, vector<vector<bool>>
         W_indices[i] = i;
     sort(W_indices.begin(), W_indices.end(), [&](int i1, int i2) { return W[i1] < W[i2]; });
 
+    // null grad
+    int it = 0;
+    f_val = 0.;
+    for(int it = 0; it < g->nr_nodes; ++it)
+    {
+      grad[it] = 1.;
+      f_val += alpha[it];
+    }
+    for(; it < 3*g->nr_nodes; ++it)
+      grad[it] = 0.;
+
     for (int i = 0; i < g->nr_nodes; ++i)
     {
         for (int j = 0; j < g->nr_nodes; ++j)
         {
             if (F_1[i][j])
-                S[i][j] = true;
-            else
-                S[i][j] = false;
+            {
+                // setting x[i][j] = true
+                grad[i] -= 1;
+                grad[j+g->nr_nodes] -= static_cast<double>(population[i]) / static_cast<double>(L);
+                grad[j+2*g->nr_nodes] += static_cast<double>(population[i]) / static_cast<double>(U);
+                f_val += w_hat[i][j];
+            }
         }
     }
 
     for (int i = 0; i < k - fixed; i++)
-        S[W_indices[i]][W_indices[i]] = true;
+    {
+        // setting x[W_indices[i]][W_indices[i]] = true
+        S[W_indices[i]] = true;
+        grad[W_indices[i]+g->nr_nodes] += 1;
+        grad[W_indices[i]+2*g->nr_nodes] -= 1;
+        f_val += w_hat[W_indices[i]][W_indices[i]];
+    }
 
     // fix S[i][j] for all i \in C (i != j) if w_hat_{Cj} is nonnegative
     for (int j = 0; j < g->nr_nodes; ++j)
     {
-        if (!S[j][j]) continue;
+        if (!S[j]) continue;
         for (int c = 0; c < clusters.size(); ++c)
         {
             double sum = 0;
-            int i;
+            int i = -1;
             for (int b = 0; b < clusters[c].size(); ++b)
             {
                 i = clusters[c][b];
@@ -123,7 +144,12 @@ void solveInnerProblem(graph* g, const double* multipliers, vector<vector<bool>>
             for (int b = 0; b < clusters[c].size(); ++b)
             {
                 i = clusters[c][b];
-                S[i][j] = true;
+                if(F_1[i][j]) continue;
+                // setting x[i][j] = true
+                grad[i] -= 1;
+                grad[j+g->nr_nodes] -= static_cast<double>(population[i]) / static_cast<double>(L);
+                grad[j+2*g->nr_nodes] += static_cast<double>(population[i]) / static_cast<double>(U);
+                f_val += w_hat[i][j];
             }
         }
     }

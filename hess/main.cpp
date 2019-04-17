@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
     vector<vector<bool>> F_0(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_0
     vector<vector<bool>> F_1(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_1
 
-    vector <vector<bool>> S(g->nr_nodes, vector<bool>(g->nr_nodes));
+    vector<bool> S(g->nr_nodes);
 
     vector<vector<double>> w_hat(g->nr_nodes, vector<double>(g->nr_nodes));
     vector<double> W(g->nr_nodes, 0);
@@ -124,33 +124,9 @@ int main(int argc, char *argv[])
 
     auto cb_grad_func = [g, L, U, k, &population, &w, &S, &F_0, &F_1, &W, &w_hat, &clusters](const double* multipliers, double& f_val, double* grad) {
         f_val = 0;
-        double Ld = static_cast<double>(L);
-        double Ud = static_cast<double>(U);
 
         // calculate here the gradient and obj value
-        solveInnerProblem(g, multipliers, F_0, F_1, L, U, k, clusters, population, w, w_hat, W, S);
-
-        // A_i
-        for(int i = 0; i < g->nr_nodes; ++i)
-        {
-          grad[i] = 1;
-          for(int j = 0; j < g->nr_nodes; ++j)
-              grad[i] -= S[i][j];
-        }
-        // \Lambda_j
-        for(int j = 0; j < g->nr_nodes; ++j)
-        {
-          grad[j+g->nr_nodes] = S[j][j];
-          for(int i = 0; i < g->nr_nodes; ++i)
-              grad[j+g->nr_nodes] -= static_cast<double>(population[i])/Ld*S[i][j];
-        }
-        // \Upsilon_j
-        for(int j = 0; j < g->nr_nodes; ++j)
-        {
-          grad[j+2*g->nr_nodes] = -S[j][j];
-          for(int i = 0; i < g->nr_nodes; ++i)
-            grad[j+2*g->nr_nodes] += static_cast<double>(population[i])/Ud*S[i][j];
-        }
+        solveInnerProblem(g, multipliers, F_0, F_1, L, U, k, clusters, population, w, w_hat, W, S, grad, f_val);
 
         // revert the grads if needed to maintain positive l,u
         for (int i = g->nr_nodes; i < 3 * g->nr_nodes; ++i)
