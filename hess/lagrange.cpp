@@ -90,7 +90,7 @@ void solveInnerProblem(graph* g, const double* multipliers, const vector<vector<
     vector<int> W_indices(W.size());
     for (size_t i = 0; i < W.size(); ++i)
         W_indices[i] = i;
-    sort(W_indices.begin(), W_indices.end(), [&](int i1, int i2) { return W[i1] < W[i2]; });
+    sort(W_indices.begin(), W_indices.end(), [&W](int i1, int i2) { return W[i1] < W[i2]; });
 
     // null grad
     int it = 0;
