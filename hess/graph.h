@@ -22,12 +22,12 @@ public:
     void remove_edge(uint i, uint j);
     std::vector<int>& nb(uint i) { return nb_[i]; }
     bool is_connected(); // TODO const;
-    
-    void graph::edgeClean(const vector<int>& population, int U);
-    void graph::edgeCleanNeighbor(vector<int>& new_population, int s, int U);
-    vector<vector<int>> graph::FindBiconnectedComponents(vector<int> &AV, vector<bool> &deletedNodes);
-    std::vector<std::vector<int>> graph::FindConnectedComponents(vector<bool> &deletedNodes);
-    void graph::Bico_Sub(int v, int u, int &i, vector<int> &number, vector<int> &lowopt, stack<int> &le, stack<int> &re, vector< vector<int>> &BC, vector<bool> &deletedNodes);
+
+    void edgeClean(const vector<int>& population, int U);
+    void edgeCleanNeighbor(vector<int>& new_population, int s, int U);
+    vector<vector<int>> FindBiconnectedComponents(vector<int> &AV, vector<bool> &deletedNodes);
+    std::vector<std::vector<int>> FindConnectedComponents(vector<bool> &deletedNodes);
+    void Bico_Sub(int v, int u, int &i, vector<int> &number, vector<int> &lowopt, stack<int> &le, stack<int> &re, vector< vector<int>> &BC, vector<bool> &deletedNodes);
 
     //bool graph::deleteEdge(int i, int j);
     // works as far as no pointers are members
