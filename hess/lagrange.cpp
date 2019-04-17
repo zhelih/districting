@@ -109,7 +109,6 @@ void solveInnerProblem(graph* g, const double* multipliers, const vector<vector<
     for(; it < 3*g->nr_nodes; ++it)
       grad[it] = 0.;
 
-    //fuck it
     unordered_set<pair<int,int>, pair_hash> h;
 
     for (int i = 0; i < g->nr_nodes; ++i)
