@@ -1,12 +1,18 @@
 // source file for lagrangian relaxation model
 #include <cstdio>
+#include <cassert>
+#include <unordered_set>
 #include <vector>
 #include <algorithm>
 #include <iostream>
 #include "graph.h"
 #include "gurobi_c++.h"
 #include "models.h"
-
+struct pair_hash {
+    inline std::size_t operator()(const std::pair<int,int> & v) const {
+        return v.first*31+v.second;
+    }
+};
 using namespace std;
 
 #ifndef min
@@ -103,16 +109,28 @@ void solveInnerProblem(graph* g, const double* multipliers, const vector<vector<
     for(; it < 3*g->nr_nodes; ++it)
       grad[it] = 0.;
 
+    //fuck it
+    unordered_set<pair<int,int>, pair_hash> h;
+
     for (int i = 0; i < g->nr_nodes; ++i)
     {
         for (int j = 0; j < g->nr_nodes; ++j)
         {
             if (F_1[i][j])
             {
-                // setting x[i][j] = true
-                grad[i] -= 1;
-                grad[j+g->nr_nodes] -= static_cast<double>(population[i]) / static_cast<double>(L);
-                grad[j+2*g->nr_nodes] += static_cast<double>(population[i]) / static_cast<double>(U);
+                if(i != j)
+                {
+                    // setting x[i][j] = true
+                    grad[i] -= 1;
+                    grad[j+g->nr_nodes] -= static_cast<double>(population[i]) / static_cast<double>(L);
+                    grad[j+2*g->nr_nodes] += static_cast<double>(population[i]) / static_cast<double>(U);
+                    h.insert(make_pair(i,j));
+                } else
+                {
+                    h.insert(make_pair(i,i));
+                    grad[i+g->nr_nodes] += 1;
+                    grad[i+2*g->nr_nodes] -= 1;
+                }
                 f_val += w_hat[i][j];
             }
         }
@@ -125,6 +143,7 @@ void solveInnerProblem(graph* g, const double* multipliers, const vector<vector<
         grad[W_indices[i]+g->nr_nodes] += 1;
         grad[W_indices[i]+2*g->nr_nodes] -= 1;
         f_val += w_hat[W_indices[i]][W_indices[i]];
+        h.insert(make_pair(W_indices[i], W_indices[i]));
     }
 
     // fix S[i][j] for all i \in C (i != j) if w_hat_{Cj} is nonnegative
@@ -146,10 +165,20 @@ void solveInnerProblem(graph* g, const double* multipliers, const vector<vector<
                 i = clusters[c][b];
                 if(F_1[i][j]) continue;
                 // setting x[i][j] = true
-                grad[i] -= 1;
-                grad[j+g->nr_nodes] -= static_cast<double>(population[i]) / static_cast<double>(L);
-                grad[j+2*g->nr_nodes] += static_cast<double>(population[i]) / static_cast<double>(U);
+                if(h.count(make_pair(i,j)) > 0)
+                    continue;
                 f_val += w_hat[i][j];
+                if(i != j)
+                {
+                    grad[i] -= 1;
+                    grad[j+g->nr_nodes] -= static_cast<double>(population[i]) / static_cast<double>(L);
+                    grad[j+2*g->nr_nodes] += static_cast<double>(population[i]) / static_cast<double>(U);
+                }
+                else
+                {
+                    grad[i+g->nr_nodes] += 1;
+                    grad[i+2*g->nr_nodes] -= 1;
+                }
             }
         }
     }
