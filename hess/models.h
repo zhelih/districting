@@ -64,6 +64,8 @@ void solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0,
 
 //Preprocess functions
 vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int U, const vector<int>& population);
-int FindOneMergableBiconnectedComponent(vector<vector<int>>& biconnectedComponents, vector<int>& new_population, const vector<int>& population, vector<int>& AV, int L);
+int FindMergableBiconnectedComponent(vector<vector<int>>& biconnectedComponents, vector<int>& new_population, const vector<int>& population, vector<int>& AV, int L);
+vector<vector<int>> FindClustersFromStemVector(graph* g, vector<int>& stem);
+void QuickTestForInfeasibility(graph* g, vector<int>& new_population, vector<bool>& deleted, int L, int U);
 void strengthen_hess(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters);
 #endif
