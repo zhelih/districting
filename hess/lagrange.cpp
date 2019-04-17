@@ -15,14 +15,18 @@ using namespace std;
 #ifndef max
 #define max(a,b) (((a)>(b))?(a):(b))
 #endif
+#ifndef abs
+#define abs(x) (((x)>0)?(x):(-(x)))
+#endif
 
-void solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
+
+void solveInnerProblem(graph* g, const double* multipliers, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
     int L, int U, int k, const vector<vector<int>>& clusters, const vector<int>& population,
     const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, vector <vector<bool>>& S)
 {
-    double *alpha = multipliers;
-    double *lambda = multipliers + g->nr_nodes;
-    double *upsilon = multipliers + 2 * g->nr_nodes;
+    const double *alpha = multipliers;
+    const double *lambda = multipliers + g->nr_nodes;
+    const double *upsilon = multipliers + 2 * g->nr_nodes;
 
     for (int i = 0; i < g->nr_nodes; i++)
     {
@@ -31,9 +35,9 @@ void solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0,
         for (int j = 0; j < g->nr_nodes; j++)
         {
             if (i == j)
-                w_hat[i][j] = w[i][j] - alpha[i] - lambda[j] * pOverL + upsilon[j] * pOverU + lambda[j] - upsilon[j];
+                w_hat[i][j] = w[i][j] - alpha[i] - abs(lambda[j]) * pOverL + abs(upsilon[j]) * pOverU + abs(lambda[j]) - abs(upsilon[j]);
             else
-                w_hat[i][j] = w[i][j] - alpha[i] - lambda[j] * pOverL + upsilon[j] * pOverU;
+                w_hat[i][j] = w[i][j] - alpha[i] - abs(lambda[j]) * pOverL + abs(upsilon[j]) * pOverU;
         }
     }
 

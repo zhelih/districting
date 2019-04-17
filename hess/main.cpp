@@ -16,10 +16,6 @@
 #define sign(x) (((x)>0)?1:((x)==0)?0:(-1))
 #endif
 
-#ifndef abs
-#define abs(x) (((x)>0)?(x):(-(x)))
-#endif
-
 using namespace std;
 //extern const char* gitversion;
 
@@ -114,12 +110,7 @@ int main(int argc, char *argv[])
     vector<vector<bool>> F_0(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_0
     vector<vector<bool>> F_1(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_1
 
-    double *multipliers = new double[3 * g->nr_nodes];
-
-
     vector <vector<bool>> S(g->nr_nodes, vector<bool>(g->nr_nodes));
-
-
 
     vector<vector<double>> w_hat(g->nr_nodes, vector<double>(g->nr_nodes));
     vector<double> W(g->nr_nodes, 0);
@@ -131,20 +122,13 @@ int main(int argc, char *argv[])
     for(int i = 0; i < g->nr_nodes; ++i)
       clusters[i].push_back(i);
 
-    auto cb_grad_func = [g, L, U, k, &population, &w, &S, &F_0, &F_1, &W, &w_hat, &clusters](const double* x_, double& f_val, double* grad) {
+    auto cb_grad_func = [g, L, U, k, &population, &w, &S, &F_0, &F_1, &W, &w_hat, &clusters](const double* multipliers, double& f_val, double* grad) {
         f_val = 0;
         double Ld = static_cast<double>(L);
         double Ud = static_cast<double>(U);
 
-        // this is a real slowdown
-        vector<double> x(3 * g->nr_nodes);
-        for (int i = 0; i < g->nr_nodes; ++i)
-            x[i] = x_[i];
-        for (int i = g->nr_nodes; i < 3 * g->nr_nodes; ++i)
-            x[i] = abs(x_[i]);
-
         // calculate here the gradient and obj value
-        solveInnerProblem(g, x.data(), F_0, F_1, L, U, k, clusters, population, w, w_hat, W, S);
+        solveInnerProblem(g, multipliers, F_0, F_1, L, U, k, clusters, population, w, w_hat, W, S);
 
         // A_i
         for(int i = 0; i < g->nr_nodes; ++i)
@@ -170,26 +154,7 @@ int main(int argc, char *argv[])
 
         // revert the grads if needed to maintain positive l,u
         for (int i = g->nr_nodes; i < 3 * g->nr_nodes; ++i)
-            grad[i] = sign(x_[i])*grad[i];
-        // calculate f_val tail
-        for(int i = 0; i < g->nr_nodes; ++i)
-        {
-          f_val += x[i];
-          for(int j = 0; j < g->nr_nodes; ++j)
-            f_val -= x[i] * S[i][j];
-        }
-        for(int j = 0; j < g->nr_nodes; ++j)
-        {
-          f_val += x[j+g->nr_nodes]*S[j][j];
-          for(int i = 0; i < g->nr_nodes; ++i)
-            f_val -= x[j+g->nr_nodes] * static_cast<double>(population[i])/Ld* S[i][j];
-        }
-        for(int j = 0; j < g->nr_nodes; ++j)
-        {
-          f_val -= x[j+2*g->nr_nodes]*S[j][j];
-          for(int i = 0; i < g->nr_nodes; ++i)
-            f_val += x[j+2*g->nr_nodes] * static_cast<double>(population[i])/Ud* S[i][j];
-        }
+            grad[i] = sign(multipliers[i])*grad[i];
         return true;
     };
 
@@ -203,9 +168,6 @@ int main(int argc, char *argv[])
     ralg(&opt, cb_grad_func, dim, x0, res, RALG_MAX);
     delete [] x0;
     delete [] res;
-
-    //solve inner problem
-    //solveInnerProblem(g, multipliers, F_0, F_1, L, U, k, clusters, population, w, w_hat, W, S);
 
     //FIXME floods the output
     /*for (int i = 0; i < g->nr_nodes; i++)

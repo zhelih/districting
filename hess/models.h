@@ -58,7 +58,7 @@ GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, in
 GRBVar** build_UL_2(GRBModel* model, graph* g, const vector<int>& population, int k);
 
 //Lagrangian functions
-void solveInnerProblem(graph* g, double* multipliers, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
+void solveInnerProblem(graph* g, const double* multipliers, vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
     int L, int U, int k, const vector<vector<int>>& clusters, const vector<int>& population,
     const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, vector<vector<bool>>& S);
 
