@@ -134,6 +134,16 @@ int main(int argc, char *argv[])
         return true;
     };
 
+     auto cb_grad_func2 = [g, L, U, k, &population, &w, &W, &w_hat](const double* multipliers, double& f_val, double* grad) {
+        f_val = 0;
+
+        // calculate here the gradient and obj value
+        eugene_inner(g, multipliers, L, U, k, population, w, w_hat, W, grad, f_val);
+        return true;
+    };
+
+
+
     // run ralg
     int dim = 3 * g->nr_nodes;
     double * x0 = new double[dim];
@@ -141,7 +151,7 @@ int main(int argc, char *argv[])
         x0[i] = 1.; // whatever
     double* res = new double[dim];
     ralg_options opt = defaultOptions; opt.output_iter = 1;
-    ralg(&opt, cb_grad_func, dim, x0, res, RALG_MAX);
+    ralg(&opt, cb_grad_func2, dim, x0, res, RALG_MAX);
     delete [] x0;
     delete [] res;
 

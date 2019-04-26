@@ -182,3 +182,92 @@ void solveInnerProblem(graph* g, const double* multipliers, const vector<vector<
         }
     }
 }
+
+void eugene_inner(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,
+    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val)
+{
+    const double *alpha = multipliers;
+    const double *lambda = multipliers + g->nr_nodes;
+    const double *upsilon = multipliers + 2 * g->nr_nodes;
+
+    for (int i = 0; i < g->nr_nodes; ++i)
+    {
+        double pOverL = static_cast<double>(population[i]) / static_cast<double>(L);
+        double pOverU = static_cast<double>(population[i]) / static_cast<double>(U);
+        for (int j = 0; j < g->nr_nodes; ++j)
+        {
+            // w[i][i] == 0?
+            w_hat[i][j] = w[i][j] - alpha[i] - abs(lambda[j]) * pOverL + abs(upsilon[j]) * pOverU;
+            if (i == j)
+                w_hat[i][j] += abs(lambda[j]) - abs(upsilon[j]);
+        }
+    }
+
+    for(int j = 0; j < g->nr_nodes; ++j)
+    {
+      W[j] = w_hat[j][j];
+      for(int i = 0; i < g->nr_nodes; ++i)
+        if(i != j)
+          W[j] += min(0., w_hat[i][j]);
+    }
+
+    // select k smallest
+    vector<int> W_indices(W.size());
+    for (size_t i = 0; i < W.size(); ++i)
+        W_indices[i] = i;
+    sort(W_indices.begin(), W_indices.end(), [&W](int i1, int i2) { return W[i1] < W[i2]; });
+
+    // compute f_val
+    f_val = 0.;
+    for(int i = 0; i < g->nr_nodes; ++i)
+      f_val += alpha[i];
+
+    // add in-clusters
+    for(int j = 0; j < k; ++j)
+      for(int i = 0; i < g->nr_nodes; ++i)
+        if(i == W_indices[j])
+          f_val += w_hat[i][W_indices[j]];
+        else
+          f_val += min(0,w_hat[i][W_indices[j]]);
+
+    // compute grad
+    // A
+    for(int i = 0; i < g->nr_nodes; ++i)
+    {
+      grad[i] = 1.;
+      for(int j = 0; j < k; ++j)
+        if(i == W_indices[j] || w_hat[i][W_indices[j]] < 0)
+          grad[i] -= 1;
+    }
+    for(int i = 0; i < g->nr_nodes; ++i)
+    {
+     grad[i + g->nr_nodes] = 0.;
+     grad[i + 2*g->nr_nodes] = 0.;
+    }
+    // L
+    for(int j = 0; j < k; ++j)
+    {
+      grad[g->nr_nodes+W_indices[j]] = 1;
+      for(int i = 0; i < g->nr_nodes; ++i)
+        if(i == W_indices[j] || w_hat[i][W_indices[j]] < 0)
+        grad[g->nr_nodes+W_indices[j]] -= static_cast<double>(population[i]) / static_cast<double>(L);
+    }
+    //U
+    for(int j = 0; j < k; ++j)
+    {
+      grad[2*g->nr_nodes+W_indices[j]] = -1;
+      for(int i = 0; i < g->nr_nodes; ++i)
+        if(i == W_indices[j] || w_hat[i][W_indices[j]] < 0)
+        grad[2*g->nr_nodes+W_indices[j]] += static_cast<double>(population[i]) / static_cast<double>(U);
+    }
+
+    // signify the gradient
+    // L
+    for(int i = 0; i < g->nr_nodes; ++i)
+      if(lambda[i] < 0)
+        grad[i+g->nr_nodes] = -grad[i+g->nr_nodes];
+    // U
+    for(int i = 0; i < g->nr_nodes; ++i)
+      if(upsilon[i] < 0)
+        grad[i+2*g->nr_nodes] = -grad[i+2*g->nr_nodes];
+}

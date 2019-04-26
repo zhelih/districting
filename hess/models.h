@@ -84,4 +84,7 @@ int FindMergableBiconnectedComponent(vector<vector<int>>& biconnectedComponents,
 vector<vector<int>> FindClustersFromStemVector(graph* g, vector<int>& stem);
 void QuickTestForInfeasibility(graph* g, vector<int>& new_population, vector<bool>& deleted, int L, int U);
 void strengthen_hess(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters);
+
+void eugene_inner(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,
+    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val);
 #endif
