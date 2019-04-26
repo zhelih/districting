@@ -221,14 +221,8 @@ void eugene_inner(graph* g, const double* multipliers, int L, int U, int k, cons
     f_val = 0.;
     for(int i = 0; i < g->nr_nodes; ++i)
       f_val += alpha[i];
-
-    // add in-clusters
     for(int j = 0; j < k; ++j)
-      for(int i = 0; i < g->nr_nodes; ++i)
-        if(i == W_indices[j])
-          f_val += w_hat[i][W_indices[j]];
-        else
-          f_val += min(0,w_hat[i][W_indices[j]]);
+      f_val += W[W_indices[j]];
 
     // compute grad
     // A
