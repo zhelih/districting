@@ -78,6 +78,9 @@ void solveInnerProblem(graph* g, const double* multipliers, const vector<vector<
     int L, int U, int k, const vector<vector<int>>& clusters, const vector<int>& population,
     const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, vector<bool>& S, double* grad, double& f_val);
 
+void lagrangianBasedSafeFixing(vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
+    const vector<vector<int>>& clusters, vector<double>& W, const vector<bool>& S, double& f_val, const double UB);
+
 //Preprocess functions
 vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int U, const vector<int>& population);
 int FindMergableBiconnectedComponent(vector<vector<int>>& biconnectedComponents, vector<int>& new_population, const vector<int>& population, vector<int>& AV, int L);
@@ -86,5 +89,5 @@ void QuickTestForInfeasibility(graph* g, vector<int>& new_population, vector<boo
 void strengthen_hess(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters);
 
 void eugene_inner(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,
-    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val);
+    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& S);
 #endif
