@@ -79,7 +79,7 @@ void solveInnerProblem(graph* g, const double* multipliers, const vector<vector<
     const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, vector<bool>& S, double* grad, double& f_val);
 
 void lagrangianBasedSafeFixing(vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
-    const vector<vector<int>>& clusters, vector<double>& W, const vector<bool>& S, double& f_val, const double UB);
+    const vector<vector<int>>& clusters, vector<double>& W, const vector<bool>& S, const double f_val, const double UB, const vector<vector<double>> &w_hat);
 
 //Preprocess functions
 vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int U, const vector<int>& population);
