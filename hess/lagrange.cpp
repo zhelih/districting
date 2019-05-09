@@ -323,9 +323,7 @@ void eugene_inner(graph* g, const double* multipliers, int L, int U, int k, cons
     sort(W_indices.begin(), W_indices.end(), [&W, &F_0, &F_1](int i1, int i2) {
         if(F_0[i1][i1] + 2*F_1[i1][i1] == F_0[i2][i2] + 2*F_1[i2][i2]) // check if both are in the same set or neither
             return W[i1] < W[i2];
-        if(F_0[i1][i1] || F_1[i2][i2]) return false;
-        if(F_1[i1][i1] || F_0[i2][i2]) return true;
-      return W[i1] < W[i2];// never reached
+        return F_1[i1][i1] || F_0[i2][i2];
     });
 
     // compute f_val
