@@ -114,3 +114,40 @@ int read_auto_int(const char* arg, int def)
     return std::atoi(arg);
   return def;
 }
+
+//read ralg initial point from file [fname] to [x0]
+void read_ralg_hot_start(const char* fname, double* x0, int dim)
+{
+  FILE* f = fopen(fname, "r");
+  if(!f)
+  {
+    fprintf(stderr, "Failed to open %s.\n", fname);
+    return;
+  }
+  for(int i = 0; i < dim; ++i)
+  {
+    double val = 0.;
+    if(EOF == fscanf(f, "%lf ", &val))
+    {
+      fprintf(stderr, "Failure to complete reading ralg x0 from %s.\n", fname);
+      break;
+    }
+    x0[i] = val;
+  }
+  fclose(f);
+}
+
+// dump result to "ralg_hot_start.txt"
+void dump_ralg_hot_start(double* res, int dim)
+{
+  const char* outname = "ralg_hot_start.txt";
+  FILE* f = fopen(outname, "w");
+  if(!f)
+  {
+    fprintf(stderr, "Cannot open %s for dumping ralg result.\n", outname);
+    return;
+  }
+  for(int i = 0; i < dim; ++i)
+    fprintf(f, "%lf\n", res[i]);
+  fclose(f);
+}

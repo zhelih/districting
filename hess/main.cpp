@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     ios::sync_with_stdio(1);
     //printf("Districting, build %s\n", gitversion);
     if (argc < 8) {
-        printf("Usage: %s <dimacs> <distance> <population> <L|auto> <U|auto> <k> <model>\n\
+        printf("Usage: %s <dimacs> <distance> <population> <L|auto> <U|auto> <k> <model> [ralg hot start]\n\
   Available models:\n\
   \thess\t\tHess model\n\
   \tscf\t\tHess model with SCF\n\
@@ -44,8 +44,8 @@ int main(int argc, char *argv[])
     char* population_fname = argv[3];
     int L = read_auto_int(argv[4], 0);
     int U = read_auto_int(argv[5], 0);
-
-
+    bool ralg_hot_start = argc > 8;
+    char* ralg_hot_start_fname = ralg_hot_start?argv[8]:nullptr;
 
     // read inputs
     graph* g = 0;
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
         total_pop += p;
     printf("Model input: total population = %ld\n", total_pop);
 
-    string arg_model = argv[argc - 1];
+    string arg_model = argv[7];
 
     //apply the merging preprocess and get the clusters
     vector<vector<int>> clusters;
@@ -172,11 +172,18 @@ int main(int argc, char *argv[])
     // run ralg
     int dim = 3 * g->nr_nodes;
     double * x0 = new double[dim];
-    for (int i = 0; i < dim; ++i)
+    // try to load hot start if any
+    if(ralg_hot_start)
+      read_ralg_hot_start(ralg_hot_start_fname, x0, dim);
+    else
+      for (int i = 0; i < dim; ++i)
         x0[i] = 1.; // whatever
     double* res = new double[dim];
     ralg_options opt = defaultOptions; opt.output_iter = 1;
     double LB = ralg(&opt, cb_grad_func2, dim, x0, res, RALG_MAX); // lower bound from lagrangian
+
+    // dump result to "ralg_hot_start.txt"
+    dump_ralg_hot_start(res, dim);
 
     delete[] x0;
     delete[] res;

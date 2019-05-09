@@ -14,4 +14,8 @@ void translate_solution(GRBVar** x, vector<int>& sol, int n);
 void printf_solution(const vector<int>& sol, const char* fname=NULL);
 void calculate_UL(const vector<int> population, int k, int* L, int* U);
 int read_auto_int(const char*, int);
+//read ralg initial point from file [fname] to [x0]
+void read_ralg_hot_start(const char* fname, double* x0, int dim);
+// dump result to "ralg_hot_start.txt"
+void dump_ralg_hot_start(double* res, int dim);
 #endif
