@@ -10,7 +10,7 @@
 #include <cstring>
 #include <chrono>
 #include <string>
-#include "ralg.h"
+#include "ralg/ralg.h"
 
 #ifndef sign
 #define sign(x) (((x)>0)?1:((x)==0)?0:(-1))
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
         f_val = 0;
 
         // calculate here the gradient and obj value
-        eugene_inner(g, multipliers, L, U, k, population, w, w_hat, W, grad, f_val, S);
+        eugene_inner(g, multipliers, L, U, k, population, w, w_hat, W, grad, f_val, S, F_0, F_1);
         //lagrangianBasedSafeFixing(F_0, F_1, clusters, W, S, f_val, UB);
         if (f_val > bestLB)
         {

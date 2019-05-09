@@ -271,12 +271,14 @@ void lagrangianBasedSafeFixing(vector<vector<bool>>& F_0, vector<vector<bool>>& 
 }
 
 void eugene_inner(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,
-    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& S)
+    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& S,
+    const vector<vector<bool>>& F_0, const vector<vector<bool>>& F_1)
 {
     const double *alpha = multipliers;
     const double *lambda = multipliers + g->nr_nodes;
     const double *upsilon = multipliers + 2 * g->nr_nodes;
 
+    // TODO compute S only when needed
     for (int i = 0; i < g->nr_nodes; ++i)
         S[i] = false;
 
@@ -293,19 +295,38 @@ void eugene_inner(graph* g, const double* multipliers, int L, int U, int k, cons
         }
     }
 
+    // W_j describes the minimum value what happpens if j is a clusterhead
     for (int j = 0; j < g->nr_nodes; ++j)
     {
-        W[j] = w_hat[j][j];
+        W[j] = w_hat[j][j]; // weight of clusterhead node
         for (int i = 0; i < g->nr_nodes; ++i)
             if (i != j)
-                W[j] += min(0., w_hat[i][j]);
+            {
+              if(F_0[i][j]) continue; // must skip from F_0
+              if(F_1[i][j]) // must add from F_1
+              {
+                W[j] += w_hat[i][j];
+                continue;
+              }
+              // else
+              W[j] += min(0., w_hat[i][j]); // add all negative weights from nodes
+            }
     }
 
     // select k smallest
+    // must include for F_1[i][i]
+    // must skip for F_0[i][i]
+    // assuming at most k F_1[i][i] are set to true
     vector<int> W_indices(W.size());
     for (size_t i = 0; i < W.size(); ++i)
         W_indices[i] = i;
-    sort(W_indices.begin(), W_indices.end(), [&W](int i1, int i2) { return W[i1] < W[i2]; });
+    sort(W_indices.begin(), W_indices.end(), [&W, &F_0, &F_1](int i1, int i2) {
+        if(F_0[i1][i1] + 2*F_1[i1][i1] == F_0[i2][i2] + 2*F_1[i2][i2]) // check if both are in the same set or neither
+            return W[i1] < W[i2];
+        if(F_0[i1][i1] || F_1[i2][i2]) return false;
+        if(F_1[i1][i1] || F_0[i2][i2]) return true;
+      return W[i1] < W[i2];// never reached
+    });
 
     // compute f_val
     f_val = 0.;
