@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < g->nr_nodes; i++)
         for (int j = 0; j < g->nr_nodes; j++)
-            w[i][j] = ((double)dist[i][j] / 1000.) * ((double)dist[i][j] / 1000.) * population[i];
+            w[i][j] = get_objective_coefficient(dist, population, i, j);
 
     vector<vector<bool>> F_0(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_0
     vector<vector<bool>> F_1(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_1

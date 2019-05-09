@@ -6,6 +6,12 @@
 
 using namespace std;
 
+double get_objective_coefficient(const vector<vector<int>>& dist, const vector<int>& population, int i, int j)
+{
+  return (static_cast<double>(dist[i][j])/1000.) * (static_cast<double>(dist[i][j])/1000.) * static_cast<double>(population[i]);
+}
+
+
 // adds hess model constraints and the objective function to model using graph "g", distance data "dist", population data "pop"
 // returns "x" variables in the Hess model
 GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<int> >& dist, const vector<int>& population, int L, int U, int k)
@@ -23,7 +29,7 @@ GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<int> >& dist,
   GRBLinExpr expr = 0;
   for(int i = 0; i < n; ++i)
     for(int j = 0; j < n; ++j)
-      expr += ((double)dist[i][j]/1000.) * ((double)dist[i][j]/1000.) * population[i] * x[i][j]; //FIXME check overflow?
+      expr += get_objective_coefficient(dist, population, i, j) * x[i][j]; //FIXME check overflow?
 
   model->setObjective(expr, GRB_MINIMIZE);
 
