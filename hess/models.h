@@ -7,54 +7,64 @@
 
 using namespace std;
 
+typedef const vector<vector<bool>> cvv;
+
+//hack
+#define IS_X(i,j) (!F0[i][j] && !F1[i][j])
+#define X(i,j) (F0[i][j]?GRBLinExpr(0.):(F1[i][j]?GRBLinExpr(1.):GRBLinExpr(x[i][j])))
+
 //auxilliary procedure
 double get_objective_coefficient(const vector<vector<int>>& dist, const vector<int>& population, int i, int j);
 
 // build hess model and return x variables
-GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<int> >& dist, const vector<int>& population, int L, int U, int k);
+GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<int> >& dist, const vector<int>& population, int L, int U, int k, cvv& F0, cvv& F1);
 // add SCF constraints to model with hess variables x
-void build_scf(GRBModel* model, GRBVar** x, graph* g);
+void build_scf(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1);
 // add MCF constraints to model with hess variables x
-void build_mcf0(GRBModel* model, GRBVar** x, graph* g);
-void build_mcf1(GRBModel* model, GRBVar** x, graph* g);
-void build_mcf2(GRBModel* model, GRBVar** x, graph* g);
+void build_mcf0(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1);
+void build_mcf1(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1);
+void build_mcf2(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1);
 // add CUT constraints to model with hess variables x (lazy)
 class HessCallback : public GRBCallback
 {
 protected:
-    GRBVar** grb_x; // x variables
-    double** x; // x values
+    GRBVar** x; // x variables
+    double** x_val; // x values
     graph* g; // graph pointer
     int n; // g->nr_nodes
+    cvv& F0;
+    cvv& F1;
 public:
     int numCallbacks; // number of callback calls
     double callbackTime; // cumulative time in callbacks
     int numLazyCuts;
-    HessCallback(GRBVar** grb_x_, graph* g_) : grb_x(grb_x_), g(g_), numCallbacks(0), callbackTime(0.), numLazyCuts(0)
+    HessCallback(GRBVar** grb_x_, graph* g_, cvv& F0_, cvv& F1_) : x(grb_x_), g(g_), F0(F0_), F1(F1_), numCallbacks(0), callbackTime(0.), numLazyCuts(0)
     {
         n = g->nr_nodes;
-        x = new double*[n];
+        x_val = new double*[n];
         for (int i = 0; i < n; ++i)
-            x[i] = new double[n];
+            x_val[i] = new double[n];
     }
     virtual ~HessCallback()
     {
         for (int i = 0; i < n; ++i)
-            delete[] x[i];
-        delete[] x;
+            delete[] x_val[i];
+        delete[] x_val;
     }
 protected:
     void populate_x()
     {
         for (int i = 0; i < n; ++i)
             for (int j = 0; j < n; ++j)
-                x[i][j] = getSolution(grb_x[i][j]);
+              if(IS_X(i,j))
+                x_val[i][j] = getSolution(x[i][j]);
+              else if(F1[i][j]) x_val[i][j] = 1.; else x_val[i][j] = 0.;
     }
 };
 
 // @return callback for delete only
-HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g);
-HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g);
+HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1);
+HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1);
 
 // add UL1 & UL2 instance and return x variables
 GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, int k);
