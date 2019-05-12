@@ -375,7 +375,7 @@ int main(int argc, char *argv[])
 
         if (need_solution && model.get(GRB_IntAttr_Status) != 3) {
             vector<int> sol;
-            translate_solution(x, sol, g->nr_nodes, F1);
+            translate_solution(x, sol, g->nr_nodes, F0, F1);
             string fn = string(dimacs_fname);
             string soln_fn = fn.substr(0, 2) + "_" + arg_model + ".sol";
             int len = soln_fn.length() + 1;
