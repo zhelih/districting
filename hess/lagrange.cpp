@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <iostream>
 #include "graph.h"
-#include "gurobi_c++.h"
 #include "models.h"
 struct pair_hash {
     inline std::size_t operator()(const std::pair<int, int> & v) const {

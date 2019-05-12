@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <iostream>
 #include "graph.h"
-#include "gurobi_c++.h"
 #include "models.h"
 
 using namespace std;
