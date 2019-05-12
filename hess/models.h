@@ -87,9 +87,9 @@ GRBVar** build_UL_2(GRBModel* model, graph* g, const vector<int>& population, in
 //    S : solution of the inner problem for clusterheads
 //    grad : pointer to the resulting gradient
 //    f_val : resulting objective value
-void solveInnerProblem(graph* g, const double* multipliers, const vector<vector<bool>>& F_0, const vector<vector<bool>>& F_1,
-    int L, int U, int k, const vector<vector<int>>& clusters, const vector<int>& population,
-    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, vector<bool>& S, double* grad, double& f_val);
+void eugene_inner(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,
+    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& S,
+    const vector<vector<bool>>& F_0, const vector<vector<bool>>& F_1);
 
 void lagrangianBasedSafeFixing(vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
     const vector<vector<int>>& clusters, vector<double>& W, const vector<bool>& S, const double f_val, const double UB, const vector<vector<double>> &w_hat);
@@ -101,9 +101,5 @@ vector<vector<int>> FindClustersFromStemVector(graph* g, vector<int>& stem);
 void QuickTestForInfeasibility(graph* g, vector<int>& new_population, vector<bool>& deleted, int L, int U);
 void strengthen_hess(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters);
 
-
-void eugene_inner(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,
-    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& S,
-    const vector<vector<bool>>& F_0, const vector<vector<bool>>& F_1);
 
 #endif
