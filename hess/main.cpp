@@ -124,18 +124,6 @@ int main(int argc, char *argv[])
     for (int i = 0; i < g->nr_nodes; ++i)
         clusters[i].push_back(i);
 
-    auto cb_grad_func = [g, L, U, k, &population, &w, &S, &F0, &F1, &W, &w_hat, &clusters](const double* multipliers, double& f_val, double* grad) {
-        f_val = 0;
-
-        // calculate here the gradient and obj value
-        solveInnerProblem(g, multipliers, F0, F1, L, U, k, clusters, population, w, w_hat, W, S, grad, f_val);
-
-        // revert the grads if needed to maintain positive l,u
-        for (int i = g->nr_nodes; i < 3 * g->nr_nodes; ++i)
-            grad[i] = sign(multipliers[i])*grad[i];
-        return true;
-    };
-
     double UB = INFINITY; // = 1439.05;
     vector<long> frequency(g->nr_nodes, 0);
     double bestLB = -INFINITY;
@@ -144,7 +132,7 @@ int main(int argc, char *argv[])
     vector<vector<double>> bestw_hat(g->nr_nodes, vector<double>(g->nr_nodes));
     vector<double> bestMultipliers(3*g->nr_nodes, 0);
 
-    auto cb_grad_func2 = [g, L, U, k, &population, &w, &W, &w_hat, &S, &F0, &F1, &clusters, &UB, &frequency, &bestLB, &bestCenters, &bestW, &bestw_hat](const double* multipliers, double& f_val, double* grad) {
+    auto cb_grad_func = [g, L, U, k, &population, &w, &W, &w_hat, &S, &F0, &F1, &clusters, &UB, &frequency, &bestLB, &bestCenters, &bestW, &bestw_hat](const double* multipliers, double& f_val, double* grad) {
         f_val = 0;
 
         // calculate here the gradient and obj value
@@ -179,7 +167,7 @@ int main(int argc, char *argv[])
         x0[i] = 1.; // whatever
     double* res = new double[dim];
     ralg_options opt = defaultOptions; opt.output_iter = 1;
-    double LB = ralg(&opt, cb_grad_func2, dim, x0, res, RALG_MAX); // lower bound from lagrangian
+    double LB = ralg(&opt, cb_grad_func, dim, x0, res, RALG_MAX); // lower bound from lagrangian
 
     // dump result to "ralg_hot_start.txt"
     dump_ralg_hot_start(res, dim);
