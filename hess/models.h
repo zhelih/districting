@@ -17,7 +17,7 @@ typedef const vector<vector<bool>> cvv;
 double get_objective_coefficient(const vector<vector<int>>& dist, const vector<int>& population, int i, int j);
 
 // build hess model and return x variables
-GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<int> >& dist, const vector<int>& population, int L, int U, int k, cvv& F0, cvv& F1);
+GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, cvv& F0, cvv& F1);
 // add SCF constraints to model with hess variables x
 void build_scf(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1);
 // add MCF constraints to model with hess variables x
@@ -28,38 +28,38 @@ void build_mcf2(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1);
 class HessCallback : public GRBCallback
 {
 protected:
-    GRBVar** x; // x variables
-    double** x_val; // x values
-    graph* g; // graph pointer
-    int n; // g->nr_nodes
-    cvv& F0;
-    cvv& F1;
+	GRBVar** x; // x variables
+	double** x_val; // x values
+	graph* g; // graph pointer
+	int n; // g->nr_nodes
+	cvv& F0;
+	cvv& F1;
 public:
-    int numCallbacks; // number of callback calls
-    double callbackTime; // cumulative time in callbacks
-    int numLazyCuts;
-    HessCallback(GRBVar** grb_x_, graph* g_, cvv& F0_, cvv& F1_) : x(grb_x_), g(g_), F0(F0_), F1(F1_), numCallbacks(0), callbackTime(0.), numLazyCuts(0)
-    {
-        n = g->nr_nodes;
-        x_val = new double*[n];
-        for (int i = 0; i < n; ++i)
-            x_val[i] = new double[n];
-    }
-    virtual ~HessCallback()
-    {
-        for (int i = 0; i < n; ++i)
-            delete[] x_val[i];
-        delete[] x_val;
-    }
+	int numCallbacks; // number of callback calls
+	double callbackTime; // cumulative time in callbacks
+	int numLazyCuts;
+	HessCallback(GRBVar** grb_x_, graph* g_, cvv& F0_, cvv& F1_) : x(grb_x_), g(g_), F0(F0_), F1(F1_), numCallbacks(0), callbackTime(0.), numLazyCuts(0)
+	{
+		n = g->nr_nodes;
+		x_val = new double*[n];
+		for (int i = 0; i < n; ++i)
+			x_val[i] = new double[n];
+	}
+	virtual ~HessCallback()
+	{
+		for (int i = 0; i < n; ++i)
+			delete[] x_val[i];
+		delete[] x_val;
+	}
 protected:
-    void populate_x()
-    {
-        for (int i = 0; i < n; ++i)
-            for (int j = 0; j < n; ++j)
-              if(IS_X(i,j))
-                x_val[i][j] = getSolution(x[i][j]);
-              else if(F1[i][j]) x_val[i][j] = 1.; else x_val[i][j] = 0.;
-    }
+	void populate_x()
+	{
+		for (int i = 0; i < n; ++i)
+			for (int j = 0; j < n; ++j)
+				if (IS_X(i, j))
+					x_val[i][j] = getSolution(x[i][j]);
+				else if (F1[i][j]) x_val[i][j] = 1.; else x_val[i][j] = 0.;
+	}
 };
 
 // @return callback for delete only
@@ -88,11 +88,27 @@ GRBVar** build_UL_2(GRBModel* model, graph* g, const vector<int>& population, in
 //    grad : pointer to the resulting gradient
 //    f_val : resulting objective value
 void eugene_inner(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,
-    const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& S,
-    const vector<vector<bool>>& F_0, const vector<vector<bool>>& F_1);
+	const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& S,
+	const vector<vector<bool>>& F_0, const vector<vector<bool>>& F_1);
 
 void lagrangianBasedSafeFixing(vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
-    const vector<vector<int>>& clusters, vector<double>& W, const vector<bool>& S, const double f_val, const double UB, const vector<vector<double>> &w_hat);
+	const vector<vector<int>>& clusters, vector<double>& W, const vector<bool>& S, const double f_val, const double UB, const vector<vector<double>> &w_hat);
+
+double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<int> &population, int L, int U, int k, 
+	vector<vector<double>>& LB0, vector<vector<double>>& LB1, vector<int> &lagrangianCenters);
+
+void solveInnerProblem(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,
+	const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& currentCenters);
+
+void update_LB0_and_LB1(const vector<double>& W, const vector<bool>& currentCenters, double f_val, 
+	const vector<vector<double>> &w_hat, vector< vector<double> > &LB0, vector< vector<double> > &LB1);
+
+vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vector<int>& population, 
+	int L, int U, int k, vector<int>&centers, string arg_model, double &UB);
+
+GRBVar** build_hess_restricted(GRBModel* model, graph* g, const vector<vector<double> >& w, 
+	const vector<int>& population, const vector<int>&centers, int L, int U, int k);
+
 
 //Preprocess functions
 vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int U, const vector<int>& population);
