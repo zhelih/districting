@@ -1,1 +1,1 @@
-const char *gitversion = "173259b";
+const char *gitversion = "(undefined)";
