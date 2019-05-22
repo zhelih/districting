@@ -10,7 +10,6 @@
 #include <cstring>
 #include <chrono>
 #include <string>
-#include "ralg/ralg.h"
 
 #ifndef sign
 #define sign(x) (((x)>0)?1:((x)==0)?0:(-1))

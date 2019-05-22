@@ -70,7 +70,7 @@ double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<i
 	for (int i = 0; i < dim; ++i)
 		multipliers[i] = 1.; // whatever
 	
-	ralg_options opt = defaultOptions; opt.output_iter = 1;
+	ralg_options opt = defaultOptions; opt.output_iter = 1; opt.is_monotone = false;
 	LB = ralg(&opt, cb_grad_func, dim, multipliers, bestMultipliers, RALG_MAX); // lower bound from lagrangian
 
 	// dump result to "state_model.hot"
