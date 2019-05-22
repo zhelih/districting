@@ -7,7 +7,8 @@
 #include <iostream>
 #include "graph.h"
 #include "models.h"
-#include "ralg\ralg.h"
+#include "ralg/ralg.h"
+
 struct pair_hash {
 	inline std::size_t operator()(const std::pair<int, int> & v) const {
 		return v.first * 31 + v.second;
