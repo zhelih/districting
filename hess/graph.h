@@ -34,9 +34,16 @@ public:
     graph* duplicate() const { return new graph(*this); }
     int get_k() const { return k; }
     void set_k(int k_) { k = k_; }
-    void connect(const std::vector<std::vector<int>>& dist); // make the graph connected    
+    void connect(const std::vector<std::vector<int>>& dist); // make the graph connected
 };
 
 graph* from_dimacs(const char* fname); // don't forget to delete
+
+//FIXME
+#ifndef INFINITY
+#define INFINITY 1e20
+#endif
+
+
 
 #endif
