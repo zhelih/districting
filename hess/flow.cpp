@@ -5,7 +5,7 @@
 #include "graph.h"
 #include "models.h"
 
-void build_scf(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
+void build_scf(GRBModel* model, hess_params& p, graph* g)
 {
     // create n^2 variables for arcs, presolve will eliminate unused
     int n = g->nr_nodes;
@@ -67,7 +67,7 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
     model->write("debug_scf.lp");
 }
 
-void build_mcf0(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
+void build_mcf0(GRBModel* model, hess_params& p, graph* g)
 {
     int n = g->nr_nodes;
 
@@ -123,7 +123,7 @@ void build_mcf0(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
             f[j][hash_edges[n*i + j]].set(GRB_DoubleAttr_UB, 0.); // in d^+ : edge (nb_j -- j)
 }
 
-void build_mcf1(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
+void build_mcf1(GRBModel* model, hess_params& p, graph* g)
 {
     int n = g->nr_nodes;
 
@@ -180,7 +180,7 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
             f[j][hash_edges[n*i + j]].set(GRB_CharAttr_VType, GRB_BINARY);
 }
 
-void build_mcf2(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
+void build_mcf2(GRBModel* model, hess_params& p, graph* g)
 {
     int n = g->nr_nodes;
 
@@ -268,7 +268,7 @@ void build_mcf2(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
             }
 }
 
-void strengthen_hess(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters, cvv& F0, cvv& F1)
+void strengthen_hess(GRBModel* model, hess_params& p, graph* g, vector<vector<int>>& clusters)
 {
     // strengthening by merging
     for (int v = 0; v < g->nr_nodes; ++v)

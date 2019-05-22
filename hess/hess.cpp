@@ -15,20 +15,26 @@ double get_objective_coefficient(const vector<vector<int>>& dist, const vector<i
 
 // adds hess model constraints and the objective function to model using graph "g", distance data "dist", population data "pop"
 // returns "x" variables in the Hess model
-GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, cvv& F0, cvv& F1)
+hess_params build_hess(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, cvv& F0, cvv& F1)
 {
 	// create GUROBI Hess model
 	int n = g->nr_nodes;
+  hess_params p;
+  p.n = n;
+  p.F0 = F0; p.F1 = F1; // copy
 
-	// create n^2 variables
-	GRBVar** x = new GRBVar*[n];
-	for (int i = 0; i < n; ++i)
-	{
-		x[i] = new GRBVar[n];
-		for (int j = 0; j < n; ++j)
-			if (IS_X(i, j))
-				x[i][j] = model->addVar(0., 1., 0., GRB_BINARY);
-	}
+  // hash variables
+  int cur = 0;
+  for(int i = 0; i < n; ++i)
+    for(int j = 0; j < n; ++j)
+      if(!F0[i][j] && !F1[i][j])
+        p.h[n*i+j] = cur++; //FIXME implicit reuse of the map (i,j) -> n*i+j
+
+  printf("Build hess : created %lu variables\n", p.h.size());
+  int nr_var = static_cast<int>(p.h.size());
+
+	// create variables
+  p.x = model->addVars(nr_var, GRB_BINARY);
 	model->update();
 
 	// Set objective: minimize sum d^2_ij*x_ij
@@ -75,7 +81,7 @@ GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<double> >& w,
 
 	//model->write("debug_hess.lp");
 
-	return x;
+	return p;
 }
 
 vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, vector<int>&centers, string arg_model, double &UB)

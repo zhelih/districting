@@ -13,14 +13,16 @@ typedef const vector<vector<bool>> cvv;
 struct hess_params
 {
   GRBVar* x;
-  const vector<vector<bool>> F0;
-  const vector<vector<bool>> F1;
+  vector<vector<bool>> F0;
+  vector<vector<bool>> F1;
   unordered_map<int,int> h;
+  int n;
 };
 
 //hack
-#define IS_X(i,j) (!F0[i][j] && !F1[i][j])
-#define X(i,j) (F0[i][j]?GRBLinExpr(0.):(F1[i][j]?GRBLinExpr(1.):GRBLinExpr(x[i][j])))
+#define IS_X(i,j) (!p.F0[i][j] && !p.F1[i][j])
+#define X_V(i,j) (p.x[p.h[p.n*i+j]])
+#define X(i,j) (p.F0[i][j]?GRBLinExpr(0.):(p.F1[i][j]?GRBLinExpr(1.):GRBLinExpr(X_V(i,j))))
 
 //auxilliary procedure
 double get_objective_coefficient(const vector<vector<int>>& dist, const vector<int>& population, int i, int j);
@@ -28,26 +30,25 @@ double get_objective_coefficient(const vector<vector<int>>& dist, const vector<i
 // build hess model and return x variables
 hess_params build_hess(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, cvv& F0, cvv& F1);
 // add SCF constraints to model with hess variables x
-void build_scf(GRBModel* model, const hess_params& p, graph* g);
+void build_scf(GRBModel* model, hess_params& p, graph* g);
 // add MCF constraints to model with hess variables x
-void build_mcf0(GRBModel* model, const hess_params& p, graph* g);
-void build_mcf1(GRBModel* model, const hess_params& p, graph* g);
-void build_mcf2(GRBModel* model, const hess_params& p, graph* g);
+void build_mcf0(GRBModel* model, hess_params& p, graph* g);
+void build_mcf1(GRBModel* model, hess_params& p, graph* g);
+void build_mcf2(GRBModel* model, hess_params& p, graph* g);
 // add CUT constraints to model with hess variables x (lazy)
 class HessCallback : public GRBCallback
 {
 protected:
-	GRBVar** x; // x variables
+  hess_params& p;
 	double** x_val; // x values
 	graph* g; // graph pointer
 	int n; // g->nr_nodes
-	cvv& F0;
-	cvv& F1;
 public:
 	int numCallbacks; // number of callback calls
 	double callbackTime; // cumulative time in callbacks
 	int numLazyCuts;
-	HessCallback(GRBVar** grb_x_, graph* g_, cvv& F0_, cvv& F1_) : x(grb_x_), g(g_), F0(F0_), F1(F1_), numCallbacks(0), callbackTime(0.), numLazyCuts(0)
+	HessCallback(hess_params& p_, graph* g_) : p(p_), g(g_), numCallbacks(0), callbackTime(0.), numLazyCuts(0)
+
 	{
 		n = g->nr_nodes;
 		x_val = new double*[n];
@@ -66,14 +67,14 @@ protected:
 		for (int i = 0; i < n; ++i)
 			for (int j = 0; j < n; ++j)
 				if (IS_X(i, j))
-					x_val[i][j] = getSolution(x[i][j]);
-				else if (F1[i][j]) x_val[i][j] = 1.; else x_val[i][j] = 0.;
+					x_val[i][j] = getSolution(X_V(i,j));
+				else if (p.F1[i][j]) x_val[i][j] = 1.; else x_val[i][j] = 0.;
 	}
 };
 
 // @return callback for delete only
-HessCallback* build_cut1(GRBModel* model, const hess_params& p, graph* g);
-HessCallback* build_cut2(GRBModel* model, const hess_params& p, graph* g);
+HessCallback* build_cut1(GRBModel* model, hess_params& p, graph* g);
+HessCallback* build_cut2(GRBModel* model, hess_params& p, graph* g);
 
 // add UL1 & UL2 instance and return x variables
 GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, int k);
@@ -124,7 +125,6 @@ vector<vector<int>> preprocess(graph* g, vector<int>& new_population, int L, int
 int FindMergableBiconnectedComponent(vector<vector<int>>& biconnectedComponents, vector<int>& new_population, const vector<int>& population, vector<int>& AV, int L);
 vector<vector<int>> FindClustersFromStemVector(graph* g, vector<int>& stem);
 void QuickTestForInfeasibility(graph* g, vector<int>& new_population, vector<bool>& deleted, int L, int U);
-void strengthen_hess(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters);
-
+void strengthen_hess(GRBModel* model, hess_params& p, graph* g, vector<vector<int>>& clusters);
 
 #endif

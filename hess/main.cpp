@@ -163,14 +163,14 @@ int main(int argc, char *argv[])
 		bool need_solution = true;
 
 		// get incumbent solution using centers from lagrangian
-		GRBVar** x = 0;
+		hess_params p;
 		if (arg_model != "ul1" && arg_model != "ul2")
-			x = build_hess(&model, g, w, population, L, U, k, F0, F1);
+			p = build_hess(&model, g, w, population, L, U, k, F0, F1);
 
 		// push GUROBI to branch over clusterheads
 		for (int i = 0; i < g->nr_nodes; ++i)
 			if (IS_X(i, i))
-				x[i][i].set(GRB_IntAttr_BranchPriority, 1);
+				X_V(i,i).set(GRB_IntAttr_BranchPriority, 1);
 
 		HessCallback* cb = 0;
 
@@ -178,24 +178,28 @@ int main(int argc, char *argv[])
 		//	strengthen_hess(&model, x, g, clusters);
 
 		if (arg_model == "scf")
-			build_scf(&model, x, g, F0, F1);
+			build_scf(&model, p, g);
 		else if (arg_model == "mcf0")
-			build_mcf0(&model, x, g, F0, F1);
+			build_mcf0(&model, p, g);
 		else if (arg_model == "mcf1")
-			build_mcf1(&model, x, g, F0, F1);
+			build_mcf1(&model, p, g);
 		else if (arg_model == "mcf2")
-			build_mcf2(&model, x, g, F0, F1);
+			build_mcf2(&model, p, g);
 		else if (arg_model == "cut1")
-			cb = build_cut1(&model, x, g, F0, F1);
+			cb = build_cut1(&model, p, g);
 		else if (arg_model == "cut2")
-			cb = build_cut2(&model, x, g, F0, F1);
+			cb = build_cut2(&model, p, g);
 		else if (arg_model == "ul1") {
-			x = build_UL_1(&model, g, population, k);
-			need_solution = false;
+      fprintf(stderr, "Disabled!\n");
+      return 0;
+//			x = build_UL_1(&model, g, population, k);
+//			need_solution = false;
 		}
 		else if (arg_model == "ul2") {
-			x = build_UL_2(&model, g, population, k);
-			need_solution = false;
+      fprintf(stderr, "Disabled!\n");
+      return 0;
+//			x = build_UL_2(&model, g, population, k);
+//			need_solution = false;
 		}
 		else if (arg_model != "hess") {
 			fprintf(stderr, "ERROR: Unknown model : %s\n", arg_model.c_str());
@@ -214,12 +218,10 @@ int main(int argc, char *argv[])
 		{
 			for (int j = 0; j < g->nr_nodes; ++j)
 				if(IS_X(i,j))
-					x[i][j].set(GRB_DoubleAttr_Start, 0);
+					X_V(i,j).set(GRB_DoubleAttr_Start, 0);
 
-			x[i][heuristicSolution[i]].set(GRB_DoubleAttr_Start, 1);
+			X_V(i, heuristicSolution[i]).set(GRB_DoubleAttr_Start, 1);
 		}
-
-		
 
 		//optimize the model
 		model.optimize();
@@ -288,7 +290,7 @@ int main(int argc, char *argv[])
 
 		if (need_solution && model.get(GRB_IntAttr_Status) != 3) {
 			vector<int> sol;
-			translate_solution(x, sol, g->nr_nodes, F0, F1);
+			translate_solution(p, sol, g->nr_nodes);
 			string fn = string(dimacs_fname);
 			string soln_fn = fn.substr(0, 2) + "_" + arg_model + ".sol";
 			int len = soln_fn.length() + 1;

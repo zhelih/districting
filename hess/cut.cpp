@@ -11,7 +11,7 @@ private:
     GRBVar **grb_y;
     double **y;
 public:
-    Cut1Callback(GRBVar **grb_x, GRBVar **yvars, graph *g, cvv& F0, cvv& F1) : HessCallback(grb_x, g, F0, F1), grb_y(yvars)
+    Cut1Callback(hess_params& p, GRBVar **yvars, graph *g) : HessCallback(p, g), grb_y(yvars)
     {
         y = new double*[n];
         for (int i = 0; i < n; ++i)
@@ -105,7 +105,7 @@ void Cut1Callback::callback()
     }
 }
 
-HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
+HessCallback* build_cut1(GRBModel* model, hess_params& p, graph* g)
 {
     // create n^2 variables, and set UB=0
     model->getEnv().set(GRB_IntParam_LazyConstraints, 1);
@@ -136,7 +136,7 @@ HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1
         model->addConstr(expr + X(i,i) == 1);
     }
     //FIXME delete
-    Cut1Callback* cb = new Cut1Callback(x, y, g, F0, F1); // tell Gurobi which function generates the lazy cuts.
+    Cut1Callback* cb = new Cut1Callback(p, y, g); // tell Gurobi which function generates the lazy cuts.
     model->setCallback(cb);
     model->update();
 
@@ -151,7 +151,7 @@ private:
     int* aci; // A(C_i) set
     std::vector<int> s; // stack for DFS
 public:
-    Cut2Callback(GRBVar** grb_x_, graph *g_, cvv& F0, cvv& F1) : HessCallback(grb_x_, g_, F0, F1)
+    Cut2Callback(hess_params& p, graph *g_) : HessCallback(p, g_)
     {
         visited = new int[n];
         aci = new int[n];
@@ -254,10 +254,10 @@ void Cut2Callback::callback()
     }
 }
 
-HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
+HessCallback* build_cut2(GRBModel* model, hess_params& p, graph* g)
 {
     model->getEnv().set(GRB_IntParam_LazyConstraints, 1); // turns off presolve!!!
-    Cut2Callback* cb = new Cut2Callback(x, g, F0, F1);
+    Cut2Callback* cb = new Cut2Callback(p, g);
     model->setCallback(cb);
     model->update();
     return cb;
