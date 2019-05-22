@@ -71,14 +71,15 @@ void translate_solution(GRBVar** x, vector<int>& sol, int n, const vector<vector
     // firstly assign district number for clusterheads
     for(int i = 0; i < n; ++i)
     {
-      if((F1[i][i] && !F0[i][i]) || x[i][i].get(GRB_DoubleAttr_X) > 0.5)
+      if(F0[i][i])
+        continue;
+      if(F1[i][i] || x[i][i].get(GRB_DoubleAttr_X) > 0.5)
         heads[i] = cur++;
     }
     for(int i = 0; i < n; ++i)
       for(int j = 0; j < n; ++j)
-        if((F1[i][j] && !F0[i][j]) || x[i][j].get(GRB_DoubleAttr_X) > 0.5)
+        if(F0[i][j]) continue; else if (F1[i][j] || x[i][j].get(GRB_DoubleAttr_X) > 0.5)
           sol[i] = heads[j];
-
 }
 
 // prints the solution <node> <district>
