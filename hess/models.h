@@ -2,12 +2,21 @@
 #define _MODELS_H
 
 #include <vector>
+#include <unordered_map>
 #include "graph.h"
 #include "gurobi_c++.h"
 
 using namespace std;
 
 typedef const vector<vector<bool>> cvv;
+
+struct hess_params
+{
+  GRBVar* x;
+  const vector<vector<bool>> F0;
+  const vector<vector<bool>> F1;
+  unordered_map<int,int> h;
+};
 
 //hack
 #define IS_X(i,j) (!F0[i][j] && !F1[i][j])
@@ -17,13 +26,13 @@ typedef const vector<vector<bool>> cvv;
 double get_objective_coefficient(const vector<vector<int>>& dist, const vector<int>& population, int i, int j);
 
 // build hess model and return x variables
-GRBVar** build_hess(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, cvv& F0, cvv& F1);
+hess_params build_hess(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, cvv& F0, cvv& F1);
 // add SCF constraints to model with hess variables x
-void build_scf(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1);
+void build_scf(GRBModel* model, const hess_params& p, graph* g);
 // add MCF constraints to model with hess variables x
-void build_mcf0(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1);
-void build_mcf1(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1);
-void build_mcf2(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1);
+void build_mcf0(GRBModel* model, const hess_params& p, graph* g);
+void build_mcf1(GRBModel* model, const hess_params& p, graph* g);
+void build_mcf2(GRBModel* model, const hess_params& p, graph* g);
 // add CUT constraints to model with hess variables x (lazy)
 class HessCallback : public GRBCallback
 {
@@ -63,8 +72,8 @@ protected:
 };
 
 // @return callback for delete only
-HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1);
-HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1);
+HessCallback* build_cut1(GRBModel* model, const hess_params& p, graph* g);
+HessCallback* build_cut2(GRBModel* model, const hess_params& p, graph* g);
 
 // add UL1 & UL2 instance and return x variables
 GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, int k);
