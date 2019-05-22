@@ -83,8 +83,7 @@ double ralg(const ralg_options* opt,
   if(!cb_grad_and_func(xk, f_val, grad))
   {
     printf("grad failed, aborting\n");
-    //FIXME memory leak
-    return 0;
+    return 0.;
   }
 
   f_optimal = f_val;
@@ -139,10 +138,15 @@ double ralg(const ralg_options* opt,
       if(j > opt->stepmax)
       {
         printf("function is unbounded, done %d steps, current step %.14e\n", j, step);
-        //FIXME memory leak
         return 0.;
       }
     } while(1);
+
+    if(!opt->is_monotone)
+    {
+      if((is_min && f_val < f_optimal) || (!is_min && f_val > f_optimal))
+        cblas_dcopy(DIMENSION, xk, 1, res, 1);
+    }
 
     if(is_min)
       f_optimal = min(f_optimal, f_val);
@@ -194,7 +198,8 @@ double ralg(const ralg_options* opt,
       printf("stepmin reached\n");
   }
 
-  cblas_dcopy(DIMENSION, xk, 1, res, 1);
+  if(opt->is_monotone)
+    cblas_dcopy(DIMENSION, xk, 1, res, 1);
 
   time_t t_done = time(NULL);
 
@@ -208,6 +213,7 @@ double ralg(const ralg_options* opt,
   free(grad);
   free(xk);
   dfree(B);
+
   return f_optimal;
 }
 

@@ -26,6 +26,7 @@ struct ralg_options
     bool output;
     unsigned int output_iter;
     double b_init;
+    bool is_monotone;
 };
 
 const ralg_options defaultOptions = {
@@ -56,7 +57,9 @@ const ralg_options defaultOptions = {
   // output_iter
   50,
   // b_init
-  1.
+  1.,
+  // is_monotone
+  true
 };
 
 double ralg(const ralg_options* opt,
