@@ -41,7 +41,7 @@ double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<i
 	double * bestMultipliers = new double[dim]; 
 	double * multipliers = new double[dim];
 
-	auto cb_grad_func = [g, &w, &population, L, U, k, &W, &w_hat, &currentCenters, &bestCenters, &bestMultipliers, &LB, &LB0, &LB1, dim](const double* multipliers, double& f_val, double* grad) 
+	auto cb_grad_func = [g, &w, &population, L, U, k, &W, &w_hat, &currentCenters, &bestCenters, &LB, &LB0, &LB1, dim](const double* multipliers, double& f_val, double* grad) 
 	{
 		solveInnerProblem(g, multipliers, L, U, k, population, w, w_hat, W, grad, f_val, currentCenters);
 		update_LB0_and_LB1(W, currentCenters, f_val, w_hat, LB0, LB1);
@@ -51,8 +51,6 @@ double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<i
 		{
 			LB = f_val;
 			bestCenters = currentCenters;
-			for(int i=0; i<dim; ++i)
-				bestMultipliers[i] = multipliers[i];
 		}
 		return true;
 	};
