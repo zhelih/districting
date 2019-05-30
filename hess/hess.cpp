@@ -1,6 +1,7 @@
 // source file for building hess model for further usage
 #include <cstdio>
 #include <vector>
+#include <algorithm>
 #include "graph.h"
 #include "gurobi_c++.h"
 #include "models.h"
@@ -84,17 +85,9 @@ hess_params build_hess(GRBModel* model, graph* g, const vector<vector<double> >&
 	return p;
 }
 
-vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, vector<int>&centers, string arg_model, double &UB)
+vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, string arg_model, double &UB, int maxIterations)
 {
-	if (centers.empty())
-	{
-		cout << "Set of centers is currently empty. Using the set { 0, 1, ..., k-1 }.\n";
-		centers.resize(k, 0);
-		for (int i = 0; i < k; ++i)
-			centers[i] = i;
-	}
-
-	vector<int> heuristicSolution(g->nr_nodes, 0);
+	vector<int> heuristicSolution(g->nr_nodes, -1);
 
 	if (arg_model != "hess")
 	{
@@ -102,8 +95,9 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
 		return heuristicSolution;
 	}
 
-	double newUB = INFINITY;
-	bool CentersChanged;
+	vector<int> centers(k, -1);
+	for (int i = 0; i < k; ++i) centers[i] = i; // dummy initialization just for build_hess_restricted. 
+	vector<int> iterHeuristicSolution(g->nr_nodes, -1);
 
 	try {
 
@@ -111,69 +105,113 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
 		GRBModel model = GRBModel(env);
 		GRBVar** x = 0;
 		x = build_hess_restricted(&model, g, w, population, centers, L, U, k);
-		model.set(GRB_DoubleParam_TimeLimit, 600.); 
+		model.set(GRB_DoubleParam_TimeLimit, 60.);
+		model.set(GRB_IntParam_OutputFlag, 0);
 
-		do {
-			UB = newUB;  // the UBs are monotone, so this is okay to do.
-			CentersChanged = false;
+		vector<int> allNodes(g->nr_nodes, -1);
+		for (int i = 0; i < g->nr_nodes; ++i) allNodes[i] = i;
 
-			// Set objective (Gurobi assumes minimization objective.)
-			for (int i = 0; i < g->nr_nodes; ++i)
-				for (int j = 0; j < k; ++j)
-					x[i][j].set(GRB_DoubleAttr_Obj, w[i][centers[j]]);
+		for (int iter = 0; iter < maxIterations; ++iter)
+		{
+			// select k centers at random
+			random_shuffle(allNodes.begin(), allNodes.end());
+			for (int i = 0; i < k; ++i)
+				centers[i] = allNodes[i];
+			
+			double iterUB = INFINITY;	// the best UB found in this iteration (iter)
+			double oldIterUB;			// the UB found in the previous iteration
+			for (int i = 0; i < g->nr_nodes; ++i) // reset vector for this iteration's heuristic solution 
+				iterHeuristicSolution[i] = -1;
 
-			model.optimize();
+			model.set(GRB_DoubleParam_MIPGap, 0.1); // Allow a loose gap in the first iteration. (The centers will be awful at first.)
+			bool centersChange;
 
-			if (model.get(GRB_IntAttr_Status) == 2 || model.get(GRB_IntAttr_Status) == 9) // model was solved to optimality (subject to tolerances), so update UB.
-			{
-				newUB = model.get(GRB_DoubleAttr_ObjVal);
-				cout << "UB from restricted IP = " << newUB << endl;
-			}
-			if (newUB < UB) // found a better solution; update the centers for the next iteration.
-			{
-				for (int j = 0; j < k; ++j)
+			// perform Hess descent
+			do {
+				oldIterUB = iterUB;
+				centersChange = false;
+
+				// Reset objective (Gurobi assumes minimization objective.)
+				for (int i = 0; i < g->nr_nodes; ++i)
+					for (int j = 0; j < k; ++j)
+						x[i][j].set(GRB_DoubleAttr_Obj, w[i][centers[j]]);
+
+				GRBLinExpr numCenters = 0;
+				for (int i = 0; i < k; ++i)
 				{
-					vector<int> district;
-					for (int i = 0; i < g->nr_nodes; ++i)
-						if (x[i][j].get(GRB_DoubleAttr_X) > 0.5)
-						{
-							district.push_back(i);
-							heuristicSolution[i] = centers[j];
-						}
+					int j = centers[i];
+					numCenters += x[j][i];
+				}
+				model.addConstr(numCenters == k, "fixCenters");  // in essence, fix the current centers to 1
 
-					// find best center of this district
-					int bestCenter = -1;
-					double bestCost = INFINITY;
+				model.optimize();
 
-					for (int i = 0; i < district.size(); ++i)
+				if (model.get(GRB_IntAttr_Status) == 2 || model.get(GRB_IntAttr_Status) == 9) // model was solved to optimality (subject to tolerances), so update UB.
+				{
+					iterUB = model.get(GRB_DoubleAttr_ObjVal); // we get a warm start from previous round, so iterUB will only get better
+					cout << "  UB from restricted IP = " << iterUB << " using centers : ";
+					for (int i = 0; i < k; ++i)
+						cout << centers[i] << " ";
+					cout << endl;
+				}
+
+				model.remove(model.getConstrByName("fixCenters")); // unfix the current centers
+
+				if (iterUB < oldIterUB) // objective value strictly improved, so we need to update incumbent for this iteration
+				{
+					for (int j = 0; j < k; ++j)  // find all nodes assigned to the j-th center.
 					{
-						// compute the Cost of this district when centered at c
-						int c = district[i];
-						double Cost = 0;
+						vector<int> district;
+						for (int i = 0; i < g->nr_nodes; ++i)
+							if (x[i][j].get(GRB_DoubleAttr_X) > 0.5)
+							{
+								district.push_back(i);
+								iterHeuristicSolution[i] = centers[j]; // update this iteration's incumbent
+							}
 
-						for (int p = 0; p < district.size(); ++p)
+						// find best center of this district
+						int bestCenter = -1;
+						double bestCost = INFINITY;
+
+						for (int i = 0; i < district.size(); ++i)
 						{
-							int v = district[p];
-							Cost += w[v][c];
-							//Cost += ((double)dist[v][c] / 1000.) * ((double)dist[v][c] / 1000.) * population[v];
+							// compute the Cost of this district when centered at c
+							int c = district[i];
+							double Cost = 0;
+
+							for (int p = 0; p < district.size(); ++p)
+							{
+								int v = district[p];
+								Cost += w[v][c];
+							}
+
+							if (Cost < bestCost)
+							{
+								bestCenter = c;
+								bestCost = Cost;
+							}
 						}
 
-						if (Cost < bestCost)
+						if (centers[j] != bestCenter) // if the centers haven't changed, there's no reason to resolve the IP
 						{
-							bestCenter = c;
-							bestCost = Cost;
+							centersChange = true;
+							centers[j] = bestCenter; // update the best center for this district
 						}
-					}
-
-					if (centers[j] != bestCenter)
-					{
-						CentersChanged = true;
-						centers[j] = bestCenter; // update the best center for this district
 					}
 				}
-			}
-		} while (newUB < UB && CentersChanged); // if the centers did not change, then the next iteration will not improve the UB, so terminate early.
+				// Now that the centers should be reasonable, require a tighter tolerance
+				model.set(GRB_DoubleParam_MIPGap, 0.0005);
 
+			} while (iterUB < oldIterUB && centersChange);
+
+			// update incumbents (if needed)
+			if (iterUB < UB)
+			{
+				UB = iterUB;
+				heuristicSolution = iterHeuristicSolution;
+			}
+			cout << "In iteration " << iter << " of HessHeuristic, objective value of incumbent is = " << UB << endl;
+		}
 	}
 	catch (GRBException e) {
 		cout << "Error code = " << e.getErrorCode() << endl;
@@ -185,10 +223,12 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
 	catch (...) {
 		cout << "Exception during optimization" << endl;
 	}
-	
-	UB = newUB;
-	cerr << "UB at end of HessHeuristic = " << UB << endl;
 
+	cout << "UB at end of HessHeuristic = " << UB << endl;
+	double obj = 0;
+	for (int i = 0; i < g->nr_nodes; ++i)
+		obj += w[i][heuristicSolution[i]];
+	cout << "UB of heuristicSolution = " << obj << endl;
 	return heuristicSolution;
 }
 
@@ -208,6 +248,11 @@ GRBVar** build_hess_restricted(GRBModel* model, graph* g, const vector<vector<do
 		x[i] = model->addVars(c, GRB_BINARY);
 	model->update();
 
+	// add objective
+	for (int i = 0; i < n; ++i)
+		for (int j = 0; j < c; ++j)
+			x[i][j].set(GRB_DoubleAttr_Obj, w[i][centers[j]]);
+
 	// add constraints (1b)
 	for (int i = 0; i < n; ++i)
 	{
@@ -217,11 +262,12 @@ GRBVar** build_hess_restricted(GRBModel* model, graph* g, const vector<vector<do
 		model->addConstr(constr == 1);
 	}
 
-	// add constraint (1c)
-	GRBLinExpr expr = 0;
-	for (int j = 0; j < c; ++j)
-		expr += x[centers[j]][j];
-	model->addConstr(expr == k);
+	//// add constraint (1c)
+	cout << "Currently not adding x(V)=k constraint (fixing center vars to 1) nor coupling in build_hess_restricted." << endl;
+	//GRBLinExpr expr = 0;
+	//for (int j = 0; j < c; ++j)
+	//	expr += x[centers[j]][j];
+	//model->addConstr(expr == k);
 
 	// add constraint (1d)
 	for (int j = 0; j < c; ++j)
@@ -237,4 +283,182 @@ GRBVar** build_hess_restricted(GRBModel* model, graph* g, const vector<vector<do
 	model->update();
 
 	return x;
+}
+void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& population,
+	int L, int U, int k, vector<int>&heuristicSolution, string arg_model, double &UB) // , cvv &F0)
+{
+	cout << endl << "Beginning LOCAL SEARCH with UB = " << UB << "\n\n";
+	if (arg_model != "hess")
+	{
+		cerr << "Model " << arg_model << " is currently not supported by HessHeuristic.\n";
+		return;
+	}
+	// initialize the centers from heuristicSolution
+	vector<int> centers(k, -1);
+	int pos = 0;
+	for (int i = 0; i < g->nr_nodes; ++i)
+	{
+		if (heuristicSolution[i] == i)
+		{
+			centers[pos] = i;
+			pos++;
+		}
+	}
+
+	//int numAvailableCenters = 0;
+	//for (int i = 0; i < g->nr_nodes; ++i)
+	//	if (!F0[i][i])
+	//		numAvailableCenters++;
+
+	//cout << "Number of available centers = " << numAvailableCenters << endl;
+	//if (numAvailableCenters <= k) {
+	//	cout << "No centers left to explore.\n";
+	//	return; // no local moves possible
+	//}
+
+	try {
+		GRBEnv env = GRBEnv();
+		GRBModel model = GRBModel(env);
+		GRBVar** x = 0;
+		x = build_hess_restricted(&model, g, w, population, centers, L, U, k);
+		for (int i = 0; i < k; ++i)
+		{
+			int j = centers[i];
+			x[j][i].set(GRB_DoubleAttr_LB, 1); // assign the centers to themselves.
+		}
+		model.set(GRB_DoubleParam_TimeLimit, 60.);
+		model.set(GRB_IntParam_OutputFlag, 0);
+
+		// create LP relaxation model. If its objective is bad, then we can terminate a local search move early. Roughly 0.2 sec (vs 2.0 sec) for MI.
+		GRBModel LPmodel = GRBModel(env);
+		GRBVar** LPx = 0;
+		LPx = build_hess_restricted(&LPmodel, g, w, population, centers, L, U, k);
+		for (int i = 0; i < g->nr_nodes; ++i)
+			for (int j = 0; j < k; ++j)
+			{
+				LPx[i][j].set(GRB_CharAttr_VType, GRB_CONTINUOUS);
+				LPx[i][j].set(GRB_DoubleAttr_LB, 0);
+				LPx[i][j].set(GRB_DoubleAttr_UB, 1);
+			}
+		for (int i = 0; i < k; ++i)
+		{
+			int j = centers[i];
+			LPx[j][i].set(GRB_DoubleAttr_LB, 1); // assign the centers to themselves.
+		}
+		LPmodel.set(GRB_IntParam_OutputFlag, 0);
+
+		bool improvement;
+		
+		do {
+			improvement = false;
+			for (int p = 0; p < k && !improvement; ++p)
+			{
+				int v = centers[p];
+				cout << "  checking neighbors of node " << v << endl;
+
+				for (int u : g->nb(v))  // swap v for u?
+				{
+					if (improvement) break;
+					//if (F0[u][u]) continue;
+
+					//cout << "checking node " << u << endl;
+
+					// update cost coefficients, as if we had centers[p] = u
+					for (int i = 0; i < g->nr_nodes; ++i)
+						LPx[i][p].set(GRB_DoubleAttr_Obj, w[i][u]);
+
+					LPx[v][p].set(GRB_DoubleAttr_LB, 0);
+					LPx[u][p].set(GRB_DoubleAttr_LB, 1);
+
+					LPmodel.optimize();
+					double LPobj = LPmodel.get(GRB_DoubleAttr_ObjVal);
+
+					// revert back
+					for (int i = 0; i < g->nr_nodes; ++i)
+						LPx[i][p].set(GRB_DoubleAttr_Obj, w[i][v]);
+
+					LPx[v][p].set(GRB_DoubleAttr_LB, 1);
+					LPx[u][p].set(GRB_DoubleAttr_LB, 0);
+
+					//cout << "LPobj = " << LPobj << ", while UB = " << UB << endl;
+					if (LPobj >= UB)
+					{
+						//cout << "LPobj >= UB, so terminating early.\n";
+						continue; // no need to solve IP, since LP relaxation will not improve the UB.
+					}
+
+					// update cost coefficients, as if we had centers[p] = u
+					for (int i = 0; i < g->nr_nodes; ++i)
+						x[i][p].set(GRB_DoubleAttr_Obj, w[i][u]);
+
+					x[v][p].set(GRB_DoubleAttr_LB, 0);
+					x[u][p].set(GRB_DoubleAttr_LB, 1);
+
+					model.optimize();
+
+					// revert back
+					for (int i = 0; i < g->nr_nodes; ++i)
+						x[i][p].set(GRB_DoubleAttr_Obj, w[i][v]);
+
+					x[v][p].set(GRB_DoubleAttr_LB, 1);
+					x[u][p].set(GRB_DoubleAttr_LB, 0);
+
+					// update incumbent (if needed)
+					if (model.get(GRB_IntAttr_Status) == 2 || model.get(GRB_IntAttr_Status) == 9) // model was solved to optimality (subject to tolerances), so update UB.
+					{
+						double newUB = model.get(GRB_DoubleAttr_ObjVal);
+
+						if (newUB < UB)
+						{
+							improvement = true;
+							cout << "found better UB from LS restricted IP = " << newUB;
+							UB = newUB;
+
+							// update centers, costs, and var fixings
+							centers[p] = u;
+
+							for (int i = 0; i < g->nr_nodes; ++i)
+								LPx[i][p].set(GRB_DoubleAttr_Obj, w[i][u]);
+
+							LPx[v][p].set(GRB_DoubleAttr_LB, 0);
+							LPx[u][p].set(GRB_DoubleAttr_LB, 1);
+
+							for (int i = 0; i < g->nr_nodes; ++i)
+								x[i][p].set(GRB_DoubleAttr_Obj, w[i][u]);
+
+							x[v][p].set(GRB_DoubleAttr_LB, 0);
+							x[u][p].set(GRB_DoubleAttr_LB, 1);
+
+							cout << " with centers : ";
+							for (int i = 0; i < k; ++i)
+								cout << centers[i] << " ";
+							cout << endl;
+
+							// update heuristicSolution
+							for (int i = 0; i < g->nr_nodes; ++i)
+								for (int j = 0; j < k; ++j)
+									if (x[i][j].get(GRB_DoubleAttr_X) > 0.5)
+										heuristicSolution[i] = centers[j];
+						}
+					}
+				}
+			}
+		} while (improvement);
+	}
+	catch (GRBException e) {
+		cout << "Error code = " << e.getErrorCode() << endl;
+		cout << e.getMessage() << endl;
+	}
+	catch (const char* msg) {
+		cout << "Exception with message : " << msg << endl;
+	}
+	catch (...) {
+		cout << "Exception during optimization" << endl;
+	}
+
+	cout << "UB at end of local search heuristic = " << UB << endl;
+	double obj = 0;
+	for (int i = 0; i < g->nr_nodes; ++i)
+		obj += w[i][heuristicSolution[i]];
+	cout << "UB of heuristicSolution = " << obj << endl;
 }

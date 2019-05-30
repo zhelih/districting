@@ -8,6 +8,7 @@
 #include "graph.h"
 #include "models.h"
 #include "ralg/ralg.h"
+#include "io.h"
 
 struct pair_hash {
 	inline std::size_t operator()(const std::pair<int, int> & v) const {
@@ -27,7 +28,7 @@ using namespace std;
 #endif
 
 double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<int> &population, int L, int U, int k, 
-	vector<vector<double>>& LB0, vector<vector<double>>& LB1, vector<int> &lagrangianCenters)
+	vector<vector<double>>& LB0, vector<vector<double>>& LB1, vector<int> &lagrangianCenters, bool ralg_hot_start, const char* ralg_hot_start_fname)
 {
 	double LB = -INFINITY;
 
@@ -59,14 +60,14 @@ double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<i
 
 	// run ralg
 	
-	cerr << "\n\n**Currently incapable of using/writing hot start**\n\n";
+	//cerr << "\n\n**Currently incapable of using/writing hot start**\n\n";
 
 	// try to load hot start if any
-	//if (ralg_hot_start)
-	//	read_ralg_hot_start(ralg_hot_start_fname, multipliers, dim);
-	//else
-	for (int i = 0; i < dim; ++i)
-		multipliers[i] = 1.; // whatever
+	if (ralg_hot_start)
+		read_ralg_hot_start(ralg_hot_start_fname, multipliers, dim);
+	else
+		for (int i = 0; i < dim; ++i)
+			multipliers[i] = 1.; // whatever
 	
 	ralg_options opt = defaultOptions; opt.output_iter = 1; opt.is_monotone = false;
 	LB = ralg(&opt, cb_grad_func, dim, multipliers, bestMultipliers, RALG_MAX); // lower bound from lagrangian

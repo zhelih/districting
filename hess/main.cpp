@@ -53,6 +53,8 @@ int main(int argc, char *argv[])
 	if (read_input_data(dimacs_fname, distance_fname, population_fname, g, dist, population))
 		return 1; // failure
 
+	cerr << dimacs_fname << " " << g->nr_nodes << " ";
+
 	int k = read_auto_int(argv[6], g->get_k());
 
 	if (L == 0 && U == 0)
@@ -113,11 +115,26 @@ int main(int argc, char *argv[])
 	vector< vector<double> > LB0(g->nr_nodes, vector<double>(g->nr_nodes,-INFINITY)); // LB0[i][j] is a lower bound on problem objective if we fix x[i][j] = 0
 	vector< vector<double> > LB1(g->nr_nodes, vector<double>(g->nr_nodes,-INFINITY)); // LB1[i][j] is a lower bound on problem objective if we fix x[i][j] = 1
 	vector<int> lagrangianCenters(k, -1);									// the centers coming from the best lagrangian inner problem
-	double LB = solveLagrangian(g, w, population, L, U, k, LB0, LB1, lagrangianCenters);// lower bound on problem objective, coming from lagrangian
+	auto lagrange_start = chrono::steady_clock::now();
+	double LB = solveLagrangian(g, w, population, L, U, k, LB0, LB1, lagrangianCenters, ralg_hot_start, ralg_hot_start_fname);// lower bound on problem objective, coming from lagrangian
+	chrono::duration<double> lagrange_duration = chrono::steady_clock::now() - lagrange_start;
+	cerr << LB << " " << lagrange_duration.count() << " ";
 
 	// run a heuristic
 	double UB = INFINITY;
-	vector<int> heuristicSolution = HessHeuristic(g, w, population, L, U, k, lagrangianCenters, arg_model, UB);
+	int maxIterations = 10;		// 10 iterations is often sufficient
+	auto heuristic_start = chrono::steady_clock::now();
+	vector<int> heuristicSolution = HessHeuristic(g, w, population, L, U, k, arg_model, UB, maxIterations);
+	chrono::duration<double> heuristic_duration = chrono::steady_clock::now() - heuristic_start;
+	cerr << UB << " " << heuristic_duration.count() << " ";
+	cout << "Best solution after " << maxIterations << " of HessHeuristic is = " << UB << endl;
+
+	// run local search
+	auto LS_start = chrono::steady_clock::now();
+	LocalSearch(g, w, population, L, U, k, heuristicSolution, arg_model, UB); // , F0);
+	chrono::duration<double> LS_duration = chrono::steady_clock::now() - LS_start;
+	cerr << UB << " " << LS_duration.count() << " ";
+	cout << "Best solution after local search is = " << UB << endl;
 
 	// determine which variables can be fixed
 	vector<vector<bool>> F0(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_0
@@ -126,8 +143,8 @@ int main(int argc, char *argv[])
 	{
 		for (int j = 0; j < g->nr_nodes; ++j)
 		{
-			if (LB0[i][j] > UB) F1[i][j] = true;
-			if (LB1[i][j] > UB) F0[i][j] = true;
+			if (LB0[i][j] > UB + 0.00001) F1[i][j] = true;
+			if (LB1[i][j] > UB + 0.00001) F0[i][j] = true;
 		}
 	}
 
@@ -146,12 +163,12 @@ int main(int argc, char *argv[])
 			else numUnfixed++;
 		}
 	}
-	cerr << endl;
-	cerr << "Number of variables fixed to zero = " << numFixedZero << endl;
-	cerr << "Number of variables fixed to one  = " << numFixedOne << endl;
-	cerr << "Number of variables not fixed     = " << numUnfixed << endl;
-	cerr << "Number of centers left            = " << numCentersLeft << endl;
-	cerr << "Percentage of vars fixed = " << (double)(g->nr_nodes*g->nr_nodes - numUnfixed) / (g->nr_nodes*g->nr_nodes) << endl;
+	cout << endl;
+	cout << "Number of variables fixed to zero = " << numFixedZero << endl;
+	cout << "Number of variables fixed to one  = " << numFixedOne << endl;
+	cout << "Number of variables not fixed     = " << numUnfixed << endl;
+	cout << "Number of centers left            = " << numCentersLeft << endl;
+	cout << "Percentage of vars fixed = " << (double)(g->nr_nodes*g->nr_nodes - numUnfixed) / (g->nr_nodes*g->nr_nodes) << endl;
 
 
 
@@ -220,11 +237,15 @@ int main(int argc, char *argv[])
 				if(IS_X(i,j))
 					X_V(i,j).set(GRB_DoubleAttr_Start, 0);
 
-			X_V(i, heuristicSolution[i]).set(GRB_DoubleAttr_Start, 1);
+			if(IS_X(i,heuristicSolution[i]))
+				X_V(i, heuristicSolution[i]).set(GRB_DoubleAttr_Start, 1);
 		}
 
 		//optimize the model
+		auto IP_start = chrono::steady_clock::now();
 		model.optimize();
+		chrono::duration<double> IP_duration = chrono::steady_clock::now() - IP_start;
+		cerr << IP_duration.count() << " ";
 
 		chrono::duration<double> duration = chrono::steady_clock::now() - start;
 		printf("Time elapsed: %lf seconds\n", duration.count()); // TODO use gurobi Runtime model attr
@@ -235,6 +256,7 @@ int main(int argc, char *argv[])
 			printf("Number of lazy constraints generated: %d\n", cb->numLazyCuts);
 			delete cb;
 		}
+		cerr << duration.count() << " ";
 
 #ifdef DO_BATCH_OUTPUT
 
@@ -257,6 +279,7 @@ int main(int argc, char *argv[])
 			double mipgap = model.get(GRB_DoubleAttr_MIPGap)*100.;
 			double objbound = model.get(GRB_DoubleAttr_ObjBound);
 
+			cerr << objbound << " " << objval << endl;
 
 			// no incumbent solution was found, these values do no make sense
 			if (model.get(GRB_IntAttr_SolCount) == 0)
