@@ -28,13 +28,9 @@ int main(int argc, char *argv[])
 		printf("Usage: %s <dimacs> <distance> <population> <L|auto> <U|auto> <k> <model> [ralg hot start]\n\
   Available models:\n\
   \thess\t\tHess model\n\
-  \tscf\t\tHess model with SCF\n\
-  \tmcf1\t\tHess model with MCF1\n\
-  \tmcf2\t\tHess model with MCF2\n\
-  \tcut1\t\tHess model with CUT1\n\
-  \tcut2\t\tHess modek with CUT2\n\
-  \tul1\t\tU-L model type 1\n\
-  \tul2\t\tU-L model type 2 (auto strong symmetry)\n", argv[0]);
+  \tshir\t\tHess model with SHIR\n\
+  \tmcf\t\tHess model with MCF\n\
+  \tcut\t\tHess model with CUT\n", argv[0]);
 		return 0;
 	}
 	// parse command line arguments
@@ -95,7 +91,7 @@ int main(int argc, char *argv[])
 
 	//apply the merging preprocess and get the clusters
 	vector<vector<int>> clusters;
-	if (arg_model == "scf" || arg_model == "mcf0" || arg_model == "mcf1" || arg_model == "mcf2" || arg_model == "cut1" || arg_model == "cut2")
+	if (arg_model == "shir" || arg_model == "mcf" || arg_model == "cut")
 	{
 		printf("Preprocessing the graph...\n");
 		vector<int> new_population;
@@ -177,12 +173,10 @@ int main(int argc, char *argv[])
 		// initialize environment and create an empty model
 		GRBEnv env = GRBEnv();
 		GRBModel model = GRBModel(env);
-		bool need_solution = true;
 
 		// get incumbent solution using centers from lagrangian
-		hess_params p;
-		if (arg_model != "ul1" && arg_model != "ul2")
-			p = build_hess(&model, g, w, population, L, U, k, F0, F1);
+    hess_params p;
+    p = build_hess(&model, g, w, population, L, U, k, F0, F1);
 
 		// push GUROBI to branch over clusterheads
 		for (int i = 0; i < g->nr_nodes; ++i)
@@ -191,33 +185,14 @@ int main(int argc, char *argv[])
 
 		HessCallback* cb = 0;
 
-		//if (arg_model != "hess" && arg_model != "ul1" && arg_model != "ul2")
 		//	strengthen_hess(&model, x, g, clusters);
 
-		if (arg_model == "scf")
-			build_scf(&model, p, g);
-		else if (arg_model == "mcf0")
-			build_mcf0(&model, p, g);
-		else if (arg_model == "mcf1")
-			build_mcf1(&model, p, g);
-		else if (arg_model == "mcf2")
-			build_mcf2(&model, p, g);
-		else if (arg_model == "cut1")
-			cb = build_cut1(&model, p, g);
-		else if (arg_model == "cut2")
-			cb = build_cut2(&model, p, g);
-		else if (arg_model == "ul1") {
-      fprintf(stderr, "Disabled!\n");
-      return 0;
-//			x = build_UL_1(&model, g, population, k);
-//			need_solution = false;
-		}
-		else if (arg_model == "ul2") {
-      fprintf(stderr, "Disabled!\n");
-      return 0;
-//			x = build_UL_2(&model, g, population, k);
-//			need_solution = false;
-		}
+		if (arg_model == "shir")
+			build_shir(&model, p, g);
+		else if (arg_model == "mcf")
+			build_mcf(&model, p, g);
+		else if (arg_model == "cut")
+			cb = build_cut(&model, p, g);
 		else if (arg_model != "hess") {
 			fprintf(stderr, "ERROR: Unknown model : %s\n", arg_model.c_str());
 			exit(1);
@@ -311,7 +286,7 @@ int main(int argc, char *argv[])
 		// printf("qwerly567: sol: no incumbent solution found!\n");
 #endif
 
-		if (need_solution && model.get(GRB_IntAttr_Status) != 3) {
+		if (model.get(GRB_IntAttr_Status) != 3) {
 			vector<int> sol;
 			translate_solution(p, sol, g->nr_nodes);
 			string fn = string(dimacs_fname);

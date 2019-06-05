@@ -5,7 +5,7 @@ MKLINCLUDE=$(MKLROOT)/include
 all: districting
 
 districting: *.cpp *.h version.c ralg.o
-	g++ -Wall -Wextra version.c graph.cpp lagrange.cpp main.cpp io.cpp hess.cpp flow.cpp cut.cpp diff_ul.cpp preprocess.cpp -o districting -I"$(GUROBI_HOME)/include" -L"$(GUROBI_HOME)/lib" -lgurobi_c++ -lgurobi81 -std=c++11 -O2 -Wno-sign-compare ralg.o -L$(MKLLIB) -I$(MKLINCLUDE)/intel64/lp64 -lmkl_blas95_lp64 -Wl,--start-group $(MKLLIB)/libmkl_intel_lp64.a $(MKLLIB)/libmkl_intel_thread.a $(MKLLIB)/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl
+	g++ -Wall -Wextra version.c graph.cpp lagrange.cpp main.cpp io.cpp hess.cpp flow.cpp cut.cpp preprocess.cpp -o districting -I"$(GUROBI_HOME)/include" -L"$(GUROBI_HOME)/lib" -lgurobi_c++ -lgurobi81 -std=c++11 -O2 -Wno-sign-compare ralg.o -L$(MKLLIB) -I$(MKLINCLUDE)/intel64/lp64 -lmkl_blas95_lp64 -Wl,--start-group $(MKLLIB)/libmkl_intel_lp64.a $(MKLLIB)/libmkl_intel_thread.a $(MKLLIB)/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl
 
 version.c: ../.git/HEAD ../.git/index
 	echo "const char *gitversion = \"$(shell git describe --tags --always)\";" > $@

@@ -4,146 +4,7 @@
 #include "models.h"
 #include <chrono>
 
-//Lazy constraints for solving CUT1 in political redistricting
-class Cut1Callback : public HessCallback
-{
-private:
-    GRBVar **grb_y;
-    double **y;
-public:
-    Cut1Callback(hess_params& p, GRBVar **yvars, graph *g) : HessCallback(p, g), grb_y(yvars)
-    {
-        y = new double*[n];
-        for (int i = 0; i < n; ++i)
-            y[i] = new double[n];
-    }
-    virtual ~Cut1Callback()
-    {
-        for (int i = 0; i < n; ++i)
-            delete[] y[i];
-        delete[] y;
-    }
-protected:
-    void callback();
-    void populate_y()
-    {
-        for (int i = 0; i < n; ++i)
-            for (int j = 0; j < n; ++j)
-                y[i][j] = getSolution(grb_y[i][j]);
-    }
-};
-
-void Cut1Callback::callback()
-{
-    using namespace std;
-    try
-    {
-        if (where == GRB_CB_MIPSOL) // Found an integer ``solution'' that satisfies all cut constraints so far.
-        {
-            ++numCallbacks;
-            auto start = chrono::steady_clock::now();
-
-            populate_x(); // from HessCallback 
-            populate_y(); // from Cut1Callback
-
-            for (int i = 0; i < n; ++i)
-            {
-                int root;
-                vector<bool> R(n, false);
-                R[i] = true;
-                for (int j = 0; j < n; ++j)
-                {
-                    if (x_val[i][j] > 0.5)
-                        root = j;
-                }
-                //do a DFS to find nodes that can reach i
-                vector<int> children;
-                children.push_back(i);
-                while (!children.empty())
-                { //do DFS
-                    int cur = children.back(); children.pop_back();
-                    for (int nb_cur : g->nb(cur))
-                    {
-                        if (!R[nb_cur] && y[nb_cur][cur] + y[cur][nb_cur] > 0.5)
-                        { //can only use vertices in S
-                            R[nb_cur] = true;
-                            children.push_back(nb_cur);
-                        }
-                    }
-                }
-                if (R[root]) continue;
-                GRBLinExpr expr = 0;
-                for (int j = 0; j < n; ++j)
-                {
-                    if (R[j])
-                    {
-                        expr += X(i,j);
-                        for (int u : g->nb(j))
-                        {
-                            if (!R[u])
-                                expr += grb_y[u][j];
-                        }
-                    }
-                }
-                //Adding Lazycuts
-                addLazy(expr >= 1);
-                ++numLazyCuts;
-            }
-
-            chrono::duration<double> d = chrono::steady_clock::now() - start;
-            callbackTime += d.count();
-        }
-    }
-    catch (GRBException e)
-    {
-        fprintf(stderr, "Error number: %d\n", e.getErrorCode());
-        fprintf(stderr, "%s\n", e.getMessage().c_str());
-    }
-    catch (...)
-    {
-        fprintf(stderr, "Error during callback\n");
-    }
-}
-
-HessCallback* build_cut1(GRBModel* model, hess_params& p, graph* g)
-{
-    // create n^2 variables, and set UB=0
-    model->getEnv().set(GRB_IntParam_LazyConstraints, 1);
-    int n = g->nr_nodes;
-
-    GRBVar** y = new GRBVar*[n]; //FIXME ever deleted?
-    for (int i = 0; i < n; ++i)
-    {
-        GRBVar *y_temp = new GRBVar[n];
-        for (int j = 0; j < n; ++j)
-        {
-            // set UBs to zero for all y vars
-            y_temp[j] = model->addVar(0.0, 0.0, 0.0, GRB_BINARY);
-        }
-        y[i] = y_temp;
-    }
-
-    // add constraint (23b)
-    for (int i = 0; i < n; ++i)
-    {
-        GRBLinExpr expr = 0;
-        for (int j : g->nb(i))
-        {
-            // set UBs to one for all arcs
-            y[j][i].set(GRB_DoubleAttr_UB, 1.0);
-            expr += y[j][i];
-        }
-        model->addConstr(expr + X(i,i) == 1);
-    }
-    //FIXME delete
-    Cut1Callback* cb = new Cut1Callback(p, y, g); // tell Gurobi which function generates the lazy cuts.
-    model->setCallback(cb);
-    model->update();
-
-    return cb;
-}
-
-class Cut2Callback : public HessCallback
+class CutCallback : public HessCallback
 {
     // memory for a callback
 private:
@@ -151,13 +12,13 @@ private:
     int* aci; // A(C_i) set
     std::vector<int> s; // stack for DFS
 public:
-    Cut2Callback(hess_params& p, graph *g_) : HessCallback(p, g_)
+    CutCallback(hess_params& p, graph *g_) : HessCallback(p, g_)
     {
         visited = new int[n];
         aci = new int[n];
         s.reserve(n);
     }
-    virtual ~Cut2Callback()
+    virtual ~CutCallback()
     {
         delete[] aci;
         delete[] visited;
@@ -166,7 +27,7 @@ protected:
     void callback();
 };
 
-void Cut2Callback::callback()
+void CutCallback::callback()
 {
     using namespace std;
     try
@@ -254,10 +115,10 @@ void Cut2Callback::callback()
     }
 }
 
-HessCallback* build_cut2(GRBModel* model, hess_params& p, graph* g)
+HessCallback* build_cut(GRBModel* model, hess_params& p, graph* g)
 {
     model->getEnv().set(GRB_IntParam_LazyConstraints, 1); // turns off presolve!!!
-    Cut2Callback* cb = new Cut2Callback(p, g);
+    CutCallback* cb = new CutCallback(p, g);
     model->setCallback(cb);
     model->update();
     return cb;

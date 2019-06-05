@@ -29,12 +29,9 @@ double get_objective_coefficient(const vector<vector<int>>& dist, const vector<i
 
 // build hess model and return x variables
 hess_params build_hess(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, cvv& F0, cvv& F1);
-// add SCF constraints to model with hess variables x
-void build_scf(GRBModel* model, hess_params& p, graph* g);
 // add MCF constraints to model with hess variables x
-void build_mcf0(GRBModel* model, hess_params& p, graph* g);
-void build_mcf1(GRBModel* model, hess_params& p, graph* g);
-void build_mcf2(GRBModel* model, hess_params& p, graph* g);
+void build_shir(GRBModel* model, hess_params& p, graph* g);
+void build_mcf(GRBModel* model, hess_params& p, graph* g);
 // add CUT constraints to model with hess variables x (lazy)
 class HessCallback : public GRBCallback
 {
@@ -73,12 +70,7 @@ protected:
 };
 
 // @return callback for delete only
-HessCallback* build_cut1(GRBModel* model, hess_params& p, graph* g);
-HessCallback* build_cut2(GRBModel* model, hess_params& p, graph* g);
-
-// add UL1 & UL2 instance and return x variables
-GRBVar** build_UL_1(GRBModel* model, graph* g, const vector<int>& population, int k);
-GRBVar** build_UL_2(GRBModel* model, graph* g, const vector<int>& population, int k);
+HessCallback* build_cut(GRBModel* model, hess_params& p, graph* g);
 
 //Lagrangian functions
 // input:
