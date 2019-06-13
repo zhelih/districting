@@ -1,7 +1,7 @@
 // Much of this code is written by Anurag Verma (student of Sergiy Butenko).
 // Modified by Hamidreza Validi.
 
-vector<int> graph::ShortestPathsNodeWeighted(int origin, const vector<int>& population, int total_pop)
+vector<int> graph::ShortestPathsNodeWeighted(int origin, const vector<int>& population, vector<bool> &deletedNodes, int total_pop)
 {
     int v, u;
     int infty = total_pop + 1;
@@ -10,7 +10,14 @@ vector<int> graph::ShortestPathsNodeWeighted(int origin, const vector<int>& popu
     dist[origin] = population[origin]; //the distance from the origin node is equal to its population
     int minDistance;
     int minVertex;
-   
+    
+    //make Q[v]= false for deleted nodes
+    for (int i = 0; i < nr_nodes; ++i)
+    {
+        if (!deletedNodes[i]) continue;
+        Q[i] = false;
+    }
+    
     // do node-weighted version of Dijkstra's shortest path algorithm.
     for (int i = 0; i < nr_nodes; ++i)
     {
@@ -26,6 +33,8 @@ vector<int> graph::ShortestPathsNodeWeighted(int origin, const vector<int>& popu
                 minVertex = v;
             }
         }
+        
+        if (minVertex == -1) continue;
         
         // remove minVertex from Q
         Q[minVertex] = false;
