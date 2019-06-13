@@ -61,7 +61,7 @@ int read_input_data(const char* dimacs_fname, const char* distance_fname, const 
 }
 
 // construct districts from hess variables
-void translate_solution(GRBVar** x, vector<int>& sol, int n)
+void translate_solution(GRBVar** x, vector<int>& sol, int n, const vector<vector<bool>>& F0, const vector<vector<bool>>& F1)
 {
     // translate the solution
     sol.resize(n);
@@ -70,11 +70,13 @@ void translate_solution(GRBVar** x, vector<int>& sol, int n)
     int cur = 1;
     // firstly assign district number for clusterheads
     for(int i = 0; i < n; ++i)
-      if(x[i][i].get(GRB_DoubleAttr_X) > 0.5)
+    {
+      if((F1[i][i] && !F0[i][i]) || x[i][i].get(GRB_DoubleAttr_X) > 0.5)
         heads[i] = cur++;
+    }
     for(int i = 0; i < n; ++i)
       for(int j = 0; j < n; ++j)
-        if(x[i][j].get(GRB_DoubleAttr_X) > 0.5)
+        if((F1[i][j] && !F0[i][j]) || x[i][j].get(GRB_DoubleAttr_X) > 0.5)
           sol[i] = heads[j];
 
 }
@@ -113,4 +115,41 @@ int read_auto_int(const char* arg, int def)
   if(strcmp(arg, "auto"))
     return std::atoi(arg);
   return def;
+}
+
+//read ralg initial point from file [fname] to [x0]
+void read_ralg_hot_start(const char* fname, double* x0, int dim)
+{
+  FILE* f = fopen(fname, "r");
+  if(!f)
+  {
+    fprintf(stderr, "Failed to open %s.\n", fname);
+    return;
+  }
+  for(int i = 0; i < dim; ++i)
+  {
+    double val = 0.;
+    if(EOF == fscanf(f, "%lf ", &val))
+    {
+      fprintf(stderr, "Failure to complete reading ralg x0 from %s.\n", fname);
+      break;
+    }
+    x0[i] = val;
+  }
+  fclose(f);
+}
+
+// dump result to "ralg_hot_start.txt"
+void dump_ralg_hot_start(double* res, int dim)
+{
+  const char* outname = "ralg_hot_start.txt";
+  FILE* f = fopen(outname, "w");
+  if(!f)
+  {
+    fprintf(stderr, "Cannot open %s for dumping ralg result.\n", outname);
+    return;
+  }
+  for(int i = 0; i < dim; ++i)
+    fprintf(f, "%lf\n", res[i]);
+  fclose(f);
 }

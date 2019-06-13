@@ -3,8 +3,9 @@
 #include <vector>
 #include "gurobi_c++.h"
 #include "graph.h"
+#include "models.h"
 
-void build_scf(GRBModel* model, GRBVar** x, graph* g)
+void build_scf(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
 {
     // create n^2 variables for arcs, presolve will eliminate unused
     int n = g->nr_nodes;
@@ -26,7 +27,7 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g)
         {
             expr += y[j][i];
         }
-        model->addConstr(expr + x[i][i] == 1);
+        model->addConstr(expr + X(i,i) == 1);
     }
 
     // add constraint (16c)
@@ -40,7 +41,7 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g)
         }
 
         for (int j = 0; j < n; ++j)
-            expr -= x[j][i];
+            expr -= X(j,i);
 
         model->addConstr(expr == -1);
     }
@@ -59,14 +60,14 @@ void build_scf(GRBModel* model, GRBVar** x, graph* g)
         // for every edge here
         for (int i = 0; i < n; ++i)
             for (int j : g->nb(i))
-                model->addConstr(x[i][v] + y[i][j] - x[j][v] <= 1);
+                model->addConstr(X(i,v) + y[i][j] - X(j,v) <= 1);
     }
     model->update();
 
     model->write("debug_scf.lp");
 }
 
-void build_mcf0(GRBModel* model, GRBVar** x, graph* g)
+void build_mcf0(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
 {
     int n = g->nr_nodes;
 
@@ -99,7 +100,7 @@ void build_mcf0(GRBModel* model, GRBVar** x, graph* g)
                 expr += f[j][hash_edges[n*nb_i + i]]; // in d^- : edge (nb_i -- i)
                 expr -= f[j][hash_edges[n*i + nb_i]]; // in d^+ : edge (i -- nb_i)
             }
-            model->addConstr(expr == x[i][j]);
+            model->addConstr(expr == X(i,j));
         }
     }
 
@@ -112,7 +113,7 @@ void build_mcf0(GRBModel* model, GRBVar** x, graph* g)
             GRBLinExpr expr = 0;
             for (int nb_i : g->nb(i))
                 expr += f[j][hash_edges[n*nb_i + i]]; // in d^- : edge (nb_i -- i)
-            model->addConstr(expr <= (n - 1) * x[i][j]);
+            model->addConstr(expr <= (n - 1) * X(i,j));
         }
     }
 
@@ -122,7 +123,7 @@ void build_mcf0(GRBModel* model, GRBVar** x, graph* g)
             f[j][hash_edges[n*i + j]].set(GRB_DoubleAttr_UB, 0.); // in d^+ : edge (nb_j -- j)
 }
 
-void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
+void build_mcf1(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
 {
     int n = g->nr_nodes;
 
@@ -155,7 +156,7 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
                 expr += f[i][hash_edges[n*j + nb_j]]; // in d^+ : edge (j -- nb_j)
                 expr -= f[i][hash_edges[n*nb_j + j]]; // in d^- : edge (nb_j -- j)
             }
-            model->addConstr(expr == x[i][j]);
+            model->addConstr(expr == X(i,j));
         }
     }
 
@@ -179,7 +180,7 @@ void build_mcf1(GRBModel* model, GRBVar** x, graph* g)
             f[j][hash_edges[n*i + j]].set(GRB_CharAttr_VType, GRB_BINARY);
 }
 
-void build_mcf2(GRBModel* model, GRBVar** x, graph* g)
+void build_mcf2(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
 {
     int n = g->nr_nodes;
 
@@ -230,7 +231,7 @@ void build_mcf2(GRBModel* model, GRBVar** x, graph* g)
                 expr += f[b][hash_edges[b*n + j]][a_i]; // b -- j in d^+(b)
                 expr -= f[b][hash_edges[j*n + b]][a_i]; // j -- b in d^-(b)
             }
-            model->addConstr(expr == x[non_nbs[b][a_i]][b]);
+            model->addConstr(expr == X(non_nbs[b][a_i],b));
         }
 
     // add constraint (19c)
@@ -263,11 +264,11 @@ void build_mcf2(GRBModel* model, GRBVar** x, graph* g)
                 GRBLinExpr expr = 0;
                 for (int i : g->nb(j))
                     expr += f[b][hash_edges[i*n + j]][a_i]; // i -- j
-                model->addConstr(expr <= x[j][b]);
+                model->addConstr(expr <= X(j,b));
             }
 }
 
-void strengthen_hess(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters)
+void strengthen_hess(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>& clusters, cvv& F0, cvv& F1)
 {
     // strengthening by merging
     for (int v = 0; v < g->nr_nodes; ++v)
@@ -278,7 +279,7 @@ void strengthen_hess(GRBModel* model, GRBVar** x, graph* g, vector<vector<int>>&
             for (int j = 1; j < clusters[i].size(); ++j)
             {
                 int cur = clusters[i][j];
-                model->addConstr(x[cur][v] - x[articulation][v] == 0);
+                model->addConstr(X(cur,v) - X(articulation,v) == 0);
             }
         }
     }

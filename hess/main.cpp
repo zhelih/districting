@@ -10,7 +10,7 @@
 #include <cstring>
 #include <chrono>
 #include <string>
-#include "ralg.h"
+#include "ralg/ralg.h"
 
 #ifndef sign
 #define sign(x) (((x)>0)?1:((x)==0)?0:(-1))
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     ios::sync_with_stdio(1);
     //printf("Districting, build %s\n", gitversion);
     if (argc < 8) {
-        printf("Usage: %s <dimacs> <distance> <population> <L|auto> <U|auto> <k> <model>\n\
+        printf("Usage: %s <dimacs> <distance> <population> <L|auto> <U|auto> <k> <model> [ralg hot start]\n\
   Available models:\n\
   \thess\t\tHess model\n\
   \tscf\t\tHess model with SCF\n\
@@ -44,8 +44,8 @@ int main(int argc, char *argv[])
     char* population_fname = argv[3];
     int L = read_auto_int(argv[4], 0);
     int U = read_auto_int(argv[5], 0);
-
-
+    bool ralg_hot_start = argc > 8;
+    char* ralg_hot_start_fname = ralg_hot_start?argv[8]:nullptr;
 
     // read inputs
     graph* g = 0;
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
         total_pop += p;
     printf("Model input: total population = %ld\n", total_pop);
 
-    string arg_model = argv[argc - 1];
+    string arg_model = argv[7];
 
     //apply the merging preprocess and get the clusters
     vector<vector<int>> clusters;
@@ -107,10 +107,10 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < g->nr_nodes; i++)
         for (int j = 0; j < g->nr_nodes; j++)
-            w[i][j] = ((double)dist[i][j] / 1000.) * ((double)dist[i][j] / 1000.) * population[i];
+            w[i][j] = get_objective_coefficient(dist, population, i, j);
 
-    vector<vector<bool>> F_0(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_0
-    vector<vector<bool>> F_1(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_1
+    vector<vector<bool>> F0(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_0
+    vector<vector<bool>> F1(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_1
 
     vector<bool> S(g->nr_nodes);
 
@@ -124,18 +124,6 @@ int main(int argc, char *argv[])
     for (int i = 0; i < g->nr_nodes; ++i)
         clusters[i].push_back(i);
 
-    auto cb_grad_func = [g, L, U, k, &population, &w, &S, &F_0, &F_1, &W, &w_hat, &clusters](const double* multipliers, double& f_val, double* grad) {
-        f_val = 0;
-
-        // calculate here the gradient and obj value
-        solveInnerProblem(g, multipliers, F_0, F_1, L, U, k, clusters, population, w, w_hat, W, S, grad, f_val);
-
-        // revert the grads if needed to maintain positive l,u
-        for (int i = g->nr_nodes; i < 3 * g->nr_nodes; ++i)
-            grad[i] = sign(multipliers[i])*grad[i];
-        return true;
-    };
-
     double UB = INFINITY; // = 1439.05;
     vector<long> frequency(g->nr_nodes, 0);
     double bestLB = -INFINITY;
@@ -144,12 +132,11 @@ int main(int argc, char *argv[])
     vector<vector<double>> bestw_hat(g->nr_nodes, vector<double>(g->nr_nodes));
     vector<double> bestMultipliers(3*g->nr_nodes, 0);
 
-    auto cb_grad_func2 = [g, L, U, k, &population, &w, &W, &w_hat, &S, &F_0, &F_1, &clusters, &UB, &frequency, &bestLB, &bestCenters, &bestW, &bestw_hat](const double* multipliers, double& f_val, double* grad) {
+    auto cb_grad_func = [g, L, U, k, &population, &w, &W, &w_hat, &S, &F0, &F1, &clusters, &UB, &frequency, &bestLB, &bestCenters, &bestW, &bestw_hat](const double* multipliers, double& f_val, double* grad) {
         f_val = 0;
 
         // calculate here the gradient and obj value
-        eugene_inner(g, multipliers, L, U, k, population, w, w_hat, W, grad, f_val, S);
-        //lagrangianBasedSafeFixing(F_0, F_1, clusters, W, S, f_val, UB);
+        eugene_inner(g, multipliers, L, U, k, population, w, w_hat, W, grad, f_val, S, F0, F1);
         if (f_val > bestLB)
         {
             bestLB = f_val;
@@ -172,11 +159,18 @@ int main(int argc, char *argv[])
     // run ralg
     int dim = 3 * g->nr_nodes;
     double * x0 = new double[dim];
-    for (int i = 0; i < dim; ++i)
+    // try to load hot start if any
+    if(ralg_hot_start)
+      read_ralg_hot_start(ralg_hot_start_fname, x0, dim);
+    else
+      for (int i = 0; i < dim; ++i)
         x0[i] = 1.; // whatever
     double* res = new double[dim];
     ralg_options opt = defaultOptions; opt.output_iter = 1;
-    double LB = ralg(&opt, cb_grad_func2, dim, x0, res, RALG_MAX); // lower bound from lagrangian
+    double LB = ralg(&opt, cb_grad_func, dim, x0, res, RALG_MAX); // lower bound from lagrangian
+
+    // dump result to "ralg_hot_start.txt"
+    dump_ralg_hot_start(res, dim);
 
     delete[] x0;
     delete[] res;
@@ -207,10 +201,11 @@ int main(int argc, char *argv[])
         // get incumbent solution using centers from lagrangian
         GRBVar** x = 0;
         if (arg_model != "ul1" && arg_model != "ul2")
-            x = build_hess(&model, g, dist, population, L, U, k);
+            x = build_hess(&model, g, dist, population, L, U, k, F0, F1);
 
         // push GUROBI to branch over clusterheads
         for (int i = 0; i < g->nr_nodes; ++i)
+          if(IS_X(i,i))
             x[i][i].set(GRB_IntAttr_BranchPriority, 1);
 
         HessCallback* cb = 0;
@@ -219,17 +214,17 @@ int main(int argc, char *argv[])
         //	strengthen_hess(&model, x, g, clusters);
 
         if (arg_model == "scf")
-            build_scf(&model, x, g);
+            build_scf(&model, x, g, F0, F1);
         else if (arg_model == "mcf0")
-            build_mcf0(&model, x, g);
+            build_mcf0(&model, x, g, F0, F1);
         else if (arg_model == "mcf1")
-            build_mcf1(&model, x, g);
+            build_mcf1(&model, x, g, F0, F1);
         else if (arg_model == "mcf2")
-            build_mcf2(&model, x, g);
+            build_mcf2(&model, x, g, F0, F1);
         else if (arg_model == "cut1")
-            cb = build_cut1(&model, x, g);
+            cb = build_cut1(&model, x, g, F0, F1);
         else if (arg_model == "cut2")
-            cb = build_cut2(&model, x, g);
+            cb = build_cut2(&model, x, g, F0, F1);
         else if (arg_model == "ul1") {
             x = build_UL_1(&model, g, population, k);
             need_solution = false;
@@ -271,7 +266,7 @@ int main(int argc, char *argv[])
         cerr << "frequency values for best centers: ";
         for (int i = 0; i < g->nr_nodes; ++i)
         {
-            if (!bestCenters[i]) x[i][i].set(GRB_DoubleAttr_UB, 0);
+            if (!bestCenters[i] && IS_X(i,i)) x[i][i].set(GRB_DoubleAttr_UB, 0);
             else cerr << frequency[i] << " ";
         }
         cerr << endl;
@@ -288,18 +283,21 @@ int main(int argc, char *argv[])
         // unfix the vars that had been fixed (in the restricted problem)
         for (int j = 0; j < g->nr_nodes; ++j)
         {
+          if(IS_X(j,j))
+          {
             x[j][j].set(GRB_DoubleAttr_UB, 1);
             x[j][j].set(GRB_DoubleAttr_LB, 0);
+          }
         }
 
         // figure out which x[i][j] vars can be fixed to zero/one and fix them.
-        lagrangianBasedSafeFixing(F_0, F_1, clusters, bestW, bestCenters, bestLB, UB, bestw_hat);
+        lagrangianBasedSafeFixing(F0, F1, clusters, bestW, bestCenters, bestLB, UB, bestw_hat);
         for (int i = 0; i < g->nr_nodes; ++i)
         {
             for (int j = 0; j < g->nr_nodes; ++j)
             {
-                if (F_0[i][j]) x[i][j].set(GRB_DoubleAttr_UB, 0);
-                if (F_1[i][j]) x[i][j].set(GRB_DoubleAttr_LB, 1);
+                if (F0[i][j]) x[i][j].set(GRB_DoubleAttr_UB, 0);
+                if (F1[i][j]) x[i][j].set(GRB_DoubleAttr_LB, 1);
             }
         }
 
@@ -377,7 +375,7 @@ int main(int argc, char *argv[])
 
         if (need_solution && model.get(GRB_IntAttr_Status) != 3) {
             vector<int> sol;
-            translate_solution(x, sol, g->nr_nodes);
+            translate_solution(x, sol, g->nr_nodes, F0, F1);
             string fn = string(dimacs_fname);
             string soln_fn = fn.substr(0, 2) + "_" + arg_model + ".sol";
             int len = soln_fn.length() + 1;

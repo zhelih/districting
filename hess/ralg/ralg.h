@@ -59,7 +59,7 @@ const ralg_options defaultOptions = {
   1.
 };
 
-void ralg(const ralg_options* opt,
+double ralg(const ralg_options* opt,
           std::function<bool (const double*, double&, double*)> cb_grad_and_func,
           unsigned int DIMENSION,
           double* x0,

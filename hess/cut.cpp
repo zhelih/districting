@@ -11,7 +11,7 @@ private:
     GRBVar **grb_y;
     double **y;
 public:
-    Cut1Callback(GRBVar **grb_x, GRBVar **yvars, graph *g) : HessCallback(grb_x, g), grb_y(yvars)
+    Cut1Callback(GRBVar **grb_x, GRBVar **yvars, graph *g, cvv& F0, cvv& F1) : HessCallback(grb_x, g, F0, F1), grb_y(yvars)
     {
         y = new double*[n];
         for (int i = 0; i < n; ++i)
@@ -53,7 +53,7 @@ void Cut1Callback::callback()
                 R[i] = true;
                 for (int j = 0; j < n; ++j)
                 {
-                    if (x[i][j] > 0.5)
+                    if (x_val[i][j] > 0.5)
                         root = j;
                 }
                 //do a DFS to find nodes that can reach i
@@ -77,7 +77,7 @@ void Cut1Callback::callback()
                 {
                     if (R[j])
                     {
-                        expr += grb_x[i][j];
+                        expr += X(i,j);
                         for (int u : g->nb(j))
                         {
                             if (!R[u])
@@ -105,7 +105,7 @@ void Cut1Callback::callback()
     }
 }
 
-HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g)
+HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
 {
     // create n^2 variables, and set UB=0
     model->getEnv().set(GRB_IntParam_LazyConstraints, 1);
@@ -133,10 +133,10 @@ HessCallback* build_cut1(GRBModel* model, GRBVar** x, graph* g)
             y[j][i].set(GRB_DoubleAttr_UB, 1.0);
             expr += y[j][i];
         }
-        model->addConstr(expr + x[i][i] == 1);
+        model->addConstr(expr + X(i,i) == 1);
     }
     //FIXME delete
-    Cut1Callback* cb = new Cut1Callback(x, y, g); // tell Gurobi which function generates the lazy cuts.
+    Cut1Callback* cb = new Cut1Callback(x, y, g, F0, F1); // tell Gurobi which function generates the lazy cuts.
     model->setCallback(cb);
     model->update();
 
@@ -151,7 +151,7 @@ private:
     int* aci; // A(C_i) set
     std::vector<int> s; // stack for DFS
 public:
-    Cut2Callback(GRBVar** grb_x_, graph *g_) : HessCallback(grb_x_, g_)
+    Cut2Callback(GRBVar** grb_x_, graph *g_, cvv& F0, cvv& F1) : HessCallback(grb_x_, g_, F0, F1)
     {
         visited = new int[n];
         aci = new int[n];
@@ -182,7 +182,7 @@ void Cut2Callback::callback()
             bool done = false;
             for (int i = 0; i < n && !done; ++i)
             {
-                if (x[i][i] > 0.5) // i is a clusterhead
+                if (x_val[i][i] > 0.5) // i is a clusterhead
                 {
                     // run DFS from i on C_i, compute A(C_i) to save time later
                     // clean A(C_i) and visited
@@ -199,7 +199,7 @@ void Cut2Callback::callback()
                         int cur = s.back(); s.pop_back();
                         visited[cur] = 1;
                         for (int nb_cur : g->nb(cur))
-                            if (x[nb_cur][i] > 0.5) // if nb_cur is in C_i
+                            if (x_val[nb_cur][i] > 0.5) // if nb_cur is in C_i
                             {
                                 if (!visited[nb_cur])
                                     s.push_back(nb_cur);
@@ -209,7 +209,7 @@ void Cut2Callback::callback()
 
                     // here if C_i is connected, all vertices in C_i must be visited
                     for (int j = 0; j < n; ++j)
-                        if (x[j][i] > 0.5 && !visited[j])
+                        if (x_val[j][i] > 0.5 && !visited[j])
                         {
                             // compute i-j separator, A(C_i) is already computed)
                             GRBLinExpr expr = 0;
@@ -226,12 +226,12 @@ void Cut2Callback::callback()
                                     {
                                         visited[nb_cur] = 1;
                                         if (aci[nb_cur])
-                                            expr += grb_x[nb_cur][i];
+                                            expr += X(nb_cur, i);
                                         else s.push_back(nb_cur);
                                     }
                                 }
                             }
-                            expr -= grb_x[j][i]; // RHS
+                            expr -= X(j,i); // RHS
                             addLazy(expr >= 0);
                             ++numLazyCuts;
                             done = true;
@@ -254,10 +254,10 @@ void Cut2Callback::callback()
     }
 }
 
-HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g)
+HessCallback* build_cut2(GRBModel* model, GRBVar** x, graph* g, cvv& F0, cvv& F1)
 {
     model->getEnv().set(GRB_IntParam_LazyConstraints, 1); // turns off presolve!!!
-    Cut2Callback* cb = new Cut2Callback(x, g);
+    Cut2Callback* cb = new Cut2Callback(x, g, F0, F1);
     model->setCallback(cb);
     model->update();
     return cb;
