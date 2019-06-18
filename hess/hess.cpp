@@ -85,28 +85,116 @@ hess_params build_hess(GRBModel* model, graph* g, const vector<vector<double> >&
 	return p;
 }
 
-vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, string arg_model, double &UB, int maxIterations)
+// populate F0 and F1 depending on current centers
+void populate_hess_params(hess_params& p, graph* g, const vector<int>& centers)
+{
+  int n = g->nr_nodes; p.n = n;
+  int cur = 0;
+  p.h.clear();
+
+  //define x_ij for every for every j \in centers
+  for(int j : centers)
+    for(int i = 0; i < n; ++i)
+       p.h[n*i+j] = cur++;
+
+  // clear F0 and F1
+  p.F0.resize(n); p.F1.resize(n);
+  for(int i = 0; i < n; ++i)
+  {
+    p.F0[i].resize(n); p.F1[i].resize(n);
+    fill(p.F0[i].begin(), p.F0[i].end(), false);
+    fill(p.F1[i].begin(), p.F1[i].end(), false);
+  }
+
+  // fill F0 and F1
+  //for(int j : centers)
+  //  p.F1[j][j] = true; // the centers fixed to 1
+  vector<bool> aux_F1(n, false);
+  for(int j : centers)
+    aux_F1[j] = true;
+
+  for(int j = 0; j < n; ++j)
+    if(!aux_F1[j])
+      for(int i = 0; i < n; ++i)
+        p.F0[i][j] = true; // other centers as well as corresponding i fixed to 0
+}
+
+#define ENSURE(i,j) {if(p.h.count(p.n*i+j)==0){fprintf(stderr,"ensure failed at line %d for i = %d, j = %d\n", __LINE__, i, j);exit(1);}}
+
+// adds hess model constraints and the objective function to model using graph "g", distance data "dist", population data "pop"
+// returns "x" variables in the Hess model
+hess_params build_hess_restricted(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, const vector<int>&centers, int L, int U, int k)
+{
+	// create GUROBI Hess model
+	int n = g->nr_nodes;
+	int c = centers.size();
+	cout << "# centers = " << c << ", while k = " << k << " and n = " << n << endl;
+	if (c != k) cerr << "ERROR: improper number of centers selected for restricted problem." << endl;
+
+  // hash (i,j) for j in centers
+  hess_params p;
+  populate_hess_params(p, g, centers);
+	// create (n-1)*(# centers) variables
+	p.x = model->addVars(p.h.size(), GRB_BINARY); // h.size() = n * centers.size()
+	model->update();
+
+	// recompute objective
+	for (int i = 0; i < n; ++i)
+		for (int j : centers)
+    {
+      ENSURE(i,j);
+		  X_V(i,j).set(GRB_DoubleAttr_Obj, w[i][j]);
+    }
+
+	// add constraints (1b)
+	for (int i = 0; i < n; ++i)
+	{
+		GRBLinExpr constr = 0;
+		for (int j : centers)
+    {
+      ENSURE(i,j);
+		  constr += X(i,j);
+    }
+		model->addConstr(constr == 1); // each i must be assigned to a center
+	}
+
+  // add constraint (1d)
+	for (int j : centers)
+	{
+		GRBLinExpr constr = 0;
+		for (int i = 0; i < n; ++i)
+    {
+      ENSURE(i,j);
+			constr += population[i] * X(i,j);
+    }
+		// add for j
+		model->addConstr(constr - U <= 0); // U
+		model->addConstr(constr - L >= 0); // L
+	}
+
+	model->update();
+
+	return p;
+}
+
+vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, double &UB, int maxIterations, bool do_cuts)
 {
 	vector<int> heuristicSolution(g->nr_nodes, -1);
 
-	if (arg_model != "hess")
-	{
-		cerr << "Model " << arg_model << " is currently not supported by HessHeuristic.\n";
-		return heuristicSolution;
-	}
-
 	vector<int> centers(k, -1);
-	for (int i = 0; i < k; ++i) centers[i] = i; // dummy initialization just for build_hess_restricted. 
+	for (int i = 0; i < k; ++i) centers[i] = i; // dummy initialization just for build hess restricted. 
 	vector<int> iterHeuristicSolution(g->nr_nodes, -1);
+
+  HessCallback* cb = nullptr;
 
 	try {
 
 		GRBEnv env = GRBEnv();
 		GRBModel model = GRBModel(env);
-		GRBVar** x = 0;
-		x = build_hess_restricted(&model, g, w, population, centers, L, U, k);
 		model.set(GRB_DoubleParam_TimeLimit, 60.);
 		model.set(GRB_IntParam_OutputFlag, 0);
+
+		hess_params p = build_hess_restricted(&model, g, w, population, centers, L, U, k);
 
 		vector<int> allNodes(g->nr_nodes, -1);
 		for (int i = 0; i < g->nr_nodes; ++i) allNodes[i] = i;
@@ -114,10 +202,10 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
 		for (int iter = 0; iter < maxIterations; ++iter)
 		{
 			// select k centers at random
-			random_shuffle(allNodes.begin(), allNodes.end());
+			random_shuffle(allNodes.begin(), allNodes.end()); //FIXME O(n) instead of O(k)
 			for (int i = 0; i < k; ++i)
 				centers[i] = allNodes[i];
-			
+
 			double iterUB = INFINITY;	// the best UB found in this iteration (iter)
 			double oldIterUB;			// the UB found in the previous iteration
 			for (int i = 0; i < g->nr_nodes; ++i) // reset vector for this iteration's heuristic solution 
@@ -132,18 +220,29 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
 				centersChange = false;
 
 				// Reset objective (Gurobi assumes minimization objective.)
+        populate_hess_params(p, g, centers); // now just use X(i,j), F0, F1 and more importantly hashtable are properly set up
+        if(do_cuts)
+        {
+          if(cb)
+            delete cb;
+          build_cut(&model, p, g); //FIXME do pointers instead? worth it? prob no
+        }
+        model.reset(); // should be done in any case for predicted behavior
 				for (int i = 0; i < g->nr_nodes; ++i)
-					for (int j = 0; j < k; ++j)
-						x[i][j].set(GRB_DoubleAttr_Obj, w[i][centers[j]]);
+					for (int j : centers)
+          {
+            ENSURE(i,j);
+						X_V(i,j).set(GRB_DoubleAttr_Obj, w[i][j]);
+          }
 
 				GRBLinExpr numCenters = 0;
-				for (int i = 0; i < k; ++i)
-				{
-					int j = centers[i];
-					numCenters += x[j][i];
-				}
-				model.addConstr(numCenters == k, "fixCenters");  // in essence, fix the current centers to 1
+				for (int j : centers)
+        {
+          ENSURE(j,j);
+					numCenters += X(j,j); // different map for different centers!
+        }
 
+				model.addConstr(numCenters == k, "fixCenters");  // in essence, fix the current centers to 1
 				model.optimize();
 
 				if (model.get(GRB_IntAttr_Status) == 2 || model.get(GRB_IntAttr_Status) == 9) // model was solved to optimality (subject to tolerances), so update UB.
@@ -159,15 +258,18 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
 
 				if (iterUB < oldIterUB) // objective value strictly improved, so we need to update incumbent for this iteration
 				{
-					for (int j = 0; j < k; ++j)  // find all nodes assigned to the j-th center.
+					for (int j_i = 0; j_i < k; ++j_i)  // find all nodes assigned to the j-th center.
 					{
 						vector<int> district;
 						for (int i = 0; i < g->nr_nodes; ++i)
-							if (x[i][j].get(GRB_DoubleAttr_X) > 0.5)
+            {
+              ENSURE(i,centers[j_i]);
+							if (X_V(i,centers[j_i]).get(GRB_DoubleAttr_X) > 0.5) //FIXME cerr if not IS_X
 							{
 								district.push_back(i);
-								iterHeuristicSolution[i] = centers[j]; // update this iteration's incumbent
+								iterHeuristicSolution[i] = centers[j_i]; // update this iteration's incumbent
 							}
+            }
 
 						// find best center of this district
 						int bestCenter = -1;
@@ -192,10 +294,10 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
 							}
 						}
 
-						if (centers[j] != bestCenter) // if the centers haven't changed, there's no reason to resolve the IP
+						if (centers[j_i] != bestCenter) // if the centers haven't changed, there's no reason to resolve the IP
 						{
 							centersChange = true;
-							centers[j] = bestCenter; // update the best center for this district
+							centers[j_i] = bestCenter; // update the best center for this district
 						}
 					}
 				}
@@ -229,70 +331,18 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
 	for (int i = 0; i < g->nr_nodes; ++i)
 		obj += w[i][heuristicSolution[i]];
 	cout << "UB of heuristicSolution = " << obj << endl;
+  if(cb)
+    delete cb;
 	return heuristicSolution;
 }
 
-// adds hess model constraints and the objective function to model using graph "g", distance data "dist", population data "pop"
-// returns "x" variables in the Hess model
-GRBVar** build_hess_restricted(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, const vector<int>&centers, int L, int U, int k)
-{
-	// create GUROBI Hess model
-	int n = g->nr_nodes;
-	int c = centers.size();
-	cout << "# centers = " << c << ", while k = " << k << " and n = " << n << endl;
-	if (c != k) cerr << "ERROR: improper number of centers selected for restricted problem.\n";
-
-	// create n*(# centers) variables
-	GRBVar** x = new GRBVar*[n];
-	for (int i = 0; i < n; ++i)
-		x[i] = model->addVars(c, GRB_BINARY);
-	model->update();
-
-	// add objective
-	for (int i = 0; i < n; ++i)
-		for (int j = 0; j < c; ++j)
-			x[i][j].set(GRB_DoubleAttr_Obj, w[i][centers[j]]);
-
-	// add constraints (1b)
-	for (int i = 0; i < n; ++i)
-	{
-		GRBLinExpr constr = 0;
-		for (int j = 0; j < c; ++j)
-			constr += x[i][j];
-		model->addConstr(constr == 1);
-	}
-
-	//// add constraint (1c)
-	cout << "Currently not adding x(V)=k constraint (fixing center vars to 1) nor coupling in build_hess_restricted." << endl;
-	//GRBLinExpr expr = 0;
-	//for (int j = 0; j < c; ++j)
-	//	expr += x[centers[j]][j];
-	//model->addConstr(expr == k);
-
-	// add constraint (1d)
-	for (int j = 0; j < c; ++j)
-	{
-		GRBLinExpr constr = 0;
-		for (int i = 0; i < n; ++i)
-			constr += population[i] * x[i][j];
-		// add for j
-		model->addConstr(constr - U <= 0); // U
-		model->addConstr(constr - L >= 0); // L
-	}
-
-	model->update();
-
-	return x;
-}
 void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& population,
 	int L, int U, int k, vector<int>&heuristicSolution, string arg_model, double &UB) // , cvv &F0)
 {
+  cerr << endl << "Eugene disabled Local Search for greater good" << endl;
+  /*
 	cout << endl << "Beginning LOCAL SEARCH with UB = " << UB << "\n\n";
-	if (arg_model != "hess")
-	{
-		cerr << "Model " << arg_model << " is currently not supported by HessHeuristic.\n";
-		return;
-	}
+
 	// initialize the centers from heuristicSolution
 	vector<int> centers(k, -1);
 	int pos = 0;
@@ -348,7 +398,7 @@ void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& 
 		LPmodel.set(GRB_IntParam_OutputFlag, 0);
 
 		bool improvement;
-		
+
 		do {
 			improvement = false;
 			for (int p = 0; p < k && !improvement; ++p)
@@ -461,4 +511,5 @@ void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& 
 	for (int i = 0; i < g->nr_nodes; ++i)
 		obj += w[i][heuristicSolution[i]];
 	cout << "UB of heuristicSolution = " << obj << endl;
+  */
 }

@@ -91,8 +91,10 @@ int main(int argc, char *argv[])
 
 	//apply the merging preprocess and get the clusters
 	vector<vector<int>> clusters;
+  bool do_heur_cuts = false;
 	if (arg_model == "shir" || arg_model == "mcf" || arg_model == "cut")
 	{
+    do_heur_cuts = true;
 		printf("Preprocessing the graph...\n");
 		vector<int> new_population;
 		new_population = population;
@@ -120,7 +122,7 @@ int main(int argc, char *argv[])
 	double UB = INFINITY;
 	int maxIterations = 10;		// 10 iterations is often sufficient
 	auto heuristic_start = chrono::steady_clock::now();
-	vector<int> heuristicSolution = HessHeuristic(g, w, population, L, U, k, arg_model, UB, maxIterations);
+	vector<int> heuristicSolution = HessHeuristic(g, w, population, L, U, k, UB, maxIterations, do_heur_cuts);
 	chrono::duration<double> heuristic_duration = chrono::steady_clock::now() - heuristic_start;
 	cerr << UB << " " << heuristic_duration.count() << " ";
 	cout << "Best solution after " << maxIterations << " of HessHeuristic is = " << UB << endl;

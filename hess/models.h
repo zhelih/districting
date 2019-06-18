@@ -106,10 +106,7 @@ void update_LB0_and_LB1(const vector<double>& W, const vector<bool>& currentCent
 	const vector<vector<double>> &w_hat, vector< vector<double> > &LB0, vector< vector<double> > &LB1);
 
 vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vector<int>& population,
-	int L, int U, int k, string arg_model, double &UB, int maxIterations);
-
-GRBVar** build_hess_restricted(GRBModel* model, graph* g, const vector<vector<double> >& w, 
-	const vector<int>& population, const vector<int>&centers, int L, int U, int k);
+	int L, int U, int k, double &UB, int maxIterations, bool do_cuts=false);
 
 void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& population,
 	int L, int U, int k, vector<int>&heuristicSolution, string arg_model, double &UB);// , cvv &F0);
