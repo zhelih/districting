@@ -40,11 +40,12 @@ protected:
 	double** x_val; // x values
 	graph* g; // graph pointer
 	int n; // g->nr_nodes
+  const vector<int> population;
 public:
 	int numCallbacks; // number of callback calls
 	double callbackTime; // cumulative time in callbacks
 	int numLazyCuts;
-	HessCallback(hess_params& p_, graph* g_) : p(p_), g(g_), numCallbacks(0), callbackTime(0.), numLazyCuts(0)
+	HessCallback(hess_params& p_, graph* g_, const vector<int>& population_) : p(p_), g(g_), population(population_), numCallbacks(0), callbackTime(0.), numLazyCuts(0)
 
 	{
 		n = g->nr_nodes;
@@ -70,7 +71,7 @@ protected:
 };
 
 // @return callback for delete only
-HessCallback* build_cut(GRBModel* model, hess_params& p, graph* g);
+HessCallback* build_cut(GRBModel* model, hess_params& p, graph* g, const vector<int>& population);
 
 //Lagrangian functions
 // input:

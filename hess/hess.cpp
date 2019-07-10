@@ -225,7 +225,7 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
         {
           if(cb)
             delete cb;
-          build_cut(&model, p, g); //FIXME do pointers instead? worth it? prob no
+          build_cut(&model, p, g, population); //FIXME do pointers instead? worth it? prob no
         }
         model.reset(); // should be done in any case for predicted behavior
 				for (int i = 0; i < g->nr_nodes; ++i)

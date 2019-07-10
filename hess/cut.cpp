@@ -13,7 +13,7 @@ private:
     std::vector<int> s; // stack for DFS
     std::vector<int> cc; // connected component for a vertex
 public:
-    CutCallback(hess_params& p, graph *g_) : HessCallback(p, g_)
+    CutCallback(hess_params& p, graph *g_, const vector<int> pop_) : HessCallback(p, g_, pop_)
     {
         visited = new int[n];
         aci = new int[n];
@@ -77,10 +77,10 @@ void CutCallback::callback()
                     for(int j = 0; j < n; ++j)
                       if(x_val[j][i] > 0.5 && !visited[j] && cc[j] == 0)
                       {
+                        int cc_max_pop_node = j;
                         //run dfs from j and mark cc
                         cur_cc++; // we don't really need info about cc # but it is neat to have it
                         s.clear(); s.push_back(j); cc[j] = cur_cc;
-                        cc_heads.push_back(j);
                         while(!s.empty())
                         {
                           int cur = s.back(); s.pop_back();
@@ -89,8 +89,11 @@ void CutCallback::callback()
                             {
                               cc[nb_cur] = cur_cc;
                               s.push_back(nb_cur);
+                              if(population[nb_cur] > population[cc_max_pop_node])
+                                cc_max_pop_node = nb_cur;
                             }
                         }
+                        cc_heads.push_back(cc_max_pop_node);
                       }
                     for(int j : cc_heads) 
                     {
@@ -135,10 +138,10 @@ void CutCallback::callback()
     }
 }
 
-HessCallback* build_cut(GRBModel* model, hess_params& p, graph* g)
+HessCallback* build_cut(GRBModel* model, hess_params& p, graph* g, const vector<int>& population)
 {
     model->getEnv().set(GRB_IntParam_LazyConstraints, 1); // turns off presolve!!!
-    CutCallback* cb = new CutCallback(p, g);
+    CutCallback* cb = new CutCallback(p, g, population);
     model->setCallback(cb);
     model->update();
     return cb;

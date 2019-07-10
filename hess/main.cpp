@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 		else if (arg_model == "mcf")
 			build_mcf(&model, p, g);
 		else if (arg_model == "cut")
-			cb = build_cut(&model, p, g);
+			cb = build_cut(&model, p, g, population);
 		else if (arg_model != "hess") {
 			fprintf(stderr, "ERROR: Unknown model : %s\n", arg_model.c_str());
 			exit(1);
