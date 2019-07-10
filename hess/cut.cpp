@@ -19,6 +19,7 @@ private:
     int* aci; // A(C_b) set
     std::vector<int> s; // stack for DFS
     std::vector<int> cc; // connected component for a vertex
+    std::vector<int> dist;
     bool is_lcut;
     int U;
 public:
@@ -28,6 +29,7 @@ public:
         aci = new int[n];
         s.reserve(n);
         cc.resize(n);
+        dist.resize(n);
     }
     virtual ~CutCallback()
     {
@@ -134,7 +136,7 @@ void CutCallback::callback()
                             // priority queue Dijkstra
                             // priority queue pair is <weight, vertex>, min weight on top
                             priority_queue< pair<int,int>, vector <pair<int,int>> , greater<pair<int,int>> > pq;
-                            vector<int> dist(n, INT_MAX);
+                            fill(dist.begin(), dist.end(), INT_MAX);
                             const vector<int>& p = population; // alias
                             pq.push(make_pair(p[a], a));
                             dist[a] = p[a];
