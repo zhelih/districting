@@ -16,7 +16,7 @@ class CutCallback : public HessCallback
     // memory for a callback
 private:
     int* visited; // dfs marks
-    int* aci; // A(C_i) set
+    int* aci; // A(C_b) set
     std::vector<int> s; // stack for DFS
     std::vector<int> cc; // connected component for a vertex
     bool is_lcut;
@@ -51,40 +51,40 @@ void CutCallback::callback()
             populate_x(); // from HessCallback
 
             // try clusterheads
-            for (int i = 0; i < n; ++i)
+            for (int b = 0; b < n; ++b)
             {
-                if (x_val[i][i] > 0.5) // i is a clusterhead
+                if (x_val[b][b] > 0.5) // b is a clusterhead
                 {
-                    // run DFS from i on C_i, compute A(C_i) to save time later
-                    // clean A(C_i) and visited
+                    // run DFS from b on C_b, compute A(C_b) to save time later
+                    // clean A(C_b) and visited
                     for (int j = 0; j < n; ++j)
                     {
                         aci[j] = 0;
                         visited[j] = 0;
                     }
 
-                    // run DFS on C_i
-                    s.clear(); s.push_back(i);
+                    // run DFS on C_b
+                    s.clear(); s.push_back(b);
                     while (!s.empty())
                     {
                         int cur = s.back(); s.pop_back();
                         visited[cur] = 1;
                         for (int nb_cur : g->nb(cur))
-                            if (x_val[nb_cur][i] > 0.5) // if nb_cur is in C_i
+                            if (x_val[nb_cur][b] > 0.5) // if nb_cur is in C_b
                             {
                                 if (!visited[nb_cur])
                                     s.push_back(nb_cur);
                             }
-                            else aci[nb_cur] = 1; // nb_cur is a neighbor of a vertex in C_i, thus in A(C_i)a
+                            else aci[nb_cur] = 1; // nb_cur is a neighbor of a vertex in C_b, thus in A(C_b)
                     }
 
-                    // here if C_i is connected, all vertices in C_i must be visited
+                    // here if C_b is connected, all vertices in C_b must be visited
                     // since we want to add cut for every connected component reamining there, we will mark cc's
                     int cur_cc = 0;
                     fill(cc.begin(), cc.end(), 0);
                     vector<int> cc_heads;
                     for(int j = 0; j < n; ++j)
-                      if(x_val[j][i] > 0.5 && !visited[j] && cc[j] == 0)
+                      if(x_val[j][b] > 0.5 && !visited[j] && cc[j] == 0)
                       {
                         int cc_max_pop_node = j;
                         //run dfs from j and mark cc
@@ -94,7 +94,7 @@ void CutCallback::callback()
                         {
                           int cur = s.back(); s.pop_back();
                           for(int nb_cur : g->nb(cur))
-                            if(x_val[nb_cur][i] > 0.5 && !visited[nb_cur] && cc[nb_cur] == 0)
+                            if(x_val[nb_cur][b] > 0.5 && !visited[nb_cur] && cc[nb_cur] == 0)
                             {
                               cc[nb_cur] = cur_cc;
                               s.push_back(nb_cur);
@@ -104,15 +104,15 @@ void CutCallback::callback()
                         }
                         cc_heads.push_back(cc_max_pop_node);
                       }
-                    for(int j : cc_heads) 
+                    for(int a : cc_heads) 
                     {
-                        // compute i-j separator, A(C_i) is already computed)
+                        // compute i-j separator, A(C_b) is already computed)
                         GRBLinExpr expr = 0;
                         unordered_set<int> C;
                         // start DFS from j to find R_i
                         for (int k = 0; k < n; ++k)
                             visited[k] = 0;
-                        s.clear(); s.push_back(j); visited[j] = 1;
+                        s.clear(); s.push_back(a); visited[a] = 1;
                         while (!s.empty())
                         {
                             int cur = s.back(); s.pop_back();
@@ -136,8 +136,8 @@ void CutCallback::callback()
                             priority_queue< pair<int,int>, vector <pair<int,int>> , greater<pair<int,int>> > pq;
                             vector<int> dist(n, INT_MAX);
                             const vector<int>& p = population; // alias
-                            pq.push(make_pair(p[j], j));
-                            dist[j] = p[j];
+                            pq.push(make_pair(p[a], a));
+                            dist[a] = p[a];
                             while(!pq.empty())
                             {
                               int u = pq.top().second; pq.pop();
@@ -150,13 +150,13 @@ void CutCallback::callback()
                                 }
                               }
                             }
-                            if(dist[i] > U)
-                              C.erase(i);
+                            if(dist[b] > U)
+                              C.erase(b);
                           }
                         }
                         for(int c : C)
-                          expr += X(c, i);
-                        expr -= X(j,i); // RHS
+                          expr += X(c, b);
+                        expr -= X(a,b); // RHS
                         addLazy(expr >= 0);
                         ++numLazyCuts;
                     }
