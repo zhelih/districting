@@ -11,12 +11,14 @@ private:
     int* visited; // dfs marks
     int* aci; // A(C_i) set
     std::vector<int> s; // stack for DFS
+    std::vector<int> cc; // connected component for a vertex
 public:
     CutCallback(hess_params& p, graph *g_) : HessCallback(p, g_)
     {
         visited = new int[n];
         aci = new int[n];
         s.reserve(n);
+        cc.reserve(n);
     }
     virtual ~CutCallback()
     {
@@ -40,8 +42,7 @@ void CutCallback::callback()
             populate_x(); // from HessCallback
 
             // try clusterheads
-            bool done = false;
-            for (int i = 0; i < n && !done; ++i)
+            for (int i = 0; i < n; ++i)
             {
                 if (x_val[i][i] > 0.5) // i is a clusterhead
                 {
@@ -69,35 +70,54 @@ void CutCallback::callback()
                     }
 
                     // here if C_i is connected, all vertices in C_i must be visited
-                    for (int j = 0; j < n; ++j)
-                        if (x_val[j][i] > 0.5 && !visited[j])
+                    // since we want to add cut for every connected component reamining there, we will mark cc's
+                    int cur_cc = 0;
+                    fill(cc.begin(), cc.end(), 0);
+                    vector<int> cc_heads;
+                    for(int j = 0; j < n; ++j)
+                      if(x_val[j][i] > 0.5 && !visited[j] && cc[j] == 0)
+                      {
+                        //run dfs from j and mark cc
+                        cur_cc++; // we don't really need info about cc # but it is neat to have it
+                        s.clear(); s.push_back(j); cc[j] = cur_cc;
+                        cc_heads.push_back(j);
+                        while(!s.empty())
                         {
-                            // compute i-j separator, A(C_i) is already computed)
-                            GRBLinExpr expr = 0;
-                            // start DFS from j to find R_i
-                            for (int k = 0; k < n; ++k)
-                                visited[k] = 0;
-                            s.clear(); s.push_back(j); visited[j] = 1;
-                            while (!s.empty())
+                          int cur = s.back(); s.pop_back();
+                          for(int nb_cur : g->nb(cur))
+                            if(x_val[nb_cur][i] > 0.5 && !visited[nb_cur] && cc[j] == 0)
                             {
-                                int cur = s.back(); s.pop_back();
-                                for (int nb_cur : g->nb(cur))
+                              cc[nb_cur] = cur_cc;
+                              s.push_back(nb_cur);
+                            }
+                        }
+                      }
+                    for(int j : cc_heads) 
+                    {
+                        // compute i-j separator, A(C_i) is already computed)
+                        GRBLinExpr expr = 0;
+                        // start DFS from j to find R_i
+                        for (int k = 0; k < n; ++k)
+                            visited[k] = 0;
+                        s.clear(); s.push_back(j); visited[j] = 1;
+                        while (!s.empty())
+                        {
+                            int cur = s.back(); s.pop_back();
+                            for (int nb_cur : g->nb(cur))
+                            {
+                                if (!visited[nb_cur])
                                 {
-                                    if (!visited[nb_cur])
-                                    {
-                                        visited[nb_cur] = 1;
-                                        if (aci[nb_cur])
-                                            expr += X(nb_cur, i);
-                                        else s.push_back(nb_cur);
-                                    }
+                                    visited[nb_cur] = 1;
+                                    if (aci[nb_cur])
+                                        expr += X(nb_cur, i);
+                                    else s.push_back(nb_cur);
                                 }
                             }
-                            expr -= X(j,i); // RHS
-                            addLazy(expr >= 0);
-                            ++numLazyCuts;
-                            done = true;
-                            break;
                         }
+                        expr -= X(j,i); // RHS
+                        addLazy(expr >= 0);
+                        ++numLazyCuts;
+                    }
                 }
             }
             chrono::duration<double> d = chrono::steady_clock::now() - start;
