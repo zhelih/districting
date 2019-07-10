@@ -3,6 +3,13 @@
 #include "gurobi_c++.h"
 #include "models.h"
 #include <chrono>
+#include <unordered_set>
+#include <queue> // priority queue
+
+#ifndef INT_MAX
+#include <limits>
+#define INT_MAX (std::numeric_limits<int>::max())
+#endif
 
 class CutCallback : public HessCallback
 {
@@ -13,8 +20,9 @@ private:
     std::vector<int> s; // stack for DFS
     std::vector<int> cc; // connected component for a vertex
     bool is_lcut;
+    int U;
 public:
-    CutCallback(hess_params& p, graph *g_, const vector<int> pop_, bool is_lcut_=false) : HessCallback(p, g_, pop_), is_lcut(is_lcut_)
+    CutCallback(hess_params& p, graph *g_, const vector<int>& pop_, bool is_lcut_, int U_) : HessCallback(p, g_, pop_), is_lcut(is_lcut_), U(U_)
     {
         visited = new int[n];
         aci = new int[n];
@@ -100,6 +108,7 @@ void CutCallback::callback()
                     {
                         // compute i-j separator, A(C_i) is already computed)
                         GRBLinExpr expr = 0;
+                        unordered_set<int> C;
                         // start DFS from j to find R_i
                         for (int k = 0; k < n; ++k)
                             visited[k] = 0;
@@ -112,12 +121,41 @@ void CutCallback::callback()
                                 if (!visited[nb_cur])
                                 {
                                     visited[nb_cur] = 1;
-                                    if (aci[nb_cur])
-                                        expr += X(nb_cur, i);
-                                    else s.push_back(nb_cur);
+                                    if (aci[nb_cur]) C.insert(nb_cur); else s.push_back(nb_cur);
                                 }
                             }
                         }
+                        if(is_lcut)
+                        {
+                          // refine set C
+                          for(int c : C)
+                          {
+                            // find distance from a to b through c but not remaining C
+                            // priority queue Dijkstra
+                            // priority queue pair is <weight, vertex>, min weight on top
+                            priority_queue< pair<int,int>, vector <pair<int,int>> , greater<pair<int,int>> > pq;
+                            vector<int> dist(n, INT_MAX);
+                            const vector<int>& p = population; // alias
+                            pq.push(make_pair(p[j], j));
+                            dist[j] = p[j];
+                            while(!pq.empty())
+                            {
+                              int u = pq.top().second; pq.pop();
+                              for(int nb_u : g->nb(u))
+                              {
+                                if((nb_u == c || C.count(nb_u) == 0) && dist[nb_u] > dist[u] + p[nb_u])
+                                {
+                                  dist[nb_u] = dist[u] + p[nb_u];
+                                  pq.push(make_pair(dist[nb_u], nb_u));
+                                }
+                              }
+                            }
+                            if(dist[i] > U)
+                              C.erase(i);
+                          }
+                        }
+                        for(int c : C)
+                          expr += X(c, i);
                         expr -= X(j,i); // RHS
                         addLazy(expr >= 0);
                         ++numLazyCuts;
@@ -139,16 +177,20 @@ void CutCallback::callback()
     }
 }
 
-HessCallback* build_cut(GRBModel* model, hess_params& p, graph* g, const vector<int>& population, bool is_lcut)
+HessCallback* build_cut_(GRBModel* model, hess_params& p, graph* g, const vector<int>& population, bool is_lcut, int U)
 {
     model->getEnv().set(GRB_IntParam_LazyConstraints, 1); // turns off presolve!!!
-    CutCallback* cb = new CutCallback(p, g, population, is_lcut);
+    CutCallback* cb = new CutCallback(p, g, population, is_lcut, 0);
     model->setCallback(cb);
     model->update();
     return cb;
 }
 
-HessCallback* build_lcut(GRBModel* model, hess_params& p, graph* g, const vector<int>& population)
+HessCallback* build_cut(GRBModel* model, hess_params& p, graph* g, const vector<int>& population)
 {
-  return build_cut(model, p, g, population, true);
+  return build_cut_(model, p, g, population, false, 0);
+}
+HessCallback* build_lcut(GRBModel* model, hess_params& p, graph* g, const vector<int>& population, int U)
+{
+  return build_cut_(model, p, g, population, true, U);
 }
