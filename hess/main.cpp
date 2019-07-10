@@ -235,7 +235,6 @@ int main(int argc, char *argv[])
 			printf("Number of lazy constraints generated: %d\n", cb->numLazyCuts);
 			delete cb;
 		}
-		cerr << duration.count() << " ";
 
 #ifdef DO_BATCH_OUTPUT
 
@@ -257,8 +256,6 @@ int main(int argc, char *argv[])
 			double objval = model.get(GRB_DoubleAttr_ObjVal);
 			double mipgap = model.get(GRB_DoubleAttr_MIPGap)*100.;
 			double objbound = model.get(GRB_DoubleAttr_ObjBound);
-
-			cerr << objbound << " " << objval << endl;
 
 			// no incumbent solution was found, these values do no make sense
 			if (model.get(GRB_IntAttr_SolCount) == 0)
