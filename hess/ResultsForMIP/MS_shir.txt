@@ -1,0 +1,72 @@
+graph: 82 nodes, 0 edges
+Model input: L = 738116, U = 745533, k = 4
+Academic license - for non-commercial use only
+Optimize a model with 20173 rows, 39852 columns and 144994 nonzeros
+Variable types: 33128 continuous, 6724 integer (6724 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 7e+05]
+  Objective range  [7e-01, 5e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 4e+00]
+Presolve removed 0 rows and 404 columns
+Presolve time: 0.32s
+Presolved: 20173 rows, 39448 columns, 144588 nonzeros
+Variable types: 32724 continuous, 6724 integer (6724 binary)
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Root barrier log...
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 4.209e+05
+ Factor NZ  : 1.407e+06 (roughly 36 MBytes of memory)
+ Factor Ops : 1.348e+08 (less than 1 second per iteration)
+ Threads    : 2
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   9.59278060e+06 -1.58844708e+06  1.69e+04 0.00e+00  1.00e+03     1s
+   1   7.89523204e+05 -1.52238621e+06  1.24e+03 9.77e-14  8.65e+01     1s
+   2   2.09298918e+05 -7.26891896e+05  2.46e+02 1.43e-13  1.80e+01     1s
+   3   6.79623882e+04 -1.74030956e+05  4.45e+01 6.62e-14  3.55e+00     1s
+   4   3.96840654e+04 -5.19604340e+04  1.50e+01 1.88e-14  1.28e+00     1s
+   5   2.73080603e+04 -1.54157573e+04  5.63e+00 1.99e-14  5.64e-01     1s
+   6   2.27568865e+04  1.12856432e+03  2.91e+00 1.42e-14  2.85e-01     1s
+
+Barrier performed 6 iterations in 1.01 seconds
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+
+Root relaxation: objective 1.608771e+04, 2523 iterations, 0.50 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 16087.7130    0    4          - 16087.7130      -     -    1s
+H    0     0                    16142.038073 16087.7130  0.34%     -    1s
+*    0     0               0    16142.038041 16142.0380  0.00%     -    1s
+
+Cutting planes:
+  Gomory: 2
+  Cover: 3
+  Flow cover: 2
+  GUB cover: 3
+
+Explored 1 nodes (2598 simplex iterations) in 1.35 seconds
+Thread count was 8 (of 8 available processors)
+
+Solution count 2: 16142 16142 
+No other solutions better than 16142
+
+Optimal solution found (tolerance 0.00e+00)
+Best objective 1.614203804081e+04, best bound 1.614203804081e+04, gap 0.0000%
+Graph is connected.
+Model input: total population = 2967297
+Build hess : created 6724 variables
+Time elapsed: 1.448600 seconds
+qwerky567: MS.dimacs, 4, 82, 738116, 745533, 1.45,0.33, 16142.04, 0.00, 16142.04, 1, 0, 0.00, 0

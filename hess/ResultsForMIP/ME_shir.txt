@@ -1,0 +1,106 @@
+graph: 16 nodes, 0 edges
+Model input: L = 660860, U = 667501, k = 2
+Academic license - for non-commercial use only
+Optimize a model with 769 rows, 1344 columns and 4804 nonzeros
+Variable types: 1088 continuous, 256 integer (256 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+05]
+  Objective range  [3e+01, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 2e+00]
+Presolve removed 0 rows and 68 columns
+Presolve time: 0.02s
+Presolved: 769 rows, 1276 columns, 4734 nonzeros
+Variable types: 1020 continuous, 256 integer (256 binary)
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Presolve removed 0 rows and 2 columns
+Presolved: 769 rows, 1274 columns, 4732 nonzeros
+
+Root barrier log...
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 7.046e+03
+ Factor NZ  : 1.928e+04 (roughly 1 MByte of memory)
+ Factor Ops : 5.070e+05 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   2.87428008e+05 -2.10409245e+04  2.84e+03 0.00e+00  1.01e+03     0s
+   1   4.43923685e+04 -4.64686705e+04  2.44e+02 1.15e-14  1.02e+02     0s
+
+Barrier performed 1 iterations in 0.03 seconds
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+
+Root relaxation: objective 9.882712e+03, 133 iterations, 0.01 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 9882.71182    0    2          - 9882.71182      -     -    0s
+     0     0 10177.4240    0   31          - 10177.4240      -     -    0s
+     0     0 10412.2164    0    8          - 10412.2164      -     -    0s
+     0     0 10511.5374    0   31          - 10511.5374      -     -    0s
+     0     0 10523.8098    0   31          - 10523.8098      -     -    0s
+     0     0 10559.7681    0   10          - 10559.7681      -     -    0s
+     0     0 10591.5311    0   32          - 10591.5311      -     -    0s
+     0     0 10760.1904    0   31          - 10760.1904      -     -    0s
+     0     0 10810.9914    0    4          - 10810.9914      -     -    0s
+     0     0 10818.7858    0   38          - 10818.7858      -     -    0s
+     0     0 10898.6474    0   40          - 10898.6474      -     -    0s
+     0     0 10919.1352    0   40          - 10919.1352      -     -    0s
+     0     0 10932.8577    0   41          - 10932.8577      -     -    0s
+     0     0 10933.2681    0   41          - 10933.2681      -     -    0s
+     0     0 10982.5188    0   43          - 10982.5188      -     -    0s
+     0     0 11043.1465    0   52          - 11043.1465      -     -    0s
+     0     0 11044.2469    0   53          - 11044.2469      -     -    0s
+     0     0 11045.0791    0   52          - 11045.0791      -     -    0s
+     0     0 11045.2240    0   52          - 11045.2240      -     -    0s
+     0     0 11063.6278    0   37          - 11063.6278      -     -    0s
+     0     0 11074.9896    0   40          - 11074.9896      -     -    0s
+     0     0 11075.2450    0   39          - 11075.2450      -     -    0s
+     0     0 11075.2450    0   39          - 11075.2450      -     -    0s
+     0     0 11076.7546    0   40          - 11076.7546      -     -    0s
+     0     0 11076.7546    0   40          - 11076.7546      -     -    0s
+     0     0 11077.2038    0   40          - 11077.2038      -     -    0s
+     0     0 11077.3141    0   42          - 11077.3141      -     -    0s
+     0     0 11077.3141    0   42          - 11077.3141      -     -    0s
+     0     0 11077.3141    0   42          - 11077.3141      -     -    0s
+     0     2 11077.3141    0   42          - 11077.3141      -     -    0s
+*  482   136              20    26353.292830 12015.9240  54.4%  19.0    0s
+*  486   136              21    25079.804333 12015.9240  52.1%  18.9    0s
+*  613   138              11    24965.057079 12417.4990  50.3%  19.0    0s
+*  731   125              16    23076.178876 12631.1494  45.3%  17.8    0s
+* 1137   111              13    20668.241921 13696.3730  33.7%  17.1    0s
+* 1371    65              20    19093.259907 14242.7765  25.4%  16.6    0s
+
+Cutting planes:
+  Cover: 59
+  Implied bound: 8
+  MIR: 18
+  StrongCG: 7
+  Flow cover: 26
+  GUB cover: 1
+  Inf proof: 5
+  Network: 2
+
+Explored 2301 nodes (34338 simplex iterations) in 0.70 seconds
+Thread count was 8 (of 8 available processors)
+
+Solution count 6: 19093.3 20668.2 23076.2 ... 26353.3
+
+Optimal solution found (tolerance 0.00e+00)
+Best objective 1.909325990700e+04, best bound 1.909325990700e+04, gap 0.0000%
+Graph is connected.
+Model input: total population = 1328361
+Build hess : created 256 variables
+Time elapsed: 0.707914 seconds
+qwerky567: ME.dimacs, 2, 16, 660860, 667501, 0.71,0.42, 19093.26, 0.00, 19093.26, 2301, 0, 0.00, 0
