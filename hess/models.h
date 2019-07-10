@@ -71,8 +71,8 @@ protected:
 };
 
 // @return callback for delete only
-HessCallback* build_cut(GRBModel* model, hess_params& p, graph* g, const vector<int>& population);
-
+HessCallback* build_cut(GRBModel* model, hess_params& p, graph* g, const vector<int>& population, bool is_lcut=false);
+HessCallback* build_lcut(GRBModel* model, hess_params& p, graph* g, const vector<int>& population);
 //Lagrangian functions
 // input:
 //    g: graph pointer

@@ -12,8 +12,9 @@ private:
     int* aci; // A(C_i) set
     std::vector<int> s; // stack for DFS
     std::vector<int> cc; // connected component for a vertex
+    bool is_lcut;
 public:
-    CutCallback(hess_params& p, graph *g_, const vector<int> pop_) : HessCallback(p, g_, pop_)
+    CutCallback(hess_params& p, graph *g_, const vector<int> pop_, bool is_lcut_=false) : HessCallback(p, g_, pop_), is_lcut(is_lcut_)
     {
         visited = new int[n];
         aci = new int[n];
@@ -138,11 +139,16 @@ void CutCallback::callback()
     }
 }
 
-HessCallback* build_cut(GRBModel* model, hess_params& p, graph* g, const vector<int>& population)
+HessCallback* build_cut(GRBModel* model, hess_params& p, graph* g, const vector<int>& population, bool is_lcut)
 {
     model->getEnv().set(GRB_IntParam_LazyConstraints, 1); // turns off presolve!!!
-    CutCallback* cb = new CutCallback(p, g, population);
+    CutCallback* cb = new CutCallback(p, g, population, is_lcut);
     model->setCallback(cb);
     model->update();
     return cb;
+}
+
+HessCallback* build_lcut(GRBModel* model, hess_params& p, graph* g, const vector<int>& population)
+{
+  return build_cut(model, p, g, population, true);
 }

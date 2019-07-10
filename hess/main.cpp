@@ -30,7 +30,8 @@ int main(int argc, char *argv[])
   \thess\t\tHess model\n\
   \tshir\t\tHess model with SHIR\n\
   \tmcf\t\tHess model with MCF\n\
-  \tcut\t\tHess model with CUT\n", argv[0]);
+  \tcut\t\tHess model with CUT\n\
+  \tlcut\t\tHess model with LCUT\n", argv[0]);
 		return 0;
 	}
 	// parse command line arguments
@@ -194,6 +195,8 @@ int main(int argc, char *argv[])
 			build_mcf(&model, p, g);
 		else if (arg_model == "cut")
 			cb = build_cut(&model, p, g, population);
+    else if (arg_model == "lcut")
+      cb = build_lcut(&model, p, g, population);
 		else if (arg_model != "hess") {
 			fprintf(stderr, "ERROR: Unknown model : %s\n", arg_model.c_str());
 			exit(1);
