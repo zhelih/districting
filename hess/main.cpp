@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 	double UB = INFINITY;
 	int maxIterations = 10;		// 10 iterations is often sufficient
 	auto heuristic_start = chrono::steady_clock::now();
-	vector<int> heuristicSolution = HessHeuristic(g, w, population, L, U, k, UB, maxIterations, do_heur_cuts);
+	vector<int> heuristicSolution = HessHeuristic(g, w, population, L, U, k, UB, maxIterations, false);
 	chrono::duration<double> heuristic_duration = chrono::steady_clock::now() - heuristic_start;
 	cerr << UB << " " << heuristic_duration.count() << " ";
 	cout << "Best solution after " << maxIterations << " of HessHeuristic is = " << UB << endl;
@@ -167,7 +167,6 @@ int main(int argc, char *argv[])
 	cout << "Number of variables not fixed     = " << numUnfixed << endl;
 	cout << "Number of centers left            = " << numCentersLeft << endl;
 	cout << "Percentage of vars fixed = " << (double)(g->nr_nodes*g->nr_nodes - numUnfixed) / (g->nr_nodes*g->nr_nodes) << endl;
-
 
 
 	try 

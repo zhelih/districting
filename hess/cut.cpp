@@ -18,7 +18,7 @@ public:
         visited = new int[n];
         aci = new int[n];
         s.reserve(n);
-        cc.reserve(n);
+        cc.resize(n);
     }
     virtual ~CutCallback()
     {
@@ -85,7 +85,7 @@ void CutCallback::callback()
                         {
                           int cur = s.back(); s.pop_back();
                           for(int nb_cur : g->nb(cur))
-                            if(x_val[nb_cur][i] > 0.5 && !visited[nb_cur] && cc[j] == 0)
+                            if(x_val[nb_cur][i] > 0.5 && !visited[nb_cur] && cc[nb_cur] == 0)
                             {
                               cc[nb_cur] = cur_cc;
                               s.push_back(nb_cur);
