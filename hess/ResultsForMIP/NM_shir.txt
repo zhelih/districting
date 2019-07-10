@@ -1,0 +1,72 @@
+graph: 33 nodes, 0 edges
+Model input: L = 682962, U = 689824, k = 3
+Academic license - for non-commercial use only
+Optimize a model with 3268 rows, 6237 columns and 22500 nonzeros
+Variable types: 5148 continuous, 1089 integer (1089 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 7e+05]
+  Objective range  [4e+00, 1e+05]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 3e+00]
+Presolve removed 167 rows and 640 columns
+Presolve time: 0.12s
+Presolved: 3101 rows, 5597 columns, 20897 nonzeros
+Variable types: 4552 continuous, 1045 integer (1045 binary)
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Presolve removed 0 rows and 4 columns
+Presolved: 3101 rows, 5593 columns, 20893 nonzeros
+
+Root barrier log...
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 3.812e+04
+ Factor NZ  : 1.121e+05 (roughly 4 MBytes of memory)
+ Factor Ops : 4.673e+06 (less than 1 second per iteration)
+ Threads    : 2
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   1.58170366e+06 -2.71518213e+05  3.23e+03 0.00e+00  1.48e+03     0s
+   1   2.29695336e+05 -3.49716641e+05  2.80e+02 7.37e-14  1.53e+02     0s
+   2   1.20285782e+05 -1.54512427e+05  8.49e+01 5.33e-14  4.62e+01     0s
+   3   6.97747745e+04 -7.03213897e+04  2.13e+01 4.33e-14  1.56e+01     0s
+   4   4.50817342e+04 -1.84052677e+04  6.16e+00 4.57e-14  6.00e+00     0s
+   5   3.68121527e+04  1.25290022e+04  2.20e+00 4.26e-14  2.21e+00     0s
+   6   3.47163772e+04  2.72392186e+04  1.23e+00 4.83e-14  7.67e-01     0s
+
+Barrier performed 6 iterations in 0.18 seconds
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+
+Root relaxation: objective 3.188045e+04, 693 iterations, 0.04 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 31880.4526    0   16          - 31880.4526      -     -    0s
+     0     0 32738.8030    0   13          - 32738.8030      -     -    0s
+H    0     0                    32944.250963 32738.8030  0.62%     -    0s
+     0     0 32772.9175    0   15 32944.2510 32772.9175  0.52%     -    0s
+     0     0 32772.9175    0   15 32944.2510 32772.9175  0.52%     -    0s
+     0     0 32799.3840    0   10 32944.2510 32799.3840  0.44%     -    0s
+     0     0     cutoff    0      32944.2510 32944.2510  0.00%     -    0s
+
+Explored 1 nodes (836 simplex iterations) in 0.35 seconds
+Thread count was 8 (of 8 available processors)
+
+Solution count 1: 32944.3 
+
+Optimal solution found (tolerance 0.00e+00)
+Best objective 3.294425096300e+04, best bound 3.294425096300e+04, gap 0.0000%
+Graph is connected.
+Model input: total population = 2059179
+Build hess : created 1089 variables
+Time elapsed: 0.368050 seconds
+qwerky567: NM.dimacs, 3, 33, 682962, 689824, 0.37,0.96, 32944.25, 0.00, 32944.25, 1, 0, 0.00, 0

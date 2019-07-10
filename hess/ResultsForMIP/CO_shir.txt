@@ -1,0 +1,92 @@
+graph: 64 nodes, 0 edges
+Model input: L = 714865, U = 722048, k = 7
+Academic license - for non-commercial use only
+Optimize a model with 12289 rows, 24704 columns and 89338 nonzeros
+Variable types: 20608 continuous, 4096 integer (4096 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 7e+05]
+  Objective range  [8e-01, 1e+05]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 7e+00]
+Presolve removed 676 rows and 2371 columns
+Presolve time: 0.45s
+Presolved: 11613 rows, 22333 columns, 82918 nonzeros
+Variable types: 18364 continuous, 3969 integer (3969 binary)
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Presolve removed 1 rows and 15 columns
+Presolved: 11612 rows, 22319 columns, 82852 nonzeros
+
+Root barrier log...
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.934e+05
+ Factor NZ  : 6.491e+05 (roughly 20 MBytes of memory)
+ Factor Ops : 4.724e+07 (less than 1 second per iteration)
+ Threads    : 2
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   2.60539436e+07 -1.53113353e+06  3.40e+04 0.00e+00  5.63e+03     1s
+   1   6.09027699e+06 -1.82077953e+06  8.22e+03 1.36e-12  1.38e+03     1s
+   2   8.90790950e+05 -1.60349819e+06  1.00e+03 2.50e-12  1.89e+02     1s
+   3   4.74517098e+05 -1.06148318e+06  4.40e+02 6.68e-12  8.21e+01     1s
+   4   4.32258145e+05 -8.22774771e+05  3.89e+02 5.26e-11  6.80e+01     1s
+   5   4.04610962e+05 -5.70726667e+05  3.56e+02 1.94e-10  6.02e+01     1s
+   6   3.90564404e+05  4.54205592e+05  3.41e+02 1.72e-09  5.65e+01     1s
+   7   3.84142924e+05  1.96734913e+06  3.36e+02 4.05e-09  5.63e+01     1s
+   8   3.84539985e+05  3.13435592e+06  3.36e+02 4.71e-09  5.64e+01     1s
+   9   4.84129723e+07 -1.42268184e+08  6.35e+04 0.00e+00  9.11e+05     1s
+  10   2.18512873e+07 -3.15650914e+08  2.83e+04 2.00e-10  7.15e+05     1s
+  11   1.19704154e+06 -3.02958841e+08  1.22e+03 1.74e-10  3.58e+04     1s
+  12   6.25457608e+05 -2.19887751e+08  4.68e+02 2.33e-09  1.45e+04     1s
+  13   5.40648575e+05 -1.18598898e+08  3.58e+02 1.44e-08  9.03e+03     1s
+  14   5.28752046e+05 -9.24057373e+07  3.43e+02 4.05e-08  8.50e+03     1s
+  15   5.25391295e+05  2.01767418e+08  3.40e+02 4.47e-07  8.41e+03     1s
+  16   5.20455060e+05  6.30130532e+08  3.34e+02 1.06e-06  8.31e+03     1s
+  17   5.16159951e+05  2.30528781e+09  3.29e+02 3.05e-06  8.27e+03     1s
+  18   4.84129723e+07 -1.42268184e+08  6.35e+04 0.00e+00  9.11e+05     1s
+  19   1.12771867e+06 -1.11214468e+07  1.48e+03 4.63e+01  2.05e+03     1s
+  20   5.43755461e+05 -1.73175529e+06  6.26e+02 8.65e+00  2.57e+02     1s
+  21   3.54558890e+05 -7.65500127e+05  3.86e+02 4.85e+00  1.08e+02     1s
+  22   3.24484113e+05 -5.84388967e+05  3.41e+02 3.91e+00  1.01e+02     1s
+  23   3.86292112e+05 -3.83277482e+05  3.47e+02 3.23e+00  2.97e+02     1s
+  24   4.78979809e+05  1.20215317e+06  3.48e+02 5.94e-07  6.89e+03     1s
+  25   4.86360435e+05  2.92575614e+06  3.48e+02 8.80e-06  8.10e+04     1s
+  26   5.07496123e+05  8.17327544e+08  3.47e+02 1.17e-02  9.45e+07     1s
+  27*  5.07487553e+05  1.03196129e+14  9.08e-05 8.95e-04  3.80e-02     1s
+  28*  5.07482288e+05  7.14705585e+19  1.31e-10 8.85e-04  5.51e-08     1s
+  29*  5.07473119e+05  4.95047223e+25  1.90e-16 9.33e-04  7.97e-14     1s
+  30*  5.07471399e+05  3.42921971e+31  2.74e-22 9.79e-04  1.16e-19     1s
+  31*  5.07471447e+05  2.25728315e+36  3.85e-25 8.92e-02  1.50e-20     1s
+  32*  5.09492249e+05  2.46272560e+37  3.96e-27 1.38e-01  2.46e-22     1s
+
+Barrier performed 32 iterations in 1.26 seconds
+Numerical trouble encountered
+
+
+Solved with barrier
+
+Root relaxation: infeasible, 5230 iterations, 1.41 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 infeasible    0               - infeasible      -     -    1s
+
+Explored 0 nodes (5230 simplex iterations) in 1.96 seconds
+Thread count was 8 (of 8 available processors)
+
+Solution count 0
+
+Model is infeasible
+Best objective -, best bound -, gap -
+Graph is connected.
+Model input: total population = 5029196
+Build hess : created 4096 variables
+Time elapsed: 2.022048 seconds
+qwerky567: CO.dimacs, 7, 64, 714865, 722048, 2.02,0.86,infeasible,,, 0, 0, 0.00, 0
