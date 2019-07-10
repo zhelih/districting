@@ -1,0 +1,67 @@
+graph: 33 nodes, 0 edges
+Model input: L = 682962, U = 689824, k = 3
+Academic license - for non-commercial use only
+Optimize a model with 1156 rows, 1089 columns and 5412 nonzeros
+Variable types: 0 continuous, 1089 integer (1089 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 7e+05]
+  Objective range  [4e+00, 1e+05]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 3e+00]
+Presolve removed 54 rows and 30 columns
+Presolve time: 0.02s
+Presolved: 1102 rows, 1059 columns, 5601 nonzeros
+Variable types: 0 continuous, 1059 integer (1059 binary)
+Found heuristic solution: objective 199865.46230
+Found heuristic solution: objective 178682.42533
+Found heuristic solution: objective 123909.09815
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Presolved: 1102 rows, 1059 columns, 5601 nonzeros
+
+Root barrier log...
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 2.257e+04
+ Factor NZ  : 5.288e+04 (roughly 1 MByte of memory)
+ Factor Ops : 2.677e+06 (less than 1 second per iteration)
+ Threads    : 3
+
+Barrier performed 0 iterations in 0.04 seconds
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+
+Root relaxation: objective 3.187375e+04, 411 iterations, 0.02 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 31873.7514    0    2 123909.098 31873.7514  74.3%     -    0s
+H    0     0                    34934.258970 31873.7514  8.76%     -    0s
+H    0     0                    33400.412459 31873.7514  4.57%     -    0s
+H    0     0                    32847.046144 31873.7514  2.96%     -    0s
+     0     0     cutoff    0      32847.0461 32847.0461  0.00%     -    0s
+
+Cutting planes:
+  Cover: 3
+  StrongCG: 1
+  GUB cover: 1
+
+Explored 1 nodes (424 simplex iterations) in 0.09 seconds
+Thread count was 8 (of 8 available processors)
+
+Solution count 6: 32847 33400.4 34934.3 ... 199865
+
+Optimal solution found (tolerance 0.00e+00)
+Best objective 3.284704614400e+04, best bound 3.284704614400e+04, gap 0.0000%
+Graph is connected.
+Model input: total population = 2059179
+Build hess : created 1089 variables
+Time elapsed: 0.098924 seconds
+qwerky567: NM.dimacs, 3, 33, 682962, 689824, 0.10,0.96, 32847.05, 0.00, 32847.05, 1, 0, 0.00, 0

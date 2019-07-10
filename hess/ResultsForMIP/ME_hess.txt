@@ -1,0 +1,41 @@
+graph: 16 nodes, 0 edges
+Model input: L = 660860, U = 667501, k = 2
+Academic license - for non-commercial use only
+Optimize a model with 289 rows, 256 columns and 1264 nonzeros
+Variable types: 0 continuous, 256 integer (256 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+05]
+  Objective range  [3e+01, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 2e+00]
+Presolve time: 0.00s
+Presolved: 289 rows, 256 columns, 1264 nonzeros
+Variable types: 0 continuous, 256 integer (256 binary)
+Found heuristic solution: objective 38146.879666
+Found heuristic solution: objective 33806.943491
+
+Root relaxation: objective 9.882712e+03, 168 iterations, 0.00 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 9882.71182    0    2 33806.9435 9882.71182  70.8%     -    0s
+H    0     0                    10789.071702 9882.71182  8.40%     -    0s
+     0     0 10155.7675    0    4 10789.0717 10155.7675  5.87%     -    0s
+
+Cutting planes:
+  Cover: 1
+  GUB cover: 1
+
+Explored 1 nodes (177 simplex iterations) in 0.02 seconds
+Thread count was 8 (of 8 available processors)
+
+Solution count 3: 10789.1 33806.9 38146.9 
+
+Optimal solution found (tolerance 0.00e+00)
+Best objective 1.078907170200e+04, best bound 1.078907170200e+04, gap 0.0000%
+Graph is connected.
+Model input: total population = 1328361
+Build hess : created 256 variables
+Time elapsed: 0.018588 seconds
+qwerky567: ME.dimacs, 2, 16, 660860, 667501, 0.02,0.42, 10789.07, 0.00, 10789.07, 1, 0, 0.00, 0
