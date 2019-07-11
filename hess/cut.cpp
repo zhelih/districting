@@ -130,8 +130,9 @@ void CutCallback::callback()
                         if(is_lcut)
                         {
                           // refine set C
-                          for(int c : C)
+                          for(auto it_c = C.begin(); it_c != C.end(); )
                           {
+                            int c = *it_c;
                             // find distance from a to b through c but not remaining C
                             // priority queue Dijkstra
                             // priority queue pair is <weight, vertex>, min weight on top
@@ -153,7 +154,9 @@ void CutCallback::callback()
                               }
                             }
                             if(dist[b] > U)
-                              C.erase(b);
+                              it_c = C.erase(it_c);
+                            else
+                              ++it_c;
                           }
                         }
                         for(int c : C)
