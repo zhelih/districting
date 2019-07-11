@@ -1,0 +1,127 @@
+graph: 64 nodes, 0 edges
+Model input: L = 751785, U = 759339, k = 6
+Academic license - for non-commercial use only
+Graph is connected.
+Model input: total population = 4533372
+Build hess : created 4096 variables
+Number of vars fixed in lcut initialization = 136
+Optimize a model with 4361 rows, 4096 columns and 20552 nonzeros
+Variable types: 0 continuous, 4096 integer (4096 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 8e+05]
+  Objective range  [4e+00, 1e+05]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 6e+00]
+Presolve removed 348 rows and 137 columns
+Presolve time: 0.06s
+Presolved: 4013 rows, 3959 columns, 19717 nonzeros
+Variable types: 0 continuous, 3959 integer (3959 binary)
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Presolved: 4111 rows, 3959 columns, 20196 nonzeros
+
+Root barrier log...
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.423e+05
+ Factor NZ  : 3.688e+05 (roughly 6 MBytes of memory)
+ Factor Ops : 3.506e+07 (less than 1 second per iteration)
+ Threads    : 3
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   1.41097672e+07  0.00000000e+00  2.49e+04 1.78e-15  4.40e+03     0s
+   1   9.73422351e+06 -1.13484448e+06  1.76e+04 3.95e+00  3.22e+03     0s
+   2   9.01131571e+05 -1.26059144e+06  1.44e+03 2.90e-13  3.51e+02     0s
+   3   2.78006564e+05 -4.75681546e+05  3.30e+02 1.48e-13  8.40e+01     0s
+   4   7.26363462e+04 -7.36619362e+04  1.47e+01 9.55e-14  1.25e+01     0s
+   5   6.11153794e+04 -2.06197184e+04  1.07e+01 4.34e-14  6.86e+00     0s
+   6   4.93023847e+04 -1.98281371e+03  7.43e+00 2.84e-14  4.27e+00     0s
+   7   3.97506538e+04  5.23293911e+03  4.99e+00 2.84e-14  2.87e+00     0s
+
+Barrier performed 7 iterations in 0.18 seconds
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+
+Root relaxation: objective 1.547037e+04, 1074 iterations, 0.09 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 15470.3732    0  183          - 15470.3732      -     -    0s
+     0     0 15531.9202    0  162          - 15531.9202      -     -    0s
+     0     0 15562.1718    0  162          - 15562.1718      -     -    0s
+     0     0 15563.6764    0  162          - 15563.6764      -     -    0s
+     0     0 15613.0699    0  187          - 15613.0699      -     -    0s
+     0     0 15627.7046    0  215          - 15627.7046      -     -    0s
+     0     0 15634.0032    0  195          - 15634.0032      -     -    0s
+     0     0 15669.5407    0  220          - 15669.5407      -     -    0s
+     0     0 15689.3591    0  189          - 15689.3591      -     -    0s
+     0     0 15692.5102    0  186          - 15692.5102      -     -    0s
+     0     0 15693.6663    0  189          - 15693.6663      -     -    0s
+     0     0 15693.6902    0  189          - 15693.6902      -     -    0s
+     0     0 15703.5951    0  215          - 15703.5951      -     -    0s
+     0     0 15704.7183    0  214          - 15704.7183      -     -    0s
+     0     0 15704.9195    0  216          - 15704.9195      -     -    0s
+     0     0 15714.1260    0  274          - 15714.1260      -     -    0s
+     0     0 15714.2376    0  281          - 15714.2376      -     -    0s
+     0     0 15728.7853    0  275          - 15728.7853      -     -    0s
+     0     0 15730.0895    0  249          - 15730.0895      -     -    0s
+     0     0 15730.0902    0  249          - 15730.0902      -     -    0s
+     0     0 15732.3798    0  262          - 15732.3798      -     -    0s
+     0     0 15733.3731    0  243          - 15733.3731      -     -    0s
+     0     0 15733.6179    0  259          - 15733.6179      -     -    0s
+     0     0 15733.6879    0  260          - 15733.6879      -     -    0s
+     0     0 15735.7471    0  268          - 15735.7471      -     -    1s
+     0     0 15736.3329    0  274          - 15736.3329      -     -    1s
+     0     0 15736.6586    0  270          - 15736.6586      -     -    1s
+     0     0 15736.9455    0  270          - 15736.9455      -     -    1s
+     0     0 15737.4688    0  259          - 15737.4688      -     -    1s
+     0     0 15737.4688    0  259          - 15737.4688      -     -    1s
+     0     2 15737.4688    0  259          - 15737.4688      -     -    1s
+  1055   972 17029.8041   11  183          - 15950.3464      -  46.7    5s
+  1071   986 15950.3464   12  179          - 15950.3464      -  48.1   10s
+H 1460  1092                    33396.325005 15950.3464  52.2%  57.9   13s
+H 1464   840                    18310.672489 15950.3464  12.9%  58.1   13s
+H 1474   779                    18243.360574 15950.3464  12.6%  58.2   13s
+H 1554   730                    18103.900577 15950.3464  11.9%  58.2   14s
+H 1604   681                    17857.155590 16157.2722  9.52%  58.4   14s
+  1647   672 16474.3803   23   84 17857.1556 16304.5241  8.69%  58.9   15s
+* 1880   606              32    17856.088708 16810.5185  5.86%  55.9   15s
+H 1889   561                    17779.626720 16810.5185  5.45%  55.6   15s
+* 2032   523              32    17769.875921 16974.0542  4.48%  54.0   15s
+H 2492   467                    17647.942991 17084.4938  3.19%  48.1   16s
+* 2874   380              36    17632.899118 17115.3159  2.94%  44.4   16s
+* 2875   369              36    17616.425498 17115.3159  2.84%  44.4   16s
+* 2876   341              35    17569.012479 17115.3159  2.58%  44.4   16s
+H 2903   232                    17418.432435 17141.4965  1.59%  44.3   16s
+H 2919    96                    17272.646110 17149.7737  0.71%  44.1   16s
+
+Cutting planes:
+  Cover: 49
+  MIR: 3
+  StrongCG: 1
+  Flow cover: 1
+  GUB cover: 4
+  Inf proof: 4
+  Zero half: 11
+  Lazy constraints: 276
+
+Explored 3057 nodes (132963 simplex iterations) in 16.76 seconds
+Thread count was 8 (of 8 available processors)
+
+Solution count 10: 17272.6 17418.4 17569 ... 17857.2
+
+Optimal solution found (tolerance 0.00e+00)
+Best objective 1.727264611000e+04, best bound 1.727264611000e+04, gap 0.0000%
+Time elapsed: 16.774290 seconds
+Number of callbacks: 74
+Time in callbacks: 0.032533 seconds
+Number of lazy constraints generated: 489
+qwerky567: LA.dimacs, 6, 64, 751785, 759339, 16.77,0.58, 17272.65, 0.00, 17272.65, 3057, 74, 0.03, 489

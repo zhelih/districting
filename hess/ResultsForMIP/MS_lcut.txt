@@ -1,0 +1,74 @@
+graph: 82 nodes, 0 edges
+Model input: L = 738116, U = 745533, k = 4
+Academic license - for non-commercial use only
+Graph is connected.
+Model input: total population = 2967297
+Build hess : created 6724 variables
+Number of vars fixed in lcut initialization = 0
+Optimize a model with 6889 rows, 6724 columns and 33538 nonzeros
+Variable types: 0 continuous, 6724 integer (6724 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 7e+05]
+  Objective range  [7e-01, 5e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 4e+00]
+Presolve time: 0.06s
+Presolved: 6889 rows, 6724 columns, 33538 nonzeros
+Variable types: 0 continuous, 6724 integer (6724 binary)
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Presolved: 6962 rows, 6724 columns, 34071 nonzeros
+
+Root barrier log...
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 3.142e+05
+ Factor NZ  : 8.450e+05 (roughly 12 MBytes of memory)
+ Factor Ops : 1.075e+08 (less than 1 second per iteration)
+ Threads    : 3
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   6.02041285e+06  0.00000000e+00  1.05e+04 0.00e+00  9.44e+02     0s
+   1   1.66184166e+06 -5.90148171e+05  2.78e+03 7.41e-02  2.64e+02     0s
+
+Barrier performed 1 iterations in 0.28 seconds
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+
+Root relaxation: objective 1.608771e+04, 2036 iterations, 0.17 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 16087.7130    0    4          - 16087.7130      -     -    0s
+H    0     0                    16363.983459 16087.7130  1.69%     -    0s
+     0     0 16129.4982    0   98 16363.9835 16129.4982  1.43%     -    0s
+     0     0 16129.4982    0    4 16363.9835 16129.4982  1.43%     -    0s
+H    0     0                    16353.000817 16129.4982  1.37%     -    0s
+H    0     0                    16211.663459 16129.4982  0.51%     -    0s
+*    0     0               0    16142.038073 16142.0381  0.00%     -    0s
+
+Cutting planes:
+  Cover: 6
+  StrongCG: 1
+  Lazy constraints: 1
+
+Explored 1 nodes (2280 simplex iterations) in 0.50 seconds
+Thread count was 8 (of 8 available processors)
+
+Solution count 4: 16142 16211.7 16353 16364 
+
+Optimal solution found (tolerance 0.00e+00)
+Best objective 1.614203807300e+04, best bound 1.614203807300e+04, gap 0.0000%
+Time elapsed: 0.527989 seconds
+Number of callbacks: 10
+Time in callbacks: 0.006741 seconds
+Number of lazy constraints generated: 83
+qwerky567: MS.dimacs, 4, 82, 738116, 745533, 0.53,0.33, 16142.04, 0.00, 16142.04, 1, 10, 0.01, 83
