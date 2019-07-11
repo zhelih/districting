@@ -1,0 +1,97 @@
+graph: 93 nodes, 0 edges
+Model input: L = 605737, U = 611824, k = 3
+Academic license - for non-commercial use only
+Optimize a model with 1498132 rows, 3748077 columns and 11894106 nonzeros
+Variable types: 3739428 continuous, 8649 integer (8649 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+05]
+  Objective range  [7e-01, 2e+05]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 3e+00]
+Presolve removed 704 rows and 43002 columns (presolve time = 6s) ...
+Presolve removed 24878 rows and 91168 columns (presolve time = 10s) ...
+Presolve removed 24878 rows and 138636 columns (presolve time = 15s) ...
+Presolve removed 48875 rows and 138636 columns (presolve time = 20s) ...
+Presolve removed 48875 rows and 138636 columns (presolve time = 26s) ...
+Presolve removed 48875 rows and 154312 columns (presolve time = 131s) ...
+Presolve removed 56620 rows and 184946 columns (presolve time = 135s) ...
+Presolve removed 64279 rows and 184946 columns (presolve time = 146s) ...
+Presolve removed 64279 rows and 185120 columns (presolve time = 204s) ...
+Presolve removed 64279 rows and 185120 columns
+Presolve time: 204.33s
+Presolved: 1433853 rows, 3562957 columns, 11348729 nonzeros
+Variable types: 3554312 continuous, 8645 integer (8645 binary)
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Root barrier log...
+
+Ordering time: 0.00s
+
+Barrier performed 0 iterations in 262.42 seconds
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+
+Root relaxation: objective 2.196398e+04, 7207 iterations, 36.84 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 21963.9756    0    4          - 21963.9756      -     -  266s
+     0     0 22012.9819    0   38          - 22012.9819      -     -  328s
+     0     0 22025.0074    0   28          - 22025.0074      -     -  342s
+     0     0 22040.3183    0   31          - 22040.3183      -     -  356s
+H    0     0                    22193.013405 22040.3183  0.69%     -  361s
+     0     0 22050.9969    0   34 22193.0134 22050.9969  0.64%     -  365s
+     0     0 22051.1442    0   34 22193.0134 22051.1442  0.64%     -  369s
+     0     0 22066.3995    0   39 22193.0134 22066.3995  0.57%     -  388s
+     0     0 22066.3995    0    4 22193.0134 22066.3995  0.57%     -  405s
+     0     0 22066.3995    0   41 22193.0134 22066.3995  0.57%     -  406s
+     0     0 22066.3995    0   47 22193.0134 22066.3995  0.57%     -  406s
+     0     0 22071.9735    0   14 22193.0134 22071.9735  0.55%     -  407s
+     0     0 22077.2345    0   16 22193.0134 22077.2345  0.52%     -  407s
+     0     0 22077.4815    0   16 22193.0134 22077.4815  0.52%     -  407s
+     0     0 22113.4567    0   18 22193.0134 22113.4567  0.36%     -  407s
+     0     0 22115.5924    0   16 22193.0134 22115.5924  0.35%     -  408s
+     0     0 22115.5924    0    4 22193.0134 22115.5924  0.35%     -  408s
+     0     0 22115.5924    0   10 22193.0134 22115.5924  0.35%     -  408s
+     0     0 22115.5924    0    4 22193.0134 22115.5924  0.35%     -  409s
+     0     0 22115.5924    0   10 22193.0134 22115.5924  0.35%     -  409s
+     0     0 22115.5924    0   10 22193.0134 22115.5924  0.35%     -  409s
+     0     0 22115.5924    0   16 22193.0134 22115.5924  0.35%     -  409s
+     0     0 22115.5924    0   17 22193.0134 22115.5924  0.35%     -  409s
+     0     0 22141.3534    0   17 22193.0134 22141.3534  0.23%     -  409s
+     0     0 22141.3534    0   19 22193.0134 22141.3534  0.23%     -  409s
+     0     0 22141.3534    0   32 22193.0134 22141.3534  0.23%     -  409s
+     0     0 22141.3534    0   32 22193.0134 22141.3534  0.23%     -  409s
+     0     0 22141.3534    0   30 22193.0134 22141.3534  0.23%     -  409s
+     0     0 22141.3534    0   23 22193.0134 22141.3534  0.23%     -  409s
+     0     0 22141.3534    0   30 22193.0134 22141.3534  0.23%     -  409s
+     0     0 22141.3534    0   31 22193.0134 22141.3534  0.23%     -  409s
+     0     0 22141.3534    0   20 22193.0134 22141.3534  0.23%     -  409s
+     0     0 22141.3534    0   32 22193.0134 22141.3534  0.23%     -  409s
+     0     0 22141.3534    0   33 22193.0134 22141.3534  0.23%     -  409s
+     0     0 22141.3534    0   26 22193.0134 22141.3534  0.23%     -  409s
+     0     0 22141.3534    0   12 22193.0134 22141.3534  0.23%     -  409s
+     0     0 22141.3534    0   12 22193.0134 22141.3534  0.23%     -  409s
+     0     0 22151.0344    0   29 22193.0134 22151.0344  0.19%     -  409s
+     0     0 22170.8972    0    4 22193.0134 22170.8972  0.10%     -  409s
+     0     0 22170.8972    0    4 22193.0134 22170.8972  0.10%     -  409s
+     0     0 22170.8972    0    1 22193.0134 22170.8972  0.10%     -  410s
+     0     0 22170.8972    0    1 22193.0134 22170.8972  0.10%     -  410s
+
+Explored 1 nodes (12903 simplex iterations) in 410.67 seconds
+Thread count was 8 (of 8 available processors)
+
+Solution count 1: 22193 
+
+Optimal solution found (tolerance 0.00e+00)
+Best objective 2.219301340500e+04, best bound 2.219301340500e+04, gap 0.0000%
+Graph is connected.
+Model input: total population = 1826341
+Build hess : created 8649 variables
+Time elapsed: 419.623647 seconds
+qwerky567: NE.dimacs, 3, 93, 605737, 611824, 419.62,0.85, 22193.01, 0.00, 22193.01, 1, 0, 0.00, 0

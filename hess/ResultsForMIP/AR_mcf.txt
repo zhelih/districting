@@ -1,0 +1,110 @@
+graph: 75 nodes, 0 edges
+Model input: L = 725335, U = 732624, k = 4
+Academic license - for non-commercial use only
+Optimize a model with 770344 rows, 1989369 columns and 6287730 nonzeros
+Variable types: 1983744 continuous, 5625 integer (5625 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 7e+05]
+  Objective range  [6e+00, 4e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 4e+00]
+Presolve removed 5025 rows and 36378 columns (presolve time = 5s) ...
+Presolve removed 10047 rows and 46282 columns (presolve time = 10s) ...
+Presolve removed 10047 rows and 46418 columns (presolve time = 23s) ...
+Presolve removed 10047 rows and 46418 columns (presolve time = 45s) ...
+Presolve removed 10047 rows and 46418 columns
+Presolve time: 44.79s
+Presolved: 760297 rows, 1942951 columns, 6170067 nonzeros
+Variable types: 1937326 continuous, 5625 integer (5625 binary)
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Presolve removed 134 rows and 268 columns
+Presolved: 760163 rows, 1942683 columns, 6169531 nonzeros
+
+Root barrier log...
+
+Ordering time: 0.00s
+
+Barrier performed 0 iterations in 72.71 seconds
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+
+Root relaxation: objective 1.600405e+04, 7564 iterations, 17.03 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 16004.0484    0  119          - 16004.0484      -     -   85s
+     0     0 16252.8089    0  164          - 16252.8089      -     -  125s
+     0     0 16255.5394    0  133          - 16255.5394      -     -  134s
+     0     0 16294.5266    0  137          - 16294.5266      -     -  146s
+     0     0 16328.0774    0  136          - 16328.0774      -     -  150s
+     0     0 16330.9954    0  123          - 16330.9954      -     -  152s
+     0     0 16342.5183    0  153          - 16342.5183      -     -  160s
+     0     0 16345.5901    0  168          - 16345.5901      -     -  164s
+     0     0 16347.2849    0  169          - 16347.2849      -     -  166s
+     0     0 16360.2289    0  196          - 16360.2289      -     -  175s
+     0     0 16362.0502    0  180          - 16362.0502      -     -  185s
+     0     0 16362.1456    0  162          - 16362.1456      -     -  187s
+     0     0 16362.7545    0  186          - 16362.7545      -     -  199s
+     0     0 16363.0688    0  184          - 16363.0688      -     -  202s
+     0     0 16363.1954    0  201          - 16363.1954      -     -  203s
+     0     0 16363.2165    0  202          - 16363.2165      -     -  210s
+H    0     0                    86450.720690 16363.2165  81.1%     -  218s
+     0     0 16363.2165    0  202 86450.7207 16363.2165  81.1%     -  225s
+H    0     0                    16543.153873 16363.2165  1.09%     -  244s
+     0     0 16363.2165    0   52 16543.1539 16363.2165  1.09%     -  258s
+     0     0 16363.2165    0   54 16543.1539 16363.2165  1.09%     -  258s
+     0     0 16363.2165    0   52 16543.1539 16363.2165  1.09%     -  259s
+     0     0 16363.2165    0   53 16543.1539 16363.2165  1.09%     -  259s
+     0     0 16363.2165    0   55 16543.1539 16363.2165  1.09%     -  259s
+     0     0 16430.8393    0   60 16543.1539 16430.8393  0.68%     -  259s
+     0     0 16512.4837    0   62 16543.1539 16512.4837  0.19%     -  260s
+     0     0 16512.4837    0   64 16543.1539 16512.4837  0.19%     -  260s
+     0     0 16512.4837    0   60 16543.1539 16512.4837  0.19%     -  260s
+     0     0 16512.4837    0   62 16543.1539 16512.4837  0.19%     -  260s
+     0     0 16512.4837    0   63 16543.1539 16512.4837  0.19%     -  260s
+     0     0 16512.4837    0   67 16543.1539 16512.4837  0.19%     -  260s
+     0     0 16512.4837    0   69 16543.1539 16512.4837  0.19%     -  260s
+     0     0 16512.4837    0   70 16543.1539 16512.4837  0.19%     -  260s
+     0     0 16512.4837    0    6 16543.1539 16512.4837  0.19%     -  260s
+     0     0 16512.4837    0   42 16543.1539 16512.4837  0.19%     -  260s
+     0     0 16512.4837    0   50 16543.1539 16512.4837  0.19%     -  261s
+     0     0 16512.4837    0   45 16543.1539 16512.4837  0.19%     -  261s
+     0     0 16512.4837    0   52 16543.1539 16512.4837  0.19%     -  261s
+     0     0 16512.4837    0   55 16543.1539 16512.4837  0.19%     -  261s
+     0     0 16512.4837    0   55 16543.1539 16512.4837  0.19%     -  261s
+     0     0 16512.4837    0   55 16543.1539 16512.4837  0.19%     -  261s
+     0     0 16512.4837    0   51 16543.1539 16512.4837  0.19%     -  261s
+     0     0 16512.4837    0   37 16543.1539 16512.4837  0.19%     -  261s
+     0     0 16512.4837    0   51 16543.1539 16512.4837  0.19%     -  261s
+     0     0 16512.4837    0   52 16543.1539 16512.4837  0.19%     -  261s
+     0     0 16512.4837    0   51 16543.1539 16512.4837  0.19%     -  261s
+     0     0 16512.4837    0   51 16543.1539 16512.4837  0.19%     -  261s
+     0     0 16512.4837    0   51 16543.1539 16512.4837  0.19%     -  261s
+
+Cutting planes:
+  Gomory: 1
+  Cover: 1
+  Implied bound: 19
+  Clique: 1
+  MIR: 2
+  StrongCG: 4
+  GUB cover: 3
+
+Explored 1 nodes (14419 simplex iterations) in 261.64 seconds
+Thread count was 8 (of 8 available processors)
+
+Solution count 2: 16543.2 86450.7 
+
+Optimal solution found (tolerance 0.00e+00)
+Best objective 1.654315387300e+04, best bound 1.654315387300e+04, gap 0.0000%
+Graph is connected.
+Model input: total population = 2915918
+Build hess : created 5625 variables
+Time elapsed: 266.321322 seconds
+qwerky567: AR.dimacs, 4, 75, 725335, 732624, 266.32,0.52, 16543.15, 0.00, 16543.15, 1, 0, 0.00, 0
