@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 	//apply the merging preprocess and get the clusters
 	vector<vector<int>> clusters;
   bool do_heur_cuts = false;
-	if (arg_model == "shir" || arg_model == "mcf" || arg_model == "cut")
+	if (arg_model != "hess")
 	{
     do_heur_cuts = true;
 		printf("Preprocessing the graph...\n");
