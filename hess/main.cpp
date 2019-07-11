@@ -224,8 +224,7 @@ int main(int argc, char *argv[])
 		auto IP_start = chrono::steady_clock::now();
 		model.optimize();
 		chrono::duration<double> IP_duration = chrono::steady_clock::now() - IP_start;
-		cerr << IP_duration.count() << " ";
-
+    printf("IP duration time: %lf seconds\n", IP_duration.count());
 		chrono::duration<double> duration = chrono::steady_clock::now() - start;
 		printf("Time elapsed: %lf seconds\n", duration.count()); // TODO use gurobi Runtime model attr
 		if (cb)

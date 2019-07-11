@@ -185,7 +185,7 @@ void CutCallback::callback()
 HessCallback* build_cut_(GRBModel* model, hess_params& p, graph* g, const vector<int>& population, bool is_lcut, int U)
 {
     model->getEnv().set(GRB_IntParam_LazyConstraints, 1); // turns off presolve!!!
-    CutCallback* cb = new CutCallback(p, g, population, is_lcut, 0);
+    CutCallback* cb = new CutCallback(p, g, population, is_lcut, U);
     model->setCallback(cb);
     model->update();
     return cb;
