@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <queue>
 #include "graph.h"
 #include "models.h"
 #include "ralg/ralg.h"
@@ -28,7 +29,7 @@ using namespace std;
 #endif
 
 double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<int> &population, int L, int U, int k, 
-	vector<vector<double>>& LB0, vector<vector<double>>& LB1, vector<int> &lagrangianCenters, bool ralg_hot_start, const char* ralg_hot_start_fname)
+	vector<vector<double>>& LB0, vector<vector<double>>& LB1, vector<int> &lagrangianCenters, bool ralg_hot_start, const char* ralg_hot_start_fname, bool exploit_contiguity)
 {
 	double LB = -INFINITY;
 
@@ -42,10 +43,13 @@ double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<i
 	double * bestMultipliers = new double[dim]; 
 	double * multipliers = new double[dim];
 
-	auto cb_grad_func = [g, &w, &population, L, U, k, &W, &w_hat, &currentCenters, &bestCenters, &LB, &LB0, &LB1, dim](const double* multipliers, double& f_val, double* grad) 
+	auto cb_grad_func = [g, &w, &population, L, U, k, &W, &w_hat, &currentCenters, &bestCenters, &LB, &LB0, &LB1, dim, exploit_contiguity](const double* multipliers, double& f_val, double* grad) 
 	{
 		solveInnerProblem(g, multipliers, L, U, k, population, w, w_hat, W, grad, f_val, currentCenters);
-		update_LB0_and_LB1(W, currentCenters, f_val, w_hat, LB0, LB1);
+		if (exploit_contiguity)
+			update_LB0_and_LB1_contiguity(g, W, currentCenters, f_val, w_hat, LB0, LB1);
+		else
+			update_LB0_and_LB1(W, currentCenters, f_val, w_hat, LB0, LB1);
 
 		// update incubments?
 		if (f_val > LB)
@@ -56,12 +60,6 @@ double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<i
 		return true;
 	};
 
-	//auto start = chrono::steady_clock::now();
-
-	// run ralg
-	
-	//cerr << "\n\n**Currently incapable of using/writing hot start**\n\n";
-
 	// try to load hot start if any
 	if (ralg_hot_start)
 		read_ralg_hot_start(ralg_hot_start_fname, multipliers, dim);
@@ -70,6 +68,7 @@ double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<i
 			multipliers[i] = 1.; // whatever
 	
 	ralg_options opt = defaultOptions; opt.output_iter = 1; opt.is_monotone = false;
+	if (ralg_hot_start) opt.itermax = 100;		
 	LB = ralg(&opt, cb_grad_func, dim, multipliers, bestMultipliers, RALG_MAX); // lower bound from lagrangian
 
 	// dump result to "state_model.hot"
@@ -134,6 +133,54 @@ void update_LB0_and_LB1(const vector<double>& W, const vector<bool>& currentCent
 	}
 
 	// TODO currently not updating LB0, since x[i][j]=1 safe fixings are not common????
+}
+
+void update_LB0_and_LB1_contiguity(graph* g, const vector<double>& W, const vector<bool>& currentCenters, double f_val,
+	const vector<vector<double>> &w_hat, vector< vector<double> > &LB0, vector< vector<double> > &LB1)
+{
+	int n = currentCenters.size();
+	double maxW = -INFINITY;
+
+	// determine value for maxW
+	for (int i = 0; i < n; ++i)
+		if (currentCenters[i])
+			maxW = max(maxW, W[i]);
+
+	// compute special distances 
+	vector<double> dist(g->nr_nodes);
+	for (int j = 0; j < n; ++j)
+	{
+		// a particular shortest path computation from j to all nodes
+		priority_queue< pair<double, int>, vector <pair<double, int>>, greater<pair<double, int>> > pq;
+		for (int i = 0; i < n; ++i) dist[i] = DBL_MAX;
+		pq.push(make_pair(0., j)); // copy constructor?
+		dist[j] = 0.; // NB: not zero here!
+
+		while (!pq.empty())
+		{
+			int u = pq.top().second;
+			pq.pop();
+			for (int nb : g->nb(u)) {
+				int weight = max(0, w_hat[nb][j]);
+				if (dist[nb] > dist[u] + weight) {
+					dist[nb] = dist[u] + weight;
+					pq.push(make_pair(dist[nb], nb));
+				}
+			}
+		}
+
+		// update LB1[][]
+		if (currentCenters[j])
+		{
+			for (int i = 0; i < n; ++i)
+				LB1[i][j] = max(LB1[i][j], f_val + dist[i]);
+		}
+		else
+		{
+			for (int i = 0; i < n; ++i)
+				LB1[i][j] = max(LB1[i][j], f_val - maxW + W[j] + dist[i]);
+		}
+	}
 }
 
 void lagrangianBasedSafeFixing(vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,

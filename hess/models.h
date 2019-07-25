@@ -12,11 +12,11 @@ typedef const vector<vector<bool>> cvv;
 
 struct hess_params
 {
-  GRBVar* x;
-  vector<vector<bool>> F0;
-  vector<vector<bool>> F1;
-  unordered_map<int,int> h;
-  int n;
+	GRBVar* x;
+	vector<vector<bool>> F0;
+	vector<vector<bool>> F1;
+	unordered_map<int, int> h;
+	int n;
 };
 
 //hack
@@ -36,11 +36,11 @@ void build_mcf(GRBModel* model, hess_params& p, graph* g);
 class HessCallback : public GRBCallback
 {
 protected:
-  hess_params& p;
+	hess_params& p;
 	double** x_val; // x values
 	graph* g; // graph pointer
 	int n; // g->nr_nodes
-  const vector<int> population;
+	const vector<int> population;
 public:
 	int numCallbacks; // number of callback calls
 	double callbackTime; // cumulative time in callbacks
@@ -65,7 +65,7 @@ protected:
 		for (int i = 0; i < n; ++i)
 			for (int j = 0; j < n; ++j)
 				if (IS_X(i, j))
-					x_val[i][j] = getSolution(X_V(i,j));
+					x_val[i][j] = getSolution(X_V(i, j));
 				else if (p.F1[i][j]) x_val[i][j] = 1.; else x_val[i][j] = 0.;
 	}
 };
@@ -97,17 +97,23 @@ void eugene_inner(graph* g, const double* multipliers, int L, int U, int k, cons
 void lagrangianBasedSafeFixing(vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
 	const vector<vector<int>>& clusters, vector<double>& W, const vector<bool>& S, const double f_val, const double UB, const vector<vector<double>> &w_hat);
 
-double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<int> &population, int L, int U, int k, 
-	vector<vector<double>>& LB0, vector<vector<double>>& LB1, vector<int> &lagrangianCenters, bool ralg_hot_start, const char* ralg_hot_start_fname);
+double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<int> &population, int L, int U, int k,
+	vector<vector<double>>& LB0, vector<vector<double>>& LB1, vector<int> &lagrangianCenters, bool ralg_hot_start, const char* ralg_hot_start_fname, bool exploit_contiguity);
 
 void solveInnerProblem(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,
 	const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& currentCenters);
 
-void update_LB0_and_LB1(const vector<double>& W, const vector<bool>& currentCenters, double f_val, 
+void update_LB0_and_LB1(const vector<double>& W, const vector<bool>& currentCenters, double f_val,
+	const vector<vector<double>> &w_hat, vector< vector<double> > &LB0, vector< vector<double> > &LB1);
+
+void update_LB0_and_LB1_contiguity(graph* g, const vector<double>& W, const vector<bool>& currentCenters, double f_val,
 	const vector<vector<double>> &w_hat, vector< vector<double> > &LB0, vector< vector<double> > &LB1);
 
 vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vector<int>& population,
-	int L, int U, int k, double &UB, int maxIterations, bool do_cuts=false);
+	int L, int U, int k, double &UB, int maxIterations, bool do_cuts = false);
+
+void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<vector<double> > &w, 
+	const vector<int> &population, int L, int U, int k, double &UB, string arg_model);
 
 void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& population,
 	int L, int U, int k, vector<int>&heuristicSolution, string arg_model, double &UB);// , cvv &F0);

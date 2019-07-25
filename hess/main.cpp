@@ -11,6 +11,8 @@
 #include <chrono>
 #include <string>
 
+constexpr auto VarFixingEpsilon = 0.00001;  
+
 #ifndef sign
 #define sign(x) (((x)>0)?1:((x)==0)?0:(-1))
 #endif
@@ -22,6 +24,12 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
+	// change the precision to 2 decimal places for reporting objective values and running times.
+	cout.setf(ios::fixed);
+	cout.precision(2);
+	cerr.setf(ios::fixed);
+	cerr.precision(2);
+
 	ios::sync_with_stdio(1);
 	//printf("Districting, build %s\n", gitversion);
 	if (argc < 8) {
@@ -90,17 +98,9 @@ int main(int argc, char *argv[])
 
 	string arg_model = argv[7];
 
-	//apply the merging preprocess and get the clusters
-	vector<vector<int>> clusters;
-  bool do_heur_cuts = false;
+	bool exploit_contiguity = false;
 	if (arg_model != "hess")
-	{
-    do_heur_cuts = true;
-		printf("Preprocessing the graph...\n");
-		vector<int> new_population;
-		new_population = population;
-		clusters = preprocess(g, new_population, L, U, population);
-	}
+		exploit_contiguity = true;
 
 	auto start = chrono::steady_clock::now();
 
@@ -111,11 +111,11 @@ int main(int argc, char *argv[])
 			w[i][j] = get_objective_coefficient(dist, population, i, j);
 
 	// apply Lagrangian 
-	vector< vector<double> > LB0(g->nr_nodes, vector<double>(g->nr_nodes,-INFINITY)); // LB0[i][j] is a lower bound on problem objective if we fix x[i][j] = 0
-	vector< vector<double> > LB1(g->nr_nodes, vector<double>(g->nr_nodes,-INFINITY)); // LB1[i][j] is a lower bound on problem objective if we fix x[i][j] = 1
+	vector< vector<double> > LB0(g->nr_nodes, vector<double>(g->nr_nodes, -INFINITY)); // LB0[i][j] is a lower bound on problem objective if we fix x[i][j] = 0
+	vector< vector<double> > LB1(g->nr_nodes, vector<double>(g->nr_nodes, -INFINITY)); // LB1[i][j] is a lower bound on problem objective if we fix x[i][j] = 1
 	vector<int> lagrangianCenters(k, -1);									// the centers coming from the best lagrangian inner problem
 	auto lagrange_start = chrono::steady_clock::now();
-	double LB = solveLagrangian(g, w, population, L, U, k, LB0, LB1, lagrangianCenters, ralg_hot_start, ralg_hot_start_fname);// lower bound on problem objective, coming from lagrangian
+	double LB = solveLagrangian(g, w, population, L, U, k, LB0, LB1, lagrangianCenters, ralg_hot_start, ralg_hot_start_fname, exploit_contiguity);// lower bound on problem objective, coming from lagrangian
 	chrono::duration<double> lagrange_duration = chrono::steady_clock::now() - lagrange_start;
 	cerr << LB << " " << lagrange_duration.count() << " ";
 
@@ -129,11 +129,20 @@ int main(int argc, char *argv[])
 	cout << "Best solution after " << maxIterations << " of HessHeuristic is = " << UB << endl;
 
 	// run local search
-	auto LS_start = chrono::steady_clock::now();
-	LocalSearch(g, w, population, L, U, k, heuristicSolution, arg_model, UB); // , F0);
-	chrono::duration<double> LS_duration = chrono::steady_clock::now() - LS_start;
-	cerr << UB << " " << LS_duration.count() << " ";
-	cout << "Best solution after local search is = " << UB << endl;
+	//auto LS_start = chrono::steady_clock::now();
+	//LocalSearch(g, w, population, L, U, k, heuristicSolution, arg_model, UB); // , F0);
+	//chrono::duration<double> LS_duration = chrono::steady_clock::now() - LS_start;
+	//cerr << UB << " " << LS_duration.count() << " ";
+	//cout << "Best solution after local search is = " << UB << endl;
+
+	if (arg_model != "hess")  // solve contiguity-constrained problem, restricted to centers from heuristicSolution
+	{
+		UB = INFINITY;
+		auto contiguity_start = chrono::steady_clock::now();
+		ContiguityHeuristic(heuristicSolution, g, w, population, L, U, k, UB, "shir"); // arg_model);
+		chrono::duration<double> contiguity_duration = chrono::steady_clock::now() - contiguity_start;
+		cerr << UB << " " << contiguity_duration.count() << " ";
+	}
 
 	// determine which variables can be fixed
 	vector<vector<bool>> F0(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_0
@@ -142,8 +151,8 @@ int main(int argc, char *argv[])
 	{
 		for (int j = 0; j < g->nr_nodes; ++j)
 		{
-			if (LB0[i][j] > UB + 0.00001) F1[i][j] = true;
-			if (LB1[i][j] > UB + 0.00001) F0[i][j] = true;
+			if (LB0[i][j] > UB + VarFixingEpsilon) F1[i][j] = true;
+			if (LB1[i][j] > UB + VarFixingEpsilon) F0[i][j] = true;
 		}
 	}
 
@@ -168,26 +177,24 @@ int main(int argc, char *argv[])
 	cout << "Number of variables not fixed     = " << numUnfixed << endl;
 	cout << "Number of centers left            = " << numCentersLeft << endl;
 	cout << "Percentage of vars fixed = " << (double)(g->nr_nodes*g->nr_nodes - numUnfixed) / (g->nr_nodes*g->nr_nodes) << endl;
+	cerr << (double)(g->nr_nodes*g->nr_nodes - numUnfixed) / (g->nr_nodes*g->nr_nodes) << " ";
 
-
-	try 
+	try
 	{
 		// initialize environment and create an empty model
 		GRBEnv env = GRBEnv();
 		GRBModel model = GRBModel(env);
 
 		// get incumbent solution using centers from lagrangian
-    hess_params p;
-    p = build_hess(&model, g, w, population, L, U, k, F0, F1);
+		hess_params p;
+		p = build_hess(&model, g, w, population, L, U, k, F0, F1);
 
 		// push GUROBI to branch over clusterheads
 		for (int i = 0; i < g->nr_nodes; ++i)
 			if (IS_X(i, i))
-				X_V(i,i).set(GRB_IntAttr_BranchPriority, 1);
+				X_V(i, i).set(GRB_IntAttr_BranchPriority, 1);
 
 		HessCallback* cb = 0;
-
-		//	strengthen_hess(&model, x, g, clusters);
 
 		if (arg_model == "shir")
 			build_shir(&model, p, g);
@@ -195,8 +202,8 @@ int main(int argc, char *argv[])
 			build_mcf(&model, p, g);
 		else if (arg_model == "cut")
 			cb = build_cut(&model, p, g, population);
-    else if (arg_model == "lcut")
-      cb = build_lcut(&model, p, g, population, U);
+		else if (arg_model == "lcut")
+			cb = build_lcut(&model, p, g, population, U);
 		else if (arg_model != "hess") {
 			fprintf(stderr, "ERROR: Unknown model : %s\n", arg_model.c_str());
 			exit(1);
@@ -213,10 +220,10 @@ int main(int argc, char *argv[])
 		for (int i = 0; i < g->nr_nodes; ++i)
 		{
 			for (int j = 0; j < g->nr_nodes; ++j)
-				if(IS_X(i,j))
-					X_V(i,j).set(GRB_DoubleAttr_Start, 0);
+				if (IS_X(i, j))
+					X_V(i, j).set(GRB_DoubleAttr_Start, 0);
 
-			if(IS_X(i,heuristicSolution[i]))
+			if (IS_X(i, heuristicSolution[i]))
 				X_V(i, heuristicSolution[i]).set(GRB_DoubleAttr_Start, 1);
 		}
 
@@ -224,8 +231,10 @@ int main(int argc, char *argv[])
 		auto IP_start = chrono::steady_clock::now();
 		model.optimize();
 		chrono::duration<double> IP_duration = chrono::steady_clock::now() - IP_start;
-    printf("IP duration time: %lf seconds\n", IP_duration.count());
+		cerr << IP_duration.count() << " ";
+		printf("IP duration time: %lf seconds\n", IP_duration.count());
 		chrono::duration<double> duration = chrono::steady_clock::now() - start;
+		cerr << duration.count() << " ";
 		printf("Time elapsed: %lf seconds\n", duration.count()); // TODO use gurobi Runtime model attr
 		if (cb)
 		{
@@ -255,6 +264,8 @@ int main(int argc, char *argv[])
 			double objval = model.get(GRB_DoubleAttr_ObjVal);
 			double mipgap = model.get(GRB_DoubleAttr_MIPGap)*100.;
 			double objbound = model.get(GRB_DoubleAttr_ObjBound);
+
+			cerr << objbound << " " << objval << endl;
 
 			// no incumbent solution was found, these values do no make sense
 			if (model.get(GRB_IntAttr_SolCount) == 0)
