@@ -11,7 +11,7 @@
 #include <chrono>
 #include <string>
 
-constexpr auto VarFixingEpsilon = 0.00001;  
+constexpr auto VarFixingEpsilon = 0.00001;
 
 #ifndef sign
 #define sign(x) (((x)>0)?1:((x)==0)?0:(-1))
@@ -234,7 +234,6 @@ int main(int argc, char *argv[])
 		cerr << IP_duration.count() << " ";
 		printf("IP duration time: %lf seconds\n", IP_duration.count());
 		chrono::duration<double> duration = chrono::steady_clock::now() - start;
-		cerr << duration.count() << " ";
 		printf("Time elapsed: %lf seconds\n", duration.count()); // TODO use gurobi Runtime model attr
 		if (cb)
 		{
@@ -264,8 +263,6 @@ int main(int argc, char *argv[])
 			double objval = model.get(GRB_DoubleAttr_ObjVal);
 			double mipgap = model.get(GRB_DoubleAttr_MIPGap)*100.;
 			double objbound = model.get(GRB_DoubleAttr_ObjBound);
-
-			cerr << objbound << " " << objval << endl;
 
 			// no incumbent solution was found, these values do no make sense
 			if (model.get(GRB_IntAttr_SolCount) == 0)
