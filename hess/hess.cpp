@@ -441,8 +441,6 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
 void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& population,
   int L, int U, int k, vector<int>&heuristicSolution, string arg_model, double &UB) // , cvv &F0)
 {
-  cerr << endl << "Eugene disabled Local Search for greater good" << endl;
-  /*
     cout << endl << "Beginning LOCAL SEARCH with UB = " << UB << "\n\n";
     // initialize the centers from heuristicSolution
     vector<int> centers(k, -1);
@@ -455,86 +453,44 @@ void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& 
         pos++;
       }
     }
-    //int numAvailableCenters = 0;
-    //for (int i = 0; i < g->nr_nodes; ++i)
-    //  if (!F0[i][i])
-    //    numAvailableCenters++;
-    //cout << "Number of available centers = " << numAvailableCenters << endl;
-    //if (numAvailableCenters <= k) {
-    //  cout << "No centers left to explore.\n";
-    //  return; // no local moves possible
-    //}
     try {
       GRBEnv env = GRBEnv();
       GRBModel model = GRBModel(env);
-      GRBVar** x = 0;
-      x = build_hess_restricted(&model, g, w, population, centers, L, U, k);
-      for (int i = 0; i < k; ++i)
+      hess_params p = build_hess_restricted(&model, g, w, population, centers, L, U, k);
+      for (int j : centers)
       {
-        int j = centers[i];
-        x[j][i].set(GRB_DoubleAttr_LB, 1); // assign the centers to themselves.
+        ENSURE(j, j);
+        X_V(j, j).set(GRB_DoubleAttr_LB, 1); // assign the centers to themselves.
       }
       model.set(GRB_DoubleParam_TimeLimit, 60.);
       model.set(GRB_IntParam_OutputFlag, 0);
-      // create LP relaxation model. If its objective is bad, then we can terminate a local search move early. Roughly 0.2 sec (vs 2.0 sec) for MI.
-      GRBModel LPmodel = GRBModel(env);
-      GRBVar** LPx = 0;
-      LPx = build_hess_restricted(&LPmodel, g, w, population, centers, L, U, k);
-      for (int i = 0; i < g->nr_nodes; ++i)
-        for (int j = 0; j < k; ++j)
-        {
-          LPx[i][j].set(GRB_CharAttr_VType, GRB_CONTINUOUS);
-          LPx[i][j].set(GRB_DoubleAttr_LB, 0);
-          LPx[i][j].set(GRB_DoubleAttr_UB, 1);
-        }
-      for (int i = 0; i < k; ++i)
-      {
-        int j = centers[i];
-        LPx[j][i].set(GRB_DoubleAttr_LB, 1); // assign the centers to themselves.
-      }
-      LPmodel.set(GRB_IntParam_OutputFlag, 0);
       bool improvement;
       do {
         improvement = false;
-        for (int p = 0; p < k && !improvement; ++p)
+        for (int c_i = 0; c_i < k && !improvement; ++c_i)
         {
-          int v = centers[p];
+          int v = centers[c_i];
           cout << "  checking neighbors of node " << v << endl;
           for (int u : g->nb(v))  // swap v for u?
           {
             if (improvement) break;
-            //if (F0[u][u]) continue;
-            //cout << "checking node " << u << endl;
+            model.reset();
+            model.set(GRB_DoubleParam_Cutoff, UB);
             // update cost coefficients, as if we had centers[p] = u
             for (int i = 0; i < g->nr_nodes; ++i)
-              LPx[i][p].set(GRB_DoubleAttr_Obj, w[i][u]);
-            LPx[v][p].set(GRB_DoubleAttr_LB, 0);
-            LPx[u][p].set(GRB_DoubleAttr_LB, 1);
-            LPmodel.optimize();
-            double LPobj = LPmodel.get(GRB_DoubleAttr_ObjVal);
-            // revert back
-            for (int i = 0; i < g->nr_nodes; ++i)
-              LPx[i][p].set(GRB_DoubleAttr_Obj, w[i][v]);
-            LPx[v][p].set(GRB_DoubleAttr_LB, 1);
-            LPx[u][p].set(GRB_DoubleAttr_LB, 0);
-            //cout << "LPobj = " << LPobj << ", while UB = " << UB << endl;
-            if (LPobj >= UB)
             {
-              //cout << "LPobj >= UB, so terminating early.\n";
-              continue; // no need to solve IP, since LP relaxation will not improve the UB.
+              ENSURE(i,v);
+              X_V(i,v).set(GRB_DoubleAttr_Obj, w[i][u]);
             }
-            // update cost coefficients, as if we had centers[p] = u
-            for (int i = 0; i < g->nr_nodes; ++i)
-              x[i][p].set(GRB_DoubleAttr_Obj, w[i][u]);
-            x[v][p].set(GRB_DoubleAttr_LB, 0);
-            x[u][p].set(GRB_DoubleAttr_LB, 1);
+            X_V(v,v).set(GRB_DoubleAttr_LB, 0);
+            X_V(u,v).set(GRB_DoubleAttr_LB, 1);
             model.optimize();
             // revert back
             for (int i = 0; i < g->nr_nodes; ++i)
-              x[i][p].set(GRB_DoubleAttr_Obj, w[i][v]);
-            x[v][p].set(GRB_DoubleAttr_LB, 1);
-            x[u][p].set(GRB_DoubleAttr_LB, 0);
-            // update incumbent (if needed)
+              X_V(i,v).set(GRB_DoubleAttr_Obj, w[i][v]);
+            X_V(v,v).set(GRB_DoubleAttr_LB, 1);
+            X_V(u,v).set(GRB_DoubleAttr_LB, 0);
+            // update incumbent (if needed) if solved or timed out
             if (model.get(GRB_IntAttr_Status) == 2 || model.get(GRB_IntAttr_Status) == 9) // model was solved to optimality (subject to tolerances), so update UB.
             {
               double newUB = model.get(GRB_DoubleAttr_ObjVal);
@@ -544,24 +500,25 @@ void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& 
                 cout << "found better UB from LS restricted IP = " << newUB;
                 UB = newUB;
                 // update centers, costs, and var fixings
-                centers[p] = u;
+                centers[c_i] = u;
                 for (int i = 0; i < g->nr_nodes; ++i)
-                  LPx[i][p].set(GRB_DoubleAttr_Obj, w[i][u]);
-                LPx[v][p].set(GRB_DoubleAttr_LB, 0);
-                LPx[u][p].set(GRB_DoubleAttr_LB, 1);
-                for (int i = 0; i < g->nr_nodes; ++i)
-                  x[i][p].set(GRB_DoubleAttr_Obj, w[i][u]);
-                x[v][p].set(GRB_DoubleAttr_LB, 0);
-                x[u][p].set(GRB_DoubleAttr_LB, 1);
+                  X_V(i,v).set(GRB_DoubleAttr_Obj, w[i][u]);
+                X_V(v,v).set(GRB_DoubleAttr_LB, 0);
+                X_V(u,v).set(GRB_DoubleAttr_LB, 1);
                 cout << " with centers : ";
                 for (int i = 0; i < k; ++i)
                   cout << centers[i] << " ";
                 cout << endl;
+                // update hess params
+                populate_hess_params(p, g, centers);
                 // update heuristicSolution
                 for (int i = 0; i < g->nr_nodes; ++i)
                   for (int j = 0; j < k; ++j)
-                    if (x[i][j].get(GRB_DoubleAttr_X) > 0.5)
+                  {
+                    ENSURE(i,centers[j]);
+                    if (X_V(i,centers[j]).get(GRB_DoubleAttr_X) > 0.5)
                       heuristicSolution[i] = centers[j];
+                  }
               }
             }
           }
@@ -583,5 +540,4 @@ void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& 
     for (int i = 0; i < g->nr_nodes; ++i)
       obj += w[i][heuristicSolution[i]];
     cout << "UB of heuristicSolution = " << obj << endl;
-  */
 }
