@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
   }
   catch (GRBException e) {
     printf("Error code = %d\n", e.getErrorCode());
-    printf("%s\n", e.getMessage());
+    printf("%s\n", e.getMessage().c_str());
   }
   catch (const char* msg) {
     printf("Exception with message : %s\n", msg);
