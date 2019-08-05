@@ -7,70 +7,70 @@
 
 void build_shir(GRBModel* model, hess_params& p, graph* g)
 {
-	int n = g->nr_nodes;
+  int n = g->nr_nodes;
 
-	vector<int> centers;
-	for (int i = 0; i < n; ++i)
-		if (!p.F0[i][i])
-			centers.push_back(i);
+  vector<int> centers;
+  for (int i = 0; i < n; ++i)
+    if (!p.F0[i][i])
+      centers.push_back(i);
 
-	int c = centers.size();
+  int c = centers.size();
 
-	// step 1 : hash edge (i,j) to i*n+j = h1
-	// step 2 : hash every h1 to a number, resulting in exactly |E| variables
+  // step 1 : hash edge (i,j) to i*n+j = h1
+  // step 2 : hash every h1 to a number, resulting in exactly |E| variables
 
-	std::unordered_map<int, int> hash_edges;
-	int cur = 0;
-	for (int i = 0; i < n; ++i)
-		for (int j : g->nb(i))
-			hash_edges.insert(std::make_pair(i*n + j, cur++));
+  std::unordered_map<int, int> hash_edges;
+  int cur = 0;
+  for (int i = 0; i < n; ++i)
+    for (int j : g->nb(i))
+      hash_edges.insert(std::make_pair(i*n + j, cur++));
 
-	// get number of edges
-	int nr_edges = hash_edges.size();
+  // get number of edges
+  int nr_edges = hash_edges.size();
 
-	// add flow variables f[v][i,j]
-	GRBVar**f = new GRBVar*[c]; // commodity type, v
-	for (int v = 0; v < c; ++v)
-		f[v] = model->addVars(nr_edges, GRB_CONTINUOUS); // the edge
+  // add flow variables f[v][i,j]
+  GRBVar**f = new GRBVar*[c]; // commodity type, v
+  for (int v = 0; v < c; ++v)
+    f[v] = model->addVars(nr_edges, GRB_CONTINUOUS); // the edge
 
-	  // add constraint (16b)
-	for (int v = 0; v < c; ++v)
-	{
-		int j = centers[v];
-		for (int i = 0; i < n; ++i)
-		{
-			if (i == j) continue;
-			GRBLinExpr expr = 0;
-			for (int nb_i : g->nb(i))
-			{
-				expr += f[v][hash_edges[n*nb_i + i]]; // in d^- : edge (nb_i -- i)
-				expr -= f[v][hash_edges[n*i + nb_i]]; // in d^+ : edge (i -- nb_i)
-			}
-			model->addConstr(expr == X(i, j));
-		}
-	}
+    // add constraint (16b)
+  for (int v = 0; v < c; ++v)
+  {
+    int j = centers[v];
+    for (int i = 0; i < n; ++i)
+    {
+      if (i == j) continue;
+      GRBLinExpr expr = 0;
+      for (int nb_i : g->nb(i))
+      {
+        expr += f[v][hash_edges[n*nb_i + i]]; // in d^- : edge (nb_i -- i)
+        expr -= f[v][hash_edges[n*i + nb_i]]; // in d^+ : edge (i -- nb_i)
+      }
+      model->addConstr(expr == X(i, j));
+    }
+  }
 
-	// add constraint (16c)
-	for (int v = 0; v < c; ++v)
-	{
-		int j = centers[v];
-		for (int i = 0; i < n; ++i)
-		{
-			if (i == j) continue;
-			GRBLinExpr expr = 0;
-			for (int nb_i : g->nb(i))
-				expr += f[v][hash_edges[n*nb_i + i]]; // in d^- : edge (nb_i -- i)
-			model->addConstr(expr <= (n - 1) * X(i, j));
-		}
-	}
+  // add constraint (16c)
+  for (int v = 0; v < c; ++v)
+  {
+    int j = centers[v];
+    for (int i = 0; i < n; ++i)
+    {
+      if (i == j) continue;
+      GRBLinExpr expr = 0;
+      for (int nb_i : g->nb(i))
+        expr += f[v][hash_edges[n*nb_i + i]]; // in d^- : edge (nb_i -- i)
+      model->addConstr(expr <= (n - 1) * X(i, j));
+    }
+  }
 
-	// add constraint (16d) -- actually just fix individual vars to zero
-	for (int v = 0; v < c; ++v)
-	{
-		int j = centers[v];
-		for (int i : g->nb(j))
-			f[v][hash_edges[n*i + j]].set(GRB_DoubleAttr_UB, 0.); // in d^+ : edge (nb_j -- j)
-	}
+  // add constraint (16d) -- actually just fix individual vars to zero
+  for (int v = 0; v < c; ++v)
+  {
+    int j = centers[v];
+    for (int i : g->nb(j))
+      f[v][hash_edges[n*i + j]].set(GRB_DoubleAttr_UB, 0.); // in d^+ : edge (nb_j -- j)
+  }
 }
 
 void build_mcf(GRBModel* model, hess_params& p, graph* g)

@@ -238,8 +238,8 @@ vector<vector<int>> graph::FindBiconnectedComponents(vector<int> &AV, vector<boo
 
     // declare vars
  
-    vector< vector<int> > BC;		// biconnected components
-    stack<int> le, re;				// used to store a stack of edges. le is "left edge" and re is "right edge". An edge is stored (le[i],re[i]). 
+    vector< vector<int> > BC;   // biconnected components
+    stack<int> le, re;        // used to store a stack of edges. le is "left edge" and re is "right edge". An edge is stored (le[i],re[i]). 
 
     //find connected components
     vector<vector<int>> connectedComponents = FindConnectedComponents(deletedNodes);
