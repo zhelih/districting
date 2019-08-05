@@ -76,7 +76,7 @@ hess_params build_hess(GRBModel* model, graph* g, const vector<vector<double> >&
 	// add contraints (1e)
 	for (int i = 0; i < n; ++i)
 		for (int j = 0; j < n; ++j)
-			if (i != j)
+			if (i != j && !F0[i][j])
 				model->addConstr(X(i, j) <= X(j, j));
 
 	model->update();
