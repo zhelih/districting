@@ -112,6 +112,6 @@ void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<
   const vector<int> &population, int L, int U, int k, double &UB, string arg_model);
 
 void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& population,
-  int L, int U, int k, vector<int>&heuristicSolution, string arg_model, double &UB);// , cvv &F0);
+  int L, int U, int k, vector<int>&heuristicSolution, double &UB);
 
 #endif

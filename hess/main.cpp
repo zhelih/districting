@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 
   // run local search
   auto LS_start = chrono::steady_clock::now();
-  LocalSearch(g, w, population, L, U, k, heuristicSolution, arg_model, UB);
+  LocalSearch(g, w, population, L, U, k, heuristicSolution, UB);
   chrono::duration<double> LS_duration = chrono::steady_clock::now() - LS_start;
   fprintf(stderr, "%.2lf %.2lf ", UB, LS_duration.count());
   printf("Best solution after local search is %.2lf\n", UB);

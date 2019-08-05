@@ -439,7 +439,7 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
 }
 
 void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& population,
-  int L, int U, int k, vector<int>&heuristicSolution, string arg_model, double &UB) // , cvv &F0)
+  int L, int U, int k, vector<int>&heuristicSolution, double &UB)
 {
     cout << endl << "Beginning LOCAL SEARCH with UB = " << UB << "\n\n";
     // initialize the centers from heuristicSolution
