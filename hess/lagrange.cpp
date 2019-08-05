@@ -66,9 +66,9 @@ double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<i
   else
     for (int i = 0; i < dim; ++i)
       multipliers[i] = 1.; // whatever
-  
+
   ralg_options opt = defaultOptions; opt.output_iter = 1; opt.is_monotone = false;
-  if (ralg_hot_start) opt.itermax = 100;    
+  if (ralg_hot_start) opt.itermax = 100;
   LB = ralg(&opt, cb_grad_func, dim, multipliers, bestMultipliers, RALG_MAX); // lower bound from lagrangian
 
   // dump result to "state_model.hot"
@@ -87,8 +87,8 @@ double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<i
       p++;
     }
 
-  delete[] multipliers;
-  delete[] bestMultipliers;
+  delete [] multipliers;
+  delete [] bestMultipliers;
 
   return LB;
 }
@@ -331,114 +331,6 @@ void solveInnerProblem(graph* g, const double* multipliers, int L, int U, int k,
     int v = W_indices[j];
     f_val += W[v];
     currentCenters[v] = true;
-  }
-
-  // compute grad
-  // A
-  for (int i = 0; i < g->nr_nodes; ++i)
-  {
-    grad[i] = 1.;
-    for (int j = 0; j < k; ++j)
-      if (i == W_indices[j] || w_hat[i][W_indices[j]] < 0)
-        grad[i] -= 1;
-  }
-  for (int i = 0; i < g->nr_nodes; ++i)
-  {
-    grad[i + g->nr_nodes] = 0.;
-    grad[i + 2 * g->nr_nodes] = 0.;
-  }
-  // L
-  for (int j = 0; j < k; ++j)
-  {
-    grad[g->nr_nodes + W_indices[j]] = 1;
-    for (int i = 0; i < g->nr_nodes; ++i)
-      if (i == W_indices[j] || w_hat[i][W_indices[j]] < 0)
-        grad[g->nr_nodes + W_indices[j]] -= static_cast<double>(population[i]) / static_cast<double>(L);
-  }
-  //U
-  for (int j = 0; j < k; ++j)
-  {
-    grad[2 * g->nr_nodes + W_indices[j]] = -1;
-    for (int i = 0; i < g->nr_nodes; ++i)
-      if (i == W_indices[j] || w_hat[i][W_indices[j]] < 0)
-        grad[2 * g->nr_nodes + W_indices[j]] += static_cast<double>(population[i]) / static_cast<double>(U);
-  }
-
-  // signify the gradient
-  // L
-  for (int i = 0; i < g->nr_nodes; ++i)
-    if (lambda[i] < 0)
-      grad[i + g->nr_nodes] = -grad[i + g->nr_nodes];
-  // U
-  for (int i = 0; i < g->nr_nodes; ++i)
-    if (upsilon[i] < 0)
-      grad[i + 2 * g->nr_nodes] = -grad[i + 2 * g->nr_nodes];
-}
-
-void eugene_inner(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,
-  const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& S,
-  const vector<vector<bool>>& F_0, const vector<vector<bool>>& F_1)
-{
-  const double *alpha = multipliers;
-  const double *lambda = multipliers + g->nr_nodes;
-  const double *upsilon = multipliers + 2 * g->nr_nodes;
-
-  // TODO compute S only when needed
-  for (int i = 0; i < g->nr_nodes; ++i)
-    S[i] = false;
-
-  for (int i = 0; i < g->nr_nodes; ++i)
-  {
-    double pOverL = static_cast<double>(population[i]) / static_cast<double>(L);
-    double pOverU = static_cast<double>(population[i]) / static_cast<double>(U);
-    for (int j = 0; j < g->nr_nodes; ++j)
-    {
-      // w[i][i] == 0?
-      w_hat[i][j] = w[i][j] - alpha[i] - abs(lambda[j]) * pOverL + abs(upsilon[j]) * pOverU;
-      if (i == j)
-        w_hat[i][j] += abs(lambda[j]) - abs(upsilon[j]);
-    }
-  }
-
-  // W_j describes the minimum value what happpens if j is a clusterhead
-  for (int j = 0; j < g->nr_nodes; ++j)
-  {
-    W[j] = w_hat[j][j]; // weight of clusterhead node
-    for (int i = 0; i < g->nr_nodes; ++i)
-      if (i != j)
-      {
-        if (F_0[i][j]) continue; // must skip from F_0
-        if (F_1[i][j]) // must add from F_1
-        {
-          W[j] += w_hat[i][j];
-          continue;
-        }
-        // else
-        W[j] += min(0., w_hat[i][j]); // add all negative weights from nodes
-      }
-  }
-
-  // select k smallest
-  // must include for F_1[i][i]
-  // must skip for F_0[i][i]
-  // assuming at most k F_1[i][i] are set to true
-  vector<int> W_indices(W.size());
-  for (size_t i = 0; i < W.size(); ++i)
-    W_indices[i] = i;
-  sort(W_indices.begin(), W_indices.end(), [&W, &F_0, &F_1](int i1, int i2) {
-    if (F_0[i1][i1] + 2 * F_1[i1][i1] == F_0[i2][i2] + 2 * F_1[i2][i2]) // check if both are in the same set or neither
-      return W[i1] < W[i2];
-    return F_1[i1][i1] || F_0[i2][i2];
-  });
-
-  // compute f_val
-  f_val = 0.;
-  for (int i = 0; i < g->nr_nodes; ++i)
-    f_val += alpha[i];
-  for (int j = 0; j < k; ++j)
-  {
-    f_val += W[W_indices[j]];
-    S[W_indices[j]] = true;
   }
 
   // compute grad

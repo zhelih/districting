@@ -90,18 +90,14 @@ HessCallback* build_lcut(GRBModel* model, hess_params& p, graph* g, const vector
 //    S : solution of the inner problem for clusterheads
 //    grad : pointer to the resulting gradient
 //    f_val : resulting objective value
-void eugene_inner(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,
-  const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& S,
-  const vector<vector<bool>>& F_0, const vector<vector<bool>>& F_1);
+void solveInnerProblem(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,
+  const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& currentCenters);
 
 void lagrangianBasedSafeFixing(vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
   const vector<vector<int>>& clusters, vector<double>& W, const vector<bool>& S, const double f_val, const double UB, const vector<vector<double>> &w_hat);
 
 double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<int> &population, int L, int U, int k,
   vector<vector<double>>& LB0, vector<vector<double>>& LB1, vector<int> &lagrangianCenters, bool ralg_hot_start, const char* ralg_hot_start_fname, bool exploit_contiguity);
-
-void solveInnerProblem(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,
-  const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& currentCenters);
 
 void update_LB0_and_LB1(const vector<double>& W, const vector<bool>& currentCenters, double f_val,
   const vector<vector<double>> &w_hat, vector< vector<double> > &LB0, vector< vector<double> > &LB1);
