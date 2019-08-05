@@ -33,7 +33,7 @@ void build_shir(GRBModel* model, hess_params& p, graph* g)
   for (int v = 0; v < c; ++v)
     f[v] = model->addVars(nr_edges, GRB_CONTINUOUS); // the edge
 
-    // add constraint (16b)
+  // add constraint (b)
   for (int v = 0; v < c; ++v)
   {
     int j = centers[v];
@@ -50,7 +50,7 @@ void build_shir(GRBModel* model, hess_params& p, graph* g)
     }
   }
 
-  // add constraint (16c)
+  // add constraint (c)
   for (int v = 0; v < c; ++v)
   {
     int j = centers[v];
@@ -64,7 +64,7 @@ void build_shir(GRBModel* model, hess_params& p, graph* g)
     }
   }
 
-  // add constraint (16d) -- actually just fix individual vars to zero
+  // add constraint (d) -- actually just fix individual vars to zero
   for (int v = 0; v < c; ++v)
   {
     int j = centers[v];
@@ -114,7 +114,7 @@ void build_mcf(GRBModel* model, hess_params& p, graph* g)
             throw "Internal Error : non nb size for mcf2";
     }
 
-    // add constraint (19b)
+    // add constraint (b)
     for (int b = 0; b < n; ++b)
         for (int a_i = 0; a_i < n - 1 - g->nb(b).size(); ++a_i)
         {
@@ -127,7 +127,7 @@ void build_mcf(GRBModel* model, hess_params& p, graph* g)
             model->addConstr(expr == X(non_nbs[b][a_i],b));
         }
 
-    // add constraint (19c)
+    // add constraint (c)
     for (int b = 0; b < n; ++b)
         for (int a_i = 0; a_i < n - 1 - g->nb(b).size(); ++a_i)
             for (int i = 0; i < n; ++i)
@@ -142,7 +142,7 @@ void build_mcf(GRBModel* model, hess_params& p, graph* g)
                 model->addConstr(expr == 0);
             }
 
-    // add constraint (19d) -- actually just fix each var UB to zero
+    // add constraint (d) -- actually just fix each var UB to zero
     for (int b = 0; b < n; ++b)
         for (int a_i = 0; a_i < n - 1 - g->nb(b).size(); ++a_i)
             for (int j : g->nb(b))

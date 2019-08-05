@@ -47,7 +47,7 @@ hess_params build_hess(GRBModel* model, graph* g, const vector<vector<double> >&
 
   model->setObjective(expr, GRB_MINIMIZE);
 
-  // add constraints (1b)
+  // add constraints (b)
   for (int i = 0; i < n; ++i)
   {
     GRBLinExpr constr = 0;
@@ -56,13 +56,13 @@ hess_params build_hess(GRBModel* model, graph* g, const vector<vector<double> >&
     model->addConstr(constr == 1);
   }
 
-  // add constraint (1c)
+  // add constraint (c)
   expr = 0;
   for (int j = 0; j < n; ++j)
     expr += X(j, j);
   model->addConstr(expr == k);
 
-  // add constraint (1d)
+  // add constraint (d)
   for (int j = 0; j < n; ++j)
   {
     GRBLinExpr constr = 0;
@@ -73,7 +73,7 @@ hess_params build_hess(GRBModel* model, graph* g, const vector<vector<double> >&
     model->addConstr(constr - L * X(j, j) >= 0); // L
   }
 
-  // add contraints (1e)
+  // add contraints (e)
   for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
       if (i != j && !F0[i][j])
