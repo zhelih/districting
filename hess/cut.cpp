@@ -66,16 +66,18 @@ void CutCallback::callback()
           }
 
           // run DFS on C_b
-          s.clear(); s.push_back(b);
+          s.clear(); s.push_back(b); visited[b] = 1;
           while (!s.empty())
           {
             int cur = s.back(); s.pop_back();
-            visited[cur] = 1;
             for (int nb_cur : g->nb(cur))
               if (x_val[nb_cur][b] > 0.5) // if nb_cur is in C_b
               {
                 if (!visited[nb_cur])
+                {
+                  visited[nb_cur] = 1;
                   s.push_back(nb_cur);
+                }
               }
               else aci[nb_cur] = 1; // nb_cur is a neighbor of a vertex in C_b, thus in A(C_b)
           }
