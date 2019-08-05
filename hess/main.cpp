@@ -24,13 +24,6 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-	// change the precision to 2 decimal places for reporting objective values and running times.
-	cout.setf(ios::fixed);
-	cout.precision(2);
-	cerr.setf(ios::fixed);
-	cerr.precision(2);
-
-	ios::sync_with_stdio(1);
 	//printf("Districting, build %s\n", gitversion);
 	if (argc < 8) {
 		printf("Usage: %s <dimacs> <distance> <population> <L|auto> <U|auto> <k> <model> [ralg hot start]\n\
@@ -58,7 +51,7 @@ int main(int argc, char *argv[])
 	if (read_input_data(dimacs_fname, distance_fname, population_fname, g, dist, population))
 		return 1; // failure
 
-	cerr << dimacs_fname << " " << g->nr_nodes << " ";
+	fprintf(stderr, "%s %d ", dimacs_fname, g->nr_nodes);
 
 	int k = read_auto_int(argv[6], g->get_k());
 
@@ -117,7 +110,7 @@ int main(int argc, char *argv[])
 	auto lagrange_start = chrono::steady_clock::now();
 	double LB = solveLagrangian(g, w, population, L, U, k, LB0, LB1, lagrangianCenters, ralg_hot_start, ralg_hot_start_fname, exploit_contiguity);// lower bound on problem objective, coming from lagrangian
 	chrono::duration<double> lagrange_duration = chrono::steady_clock::now() - lagrange_start;
-	cerr << LB << " " << lagrange_duration.count() << " ";
+  fprintf(stderr, "%.2lf %.2lf ", LB, lagrange_duration.count());
 
 	// run a heuristic
 	double UB = INFINITY;
@@ -125,8 +118,8 @@ int main(int argc, char *argv[])
 	auto heuristic_start = chrono::steady_clock::now();
 	vector<int> heuristicSolution = HessHeuristic(g, w, population, L, U, k, UB, maxIterations, false);
 	chrono::duration<double> heuristic_duration = chrono::steady_clock::now() - heuristic_start;
-	cerr << UB << " " << heuristic_duration.count() << " ";
-	cout << "Best solution after " << maxIterations << " of HessHeuristic is = " << UB << endl;
+  fprintf(stderr, "%.2lf %.2lf ", UB, heuristic_duration.count());
+	printf("Best solution after %d of HessHeuristic is %.2lf\n", maxIterations, UB);
 
 	// run local search
 	//auto LS_start = chrono::steady_clock::now();
@@ -141,7 +134,7 @@ int main(int argc, char *argv[])
 		auto contiguity_start = chrono::steady_clock::now();
 		ContiguityHeuristic(heuristicSolution, g, w, population, L, U, k, UB, "shir"); // arg_model);
 		chrono::duration<double> contiguity_duration = chrono::steady_clock::now() - contiguity_start;
-		cerr << UB << " " << contiguity_duration.count() << " ";
+    fprintf(stderr, "%.2lf %.2lf ", UB, contiguity_duration.count());
 	}
 
 	// determine which variables can be fixed
@@ -171,13 +164,13 @@ int main(int argc, char *argv[])
 			else numUnfixed++;
 		}
 	}
-	cout << endl;
-	cout << "Number of variables fixed to zero = " << numFixedZero << endl;
-	cout << "Number of variables fixed to one  = " << numFixedOne << endl;
-	cout << "Number of variables not fixed     = " << numUnfixed << endl;
-	cout << "Number of centers left            = " << numCentersLeft << endl;
-	cout << "Percentage of vars fixed = " << (double)(g->nr_nodes*g->nr_nodes - numUnfixed) / (g->nr_nodes*g->nr_nodes) << endl;
-	cerr << (double)(g->nr_nodes*g->nr_nodes - numUnfixed) / (g->nr_nodes*g->nr_nodes) << " ";
+  printf("\n");
+  printf("Number of variables fixed to zero = %d\n", numFixedZero);
+	printf("Number of variables fixed to one  = %d\n", numFixedOne);
+  printf("Number of variables not fixed     = %d\n", numUnfixed);
+	printf("Number of centers left            = %d\n", numCentersLeft);
+	printf("Percentage of vars fixed = %.2lf\n", (double)(g->nr_nodes*g->nr_nodes - numUnfixed) / (g->nr_nodes*g->nr_nodes));
+  fprintf(stderr, "%.2lf ", (double)(g->nr_nodes*g->nr_nodes - numUnfixed) / (g->nr_nodes*g->nr_nodes));
 
 	try
 	{
@@ -231,7 +224,7 @@ int main(int argc, char *argv[])
 		auto IP_start = chrono::steady_clock::now();
 		model.optimize();
 		chrono::duration<double> IP_duration = chrono::steady_clock::now() - IP_start;
-		cerr << IP_duration.count() << " ";
+		fprintf(stderr, "%.2lf ", IP_duration.count());
 		printf("IP duration time: %lf seconds\n", IP_duration.count());
 		chrono::duration<double> duration = chrono::steady_clock::now() - start;
 		printf("Time elapsed: %lf seconds\n", duration.count()); // TODO use gurobi Runtime model attr
@@ -307,14 +300,14 @@ int main(int argc, char *argv[])
 
 	}
 	catch (GRBException e) {
-		cout << "Error code = " << e.getErrorCode() << endl;
-		cout << e.getMessage() << endl;
+		printf("Error code = %d\n", e.getErrorCode());
+    printf("%s\n", e.getMessage());
 	}
 	catch (const char* msg) {
-		cout << "Exception with message : " << msg << endl;
+		printf("Exception with message : %s\n", msg);
 	}
 	catch (...) {
-		cout << "Exception during optimization" << endl;
+		printf("Exception during optimization\n");
 	}
 
 
