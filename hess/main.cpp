@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
   auto LS_start = chrono::steady_clock::now();
   LocalSearch(g, w, population, L, U, k, heuristicSolution, arg_model, UB);
   chrono::duration<double> LS_duration = chrono::steady_clock::now() - LS_start;
-  fprintf(stderr, "%.2lf %.2lf ", UB, LS_duration);
+  fprintf(stderr, "%.2lf %.2lf ", UB, LS_duration.count());
   printf("Best solution after local search is %.2lf\n", UB);
 
   if (arg_model != "hess")  // solve contiguity-constrained problem, restricted to centers from heuristicSolution
