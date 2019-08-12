@@ -104,11 +104,9 @@ int main(int argc, char *argv[])
       w[i][j] = get_objective_coefficient(dist, population, i, j);
 
   // apply Lagrangian 
-  vector< vector<double> > LB0(g->nr_nodes, vector<double>(g->nr_nodes, -INFINITY)); // LB0[i][j] is a lower bound on problem objective if we fix x[i][j] = 0
   vector< vector<double> > LB1(g->nr_nodes, vector<double>(g->nr_nodes, -INFINITY)); // LB1[i][j] is a lower bound on problem objective if we fix x[i][j] = 1
-  vector<int> lagrangianCenters(k, -1);                 // the centers coming from the best lagrangian inner problem
   auto lagrange_start = chrono::steady_clock::now();
-  double LB = solveLagrangian(g, w, population, L, U, k, LB0, LB1, lagrangianCenters, ralg_hot_start, ralg_hot_start_fname, exploit_contiguity);// lower bound on problem objective, coming from lagrangian
+  double LB = solveLagrangian(g, w, population, L, U, k, LB1, ralg_hot_start, ralg_hot_start_fname, exploit_contiguity);// lower bound on problem objective, coming from lagrangian
   chrono::duration<double> lagrange_duration = chrono::steady_clock::now() - lagrange_start;
   fprintf(stderr, "%.2lf %.2lf ", LB, lagrange_duration.count());
 
@@ -141,13 +139,8 @@ int main(int argc, char *argv[])
   vector<vector<bool>> F0(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_0
   vector<vector<bool>> F1(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_1
   for (int i = 0; i < g->nr_nodes; ++i)
-  {
     for (int j = 0; j < g->nr_nodes; ++j)
-    {
-      if (LB0[i][j] > UB + VarFixingEpsilon) F1[i][j] = true;
       if (LB1[i][j] > UB + VarFixingEpsilon) F0[i][j] = true;
-    }
-  }
 
   // report the number of fixings
   int numFixedZero = 0;

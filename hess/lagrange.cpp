@@ -29,7 +29,7 @@ using namespace std;
 #endif
 
 double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<int> &population, int L, int U, int k, 
-  vector<vector<double>>& LB0, vector<vector<double>>& LB1, vector<int> &lagrangianCenters, bool ralg_hot_start, const char* ralg_hot_start_fname, bool exploit_contiguity)
+  vector<vector<double>>& LB1, bool ralg_hot_start, const char* ralg_hot_start_fname, bool exploit_contiguity)
 {
   double LB = -INFINITY;
 
@@ -37,26 +37,23 @@ double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<i
   vector<vector<double>> w_hat(g->nr_nodes, vector<double>(g->nr_nodes));
 
   vector<bool> currentCenters(g->nr_nodes); // centers from most recent inner problem
-  vector<bool> bestCenters(g->nr_nodes);    // centers from inner problem with best LB
 
   int dim = 3 * g->nr_nodes;
   double * bestMultipliers = new double[dim]; 
   double * multipliers = new double[dim];
 
-  auto cb_grad_func = [g, &w, &population, L, U, k, &W, &w_hat, &currentCenters, &bestCenters, &LB, &LB0, &LB1, dim, exploit_contiguity](const double* multipliers, double& f_val, double* grad) 
+  auto cb_grad_func = [g, &w, &population, L, U, k, &W, &w_hat, &currentCenters, &LB, &LB1, dim, exploit_contiguity](const double* multipliers, double& f_val, double* grad) 
   {
     solveInnerProblem(g, multipliers, L, U, k, population, w, w_hat, W, grad, f_val, currentCenters);
     if (exploit_contiguity)
-      update_LB0_and_LB1_contiguity(g, W, currentCenters, f_val, w_hat, LB0, LB1);
+      update_LB_contiguity(g, W, currentCenters, f_val, w_hat, LB1);
     else
-      update_LB0_and_LB1(W, currentCenters, f_val, w_hat, LB0, LB1);
+      update_LB(W, currentCenters, f_val, w_hat, LB1);
 
     // update incubments?
     if (f_val > LB)
-    {
       LB = f_val;
-      bestCenters = currentCenters;
-    }
+
     return true;
   };
 
@@ -79,22 +76,14 @@ double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<i
   strcpy(char_array1, hsfn.c_str());
   dump_ralg_hot_start(char_array1, res, dim);*/
 
-  int p = 0;
-  for (int i = 0; i < g->nr_nodes; ++i)
-    if (bestCenters[i])
-    {
-      lagrangianCenters[p] = i;
-      p++;
-    }
-
   delete [] multipliers;
   delete [] bestMultipliers;
 
   return LB;
 }
 
-void update_LB0_and_LB1(const vector<double>& W, const vector<bool>& currentCenters, double f_val, 
-  const vector<vector<double>> &w_hat, vector< vector<double> > &LB0, vector< vector<double> > &LB1)
+void update_LB(const vector<double>& W, const vector<bool>& currentCenters, double f_val, 
+  const vector<vector<double>> &w_hat, vector< vector<double> > &LB1)
 {
   int n = currentCenters.size();
   double maxW = -INFINITY;
@@ -135,8 +124,8 @@ void update_LB0_and_LB1(const vector<double>& W, const vector<bool>& currentCent
   // TODO currently not updating LB0, since x[i][j]=1 safe fixings are not common????
 }
 
-void update_LB0_and_LB1_contiguity(graph* g, const vector<double>& W, const vector<bool>& currentCenters, double f_val,
-  const vector<vector<double>> &w_hat, vector< vector<double> > &LB0, vector< vector<double> > &LB1)
+void update_LB_contiguity(graph* g, const vector<double>& W, const vector<bool>& currentCenters, double f_val,
+  const vector<vector<double>> &w_hat, vector< vector<double> > &LB1)
 {
   int n = currentCenters.size();
   double maxW = -INFINITY;
@@ -181,102 +170,6 @@ void update_LB0_and_LB1_contiguity(graph* g, const vector<double>& W, const vect
         LB1[i][j] = max(LB1[i][j], f_val - maxW + W[j] + dist[i]);
     }
   }
-}
-
-void lagrangianBasedSafeFixing(vector<vector<bool>>& F_0, vector<vector<bool>>& F_1,
-  const vector<vector<int>>& clusters, vector<double>& W, const vector<bool>& S, const double f_val, const double UB, const vector<vector<double>> &w_hat)
-{
-  int n = S.size();
-  double maxW = -INFINITY;
-  double minW = INFINITY;
-
-  // determine values for minW and maxW
-  for (int i = 0; i < n; ++i)
-    if (S[i] && !F_1[i][i])
-      maxW = max(maxW, W[i]);
-
-  for (int i = 0; i < n; ++i)
-    if (!S[i] && !F_0[i][i])
-      minW = min(minW, W[i]);
-
-  //// fix some vars x_jj to zero?
-  //for (int j = 0; j < n; ++j)
-  //  if (!S[j] && f_val + W[j] - maxW > UB) // is it possible to have x_jj=1 in an optimal solution?
-  //    for (int i = 0; i < n; ++i) // the answer is no. Fix x_ij=0 for all i
-  //      F_0[i][j] = true;
-
-
-  // fix some vars x_ij to zero?
-  for (int j = 0; j < n; ++j)
-  {
-    if (!S[j])
-    {
-      if (f_val + W[j] - maxW > UB) // is it possible to have x_jj=1 in an optimal solution?)
-      {
-        for (int i = 0; i < n; ++i) // the answer is no. Fix x_ij=0 for all i
-          F_0[i][j] = true;
-      }
-      else
-      {
-        for (int i = 0; i < n; ++i)
-          if (i != j && f_val + W[j] - maxW + max(0, w_hat[i][j]) > UB)
-            F_0[i][j] = true;
-      }
-    }
-    else // S[j]
-    {
-      for (int i = 0; i < n; ++i)
-      {
-        if (i != j && f_val + max(0, w_hat[i][j]) > UB)
-          F_0[i][j] = true;
-      }
-    }
-  }
-
-  // fix some vars x_jj to one?
-  for (int c = 0; c < clusters.size(); ++c)
-  {
-    for (int p = 0; p < clusters[c].size(); ++p)
-    {
-      int j = clusters[c][p];
-
-      // is it possible to have x_jj=0 in an optimal solution?
-      if (S[j] && f_val - W[j] + minW > UB)
-      {
-        // the answer is no. Fix x_ij=1 for all i in the same cluster as j
-        for (int p1 = 0; p1 < clusters[c].size(); ++p1)
-        {
-          int i = clusters[c][p1];
-          F_1[i][j] = true;
-          for (int j1 = 0; j1 < n; ++j1)
-            if (j1 != j)
-              F_0[i][j1] = true;
-        }
-      }
-    }
-  }
-
-  // report the number of fixings
-  int numFixedZero = 0;
-  int numFixedOne = 0;
-  int numUnfixed = 0;
-  int numCentersLeft = 0;
-  for (int i = 0; i < n; ++i)
-  {
-    if (!F_0[i][i]) numCentersLeft++;
-    for (int j = 0; j < n; ++j)
-    {
-      if (F_0[i][j]) numFixedZero++;
-      else if (F_1[i][j]) numFixedOne++;
-      else numUnfixed++;
-    }
-  }
-  cerr << endl;
-  cerr << "Number of variables fixed to zero = " << numFixedZero << endl;
-  cerr << "Number of variables fixed to one  = " << numFixedOne << endl;
-  cerr << "Number of variables not fixed     = " << numUnfixed << endl;
-  cerr << "Number of centers left            = " << numCentersLeft << endl;
-  cerr << "Percentage of vars fixed = " << (double)(n*n - numUnfixed) / (n*n) << endl;
 }
 
 void solveInnerProblem(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,

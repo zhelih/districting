@@ -160,20 +160,3 @@ void build_mcf(GRBModel* model, hess_params& p, graph* g)
                 model->addConstr(expr <= X(j,b));
             }
 }
-
-void strengthen_hess(GRBModel* model, hess_params& p, graph* g, vector<vector<int>>& clusters)
-{
-    // strengthening by merging
-    for (int v = 0; v < g->nr_nodes; ++v)
-    {
-        for (int i = 0; i < clusters.size(); ++i)
-        {
-            int articulation = clusters[i][0];
-            for (int j = 1; j < clusters[i].size(); ++j)
-            {
-                int cur = clusters[i][j];
-                model->addConstr(X(cur,v) - X(articulation,v) == 0);
-            }
-        }
-    }
-}

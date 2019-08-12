@@ -205,25 +205,6 @@ void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<
     populate_hess_params(p, g, centers); // now just use X(i,j), F0, F1 and more importantly hashtable are properly set up
 
 
-    // begin zero-pop cuts
-    //if (arg_model == "cut" || arg_model == "lcut")
-    //{
-      /*for (int i = 0; i < g->nr_nodes; ++i)
-      {
-        if (population[i] > 0) continue;
-        cout << "population of node " << i << " is zero " << endl;
-        for (int j : centers)
-        {
-          GRBLinExpr expr = 0;
-          for (int nb : g->nb(i))
-            expr += X_V(nb, j);
-          model.addConstr(X_V(i, j) <= expr);
-        }
-      }*/
-      //model.set(GRB_IntParam_Cuts, 3); // set aggressive cuts
-    //}
-    // end zero-pop cuts
-
     if (arg_model == "shir")
       build_shir(&model, p, g);
     else if (arg_model == "mcf")
@@ -254,7 +235,9 @@ void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<
 
       for (int i = 0; i < g->nr_nodes; ++i)
         for (int j = 0; j < g->nr_nodes; ++j)
-          if (p.F0[i][j]) continue; else if (p.F1[i][j] || X_V(i, j).get(GRB_DoubleAttr_X) > 0.5)
+          if (p.F0[i][j])
+            continue;
+          else if (p.F1[i][j] || X_V(i, j).get(GRB_DoubleAttr_X) > 0.5)
             heuristicSolution[i] = j;
     }
   }
