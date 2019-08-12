@@ -1,0 +1,19 @@
+# config file for "districting"
+database /path/to/db
+# level is tracts or counties
+level tracts_or_counties
+# can be passed using cmd arguments
+state AA
+#alternative config
+dimacs /path/to/dimacs
+distance /path/to/dist
+population /path/to/pop
+# can be auto or number
+L 10
+U auto
+k auto
+# see available models while running ./districting
+model hess
+ralg_hot_start /path/to/file
+# appends comma-separated computational results
+output /path/to/output.csv

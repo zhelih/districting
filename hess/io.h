@@ -1,11 +1,27 @@
 #ifndef _IO_H
 #define _IO_H
 #include "graph.h"
-#include "gurobi_c++.h"
 #include "models.h"
 #include <vector>
+#include <string>
 
 using namespace std;
+
+struct run_params
+{
+  string dimacs_file;
+  string distance_file;
+  string population_file;
+  char state[3];
+  int L;
+  int U;
+  int k;
+  string model;
+  string ralg_hot_start;
+  string output;
+};
+
+run_params read_config(const char* fname, const char* state);
 
 int read_input_data(const char* dimacs_fname, const char* distance_fname, const char* population_fname, // INPUTS
                      graph* &g, vector<vector<int> >& dist, vector<int>& population); // OUTPUTS
@@ -19,4 +35,5 @@ int read_auto_int(const char*, int);
 void read_ralg_hot_start(const char* fname, double* x0, int dim);
 // dump result to "ralg_hot_start.txt"
 void dump_ralg_hot_start(double* res, int dim);
+
 #endif

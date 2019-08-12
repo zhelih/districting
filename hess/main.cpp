@@ -25,8 +25,8 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   //printf("Districting, build %s\n", gitversion);
-  if (argc < 8) {
-    printf("Usage: %s <dimacs> <distance> <population> <L|auto> <U|auto> <k> <model> [ralg hot start]\n\
+  if (argc < 2) {
+    printf("Usage: %s <config> [state]\n\
   Available models:\n\
   \thess\t\tHess model\n\
   \tshir\t\tHess model with SHIR\n\
@@ -35,30 +35,29 @@ int main(int argc, char *argv[])
   \tlcut\t\tHess model with LCUT\n", argv[0]);
     return 0;
   }
-  // parse command line arguments
-  char* dimacs_fname = argv[1];
-  char* distance_fname = argv[2];
-  char* population_fname = argv[3];
-  int L = read_auto_int(argv[4], 0);
-  int U = read_auto_int(argv[5], 0);
-  bool ralg_hot_start = argc > 8;
-  char* ralg_hot_start_fname = ralg_hot_start ? argv[8] : nullptr;
+
+  // parse config
+  run_params rp;
+  rp = read_config(argv[1], (argc>2 ? argv[2] : ""));
+  int L = rp.L; int U = rp.U;
+  bool ralg_hot_start = !rp.ralg_hot_start.empty();
+  const char* ralg_hot_start_fname = (rp.ralg_hot_start.empty() ? nullptr : rp.ralg_hot_start.c_str());
 
   // read inputs
   graph* g = 0;
   vector<vector<int> > dist;
   vector<int> population;
-  if (read_input_data(dimacs_fname, distance_fname, population_fname, g, dist, population))
+  if (read_input_data(rp.dimacs_file.c_str(), rp.distance_file.c_str(), rp.population_file.c_str(), g, dist, population))
     return 1; // failure
 
-  fprintf(stderr, "%s %d ", dimacs_fname, g->nr_nodes);
+  fprintf(stderr, "%s %d ", rp.dimacs_file.c_str(), g->nr_nodes);
 
-  int k = read_auto_int(argv[6], g->get_k());
+  int k = (rp.k == 0) ? g->get_k() : rp.k;
 
-  if (L == 0 && U == 0)
+  if (L == 0 || U == 0)
     calculate_UL(population, k, &L, &U);
 
-  printf("Model input: L = %d, U = %d, k = %d\n", L, U, k);
+  printf("Model input: L = %d, U = %d, k = %d.\n", L, U, k);
 
   g->connect(dist);
 
@@ -67,7 +66,7 @@ int main(int argc, char *argv[])
   {
     printf("Problem is infeasible (not connected!)\n");
 #ifdef DO_BATCH_OUTPUT
-    printf("qwerky567: %s, disconnected\n", dimacs_fname);
+    printf("qwerky567: %s, disconnected\n", rp.dimacs_file.c_str());
 #endif
     return 1;
   }
@@ -89,7 +88,7 @@ int main(int argc, char *argv[])
     total_pop += p;
   printf("Model input: total population = %ld\n", total_pop);
 
-  string arg_model = argv[7];
+  string arg_model = rp.model;
 
   bool exploit_contiguity = false;
   if (arg_model != "hess")
@@ -231,7 +230,7 @@ int main(int argc, char *argv[])
 
 #ifdef DO_BATCH_OUTPUT
 
-    printf("qwerky567: %s, %d, %d, %d, %d, %.2lf", dimacs_fname, k, g->nr_nodes, L, U, duration.count());
+    printf("qwerky567: %s, %d, %d, %d, %d, %.2lf", rp.state, k, g->nr_nodes, L, U, duration.count());
 
     // output overtly
     int max_pv = population[0];
@@ -283,8 +282,7 @@ int main(int argc, char *argv[])
     if (model.get(GRB_IntAttr_Status) != 3) {
       vector<int> sol;
       translate_solution(p, sol, g->nr_nodes);
-      string fn = string(dimacs_fname);
-      string soln_fn = fn.substr(0, 2) + "_" + arg_model + ".sol";
+      string soln_fn = string(rp.state) + "_" + arg_model + ".sol";
       int len = soln_fn.length() + 1;
       char* char_array = new char[len];
       strcpy(char_array, soln_fn.c_str());
