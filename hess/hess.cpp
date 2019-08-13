@@ -63,15 +63,22 @@ hess_params build_hess(GRBModel* model, graph* g, const vector<vector<double> >&
     expr += X(j, j);
   model->addConstr(expr == k);
 
-  // add constraint (d)
+  // add aux constraint for (d) to reduce nonzeros number
+  GRBVar* district_population = model->addVars(n, GRB_CONTINUOUS);
+  model->update();
   for (int j = 0; j < n; ++j)
   {
     GRBLinExpr constr = 0;
     for (int i = 0; i < n; ++i)
       constr += population[i] * X(i, j);
-    // add for j
-    model->addConstr(constr - U * X(j, j) <= 0); // U
-    model->addConstr(constr - L * X(j, j) >= 0); // L
+    model->addConstr(constr - district_population[j] == 0);
+  }
+
+  // add constraint (d)
+  for (int j = 0; j < n; ++j)
+  {
+    model->addConstr(district_population[j] - U * X(j, j) <= 0); // U
+    model->addConstr(district_population[j] - L * X(j, j) >= 0); // L
   }
 
   // add contraints (e)
