@@ -274,3 +274,13 @@ void graph::connect(const vector<vector<int>>& dist)
             delete e;
     }
 }
+
+int graph::get_k() const
+{
+  if(!(k > 0))
+  {
+    fprintf(stderr, "Value k is uninitialized!\n");
+    exit(1);
+  };
+  return k;
+}

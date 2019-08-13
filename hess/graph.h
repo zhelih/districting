@@ -25,7 +25,7 @@ public:
 
     // works as far as no pointers are members
     graph* duplicate() const { return new graph(*this); }
-    int get_k() const { return k; }
+    int get_k() const;
     void set_k(int k_) { k = k_; }
     void connect(const std::vector<std::vector<int>>& dist); // make the graph connected
 };
