@@ -92,6 +92,9 @@ void CutCallback::callback()
             if (x_val[j][b] > 0.5 && !visited[j] && cc[j] == 0)
             {
               int cc_max_pop_node = j;
+              if(do_reverse_nb)
+                for(int i = 0; i < n; ++i)
+                  aci[i] = 0;
               //run dfs from j and mark cc
               cur_cc++; // we don't really need info about cc # but it is neat to have it
               s.clear(); s.push_back(j); cc[j] = cur_cc;
@@ -99,13 +102,16 @@ void CutCallback::callback()
               {
                 int cur = s.back(); s.pop_back();
                 for (int nb_cur : g->nb(cur))
-                  if (x_val[nb_cur][b] > 0.5 && !visited[nb_cur] && cc[nb_cur] == 0)
+                  if (x_val[nb_cur][b] > 0.5)
                   {
-                    cc[nb_cur] = cur_cc;
-                    s.push_back(nb_cur);
-                    if (population[nb_cur] > population[cc_max_pop_node])
-                      cc_max_pop_node = nb_cur;
-                  }
+                    if(!visited[nb_cur] && cc[nb_cur] == 0)
+                    {
+                      cc[nb_cur] = cur_cc;
+                      s.push_back(nb_cur);
+                      if (population[nb_cur] > population[cc_max_pop_node])
+                        cc_max_pop_node = nb_cur;
+                    }
+                  } else if(do_reverse_nb) aci[nb_cur] = 1;
               }
               // work with cc_max_pop_node
               int a = cc_max_pop_node; // shorted alias
@@ -115,7 +121,9 @@ void CutCallback::callback()
               // start DFS from j to find R_i
               for (int k = 0; k < n; ++k)
                 visited[k] = 0;
-              s.clear(); s.push_back(a); visited[a] = 1;
+              s.clear();
+              int separator_start = do_reverse_nb ? a : b;
+              s.push_back(separator_start); visited[separator_start] = 1;
               while (!s.empty())
               {
                 int cur = s.back(); s.pop_back();
