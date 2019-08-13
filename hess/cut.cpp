@@ -11,6 +11,8 @@
 #define INT_MAX (std::numeric_limits<int>::max())
 #endif
 
+const bool do_reverse_nb = true;
+
 class CutCallback : public HessCallback
 {
   // memory for a callback
@@ -86,7 +88,6 @@ void CutCallback::callback()
           // since we want to add cut for every connected component reamining there, we will mark cc's
           int cur_cc = 0;
           fill(cc.begin(), cc.end(), 0);
-          vector<int> cc_heads;
           for (int j = 0; j < n; ++j)
             if (x_val[j][b] > 0.5 && !visited[j] && cc[j] == 0)
             {
@@ -106,67 +107,65 @@ void CutCallback::callback()
                       cc_max_pop_node = nb_cur;
                   }
               }
-              cc_heads.push_back(cc_max_pop_node);
-            }
-          for (int a : cc_heads)
-          {
-            // compute i-j separator, A(C_b) is already computed)
-            GRBLinExpr expr = 0;
-            unordered_set<int> C;
-            // start DFS from j to find R_i
-            for (int k = 0; k < n; ++k)
-              visited[k] = 0;
-            s.clear(); s.push_back(a); visited[a] = 1;
-            while (!s.empty())
-            {
-              int cur = s.back(); s.pop_back();
-              for (int nb_cur : g->nb(cur))
+              // work with cc_max_pop_node
+              int a = cc_max_pop_node; // shorted alias
+              // compute i-j separator, A(C_b) is already computed)
+              GRBLinExpr expr = 0;
+              unordered_set<int> C;
+              // start DFS from j to find R_i
+              for (int k = 0; k < n; ++k)
+                visited[k] = 0;
+              s.clear(); s.push_back(a); visited[a] = 1;
+              while (!s.empty())
               {
-                if (!visited[nb_cur])
+                int cur = s.back(); s.pop_back();
+                for (int nb_cur : g->nb(cur))
                 {
-                  visited[nb_cur] = 1;
-                  if (aci[nb_cur]) C.insert(nb_cur); else s.push_back(nb_cur);
-                }
-              }
-            }
-            if (is_lcut)
-            {
-              // refine set C
-              for (auto it_c = C.begin(); it_c != C.end(); )
-              {
-                int c = *it_c;
-                // find distance from a to b through c but not remaining C
-                // priority queue Dijkstra
-                // priority queue pair is <weight, vertex>, min weight on top
-                priority_queue< pair<int, int>, vector <pair<int, int>>, greater<pair<int, int>> > pq;
-                fill(dist.begin(), dist.end(), INT_MAX);
-                const vector<int>& p = population; // alias
-                pq.push(make_pair(p[a], a));
-                dist[a] = p[a];
-                while (!pq.empty())
-                {
-                  int u = pq.top().second; pq.pop();
-                  for (int nb_u : g->nb(u))
+                  if (!visited[nb_cur])
                   {
-                    if ((nb_u == c || C.count(nb_u) == 0) && dist[nb_u] > dist[u] + p[nb_u])
-                    {
-                      dist[nb_u] = dist[u] + p[nb_u];
-                      pq.push(make_pair(dist[nb_u], nb_u));
-                    }
+                    visited[nb_cur] = 1;
+                    if (aci[nb_cur]) C.insert(nb_cur); else s.push_back(nb_cur);
                   }
                 }
-                if (dist[b] > U)
-                  it_c = C.erase(it_c);
-                else
-                  ++it_c;
               }
-            }
-            for (int c : C)
-              expr += X(c, b);
-            expr -= X(a, b); // RHS
-            addLazy(expr >= 0);
-            ++numLazyCuts;
-          }
+              if (is_lcut)
+              {
+                // refine set C
+                for (auto it_c = C.begin(); it_c != C.end(); )
+                {
+                  int c = *it_c;
+                  // find distance from a to b through c but not remaining C
+                  // priority queue Dijkstra
+                  // priority queue pair is <weight, vertex>, min weight on top
+                  priority_queue< pair<int, int>, vector <pair<int, int>>, greater<pair<int, int>> > pq;
+                  fill(dist.begin(), dist.end(), INT_MAX);
+                  const vector<int>& p = population; // alias
+                  pq.push(make_pair(p[a], a));
+                  dist[a] = p[a];
+                  while (!pq.empty())
+                  {
+                    int u = pq.top().second; pq.pop();
+                    for (int nb_u : g->nb(u))
+                    {
+                      if ((nb_u == c || C.count(nb_u) == 0) && dist[nb_u] > dist[u] + p[nb_u])
+                      {
+                        dist[nb_u] = dist[u] + p[nb_u];
+                        pq.push(make_pair(dist[nb_u], nb_u));
+                      }
+                    }
+                  }
+                  if (dist[b] > U)
+                    it_c = C.erase(it_c);
+                  else
+                    ++it_c;
+                }
+              }
+              for (int c : C)
+                expr += X(c, b);
+              expr -= X(a, b); // RHS
+              addLazy(expr >= 0);
+              ++numLazyCuts;
+            } // if
         }
       }
       chrono::duration<double> d = chrono::steady_clock::now() - start;
