@@ -14,6 +14,10 @@ double get_objective_coefficient(const vector<vector<int>>& dist, const vector<i
   return (static_cast<double>(dist[i][j]) / 1000.) * (static_cast<double>(dist[i][j]) / 1000.) * static_cast<double>(population[i]);
 }
 
+/*    // hash routines
+    unordered_set<string> htbl;
+    auto centers_to_string(const vector<int>& centers);
+*/
 
 // adds hess model constraints and the objective function to model using graph "g", distance data "dist", population data "pop"
 // returns "x" variables in the Hess model
@@ -421,10 +425,16 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
   return heuristicSolution;
 }
 
-void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& population,
+bool LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& population,
   int L, int U, int k, vector<int>&heuristicSolution, double &UB)
 {
     cout << endl << "Beginning LOCAL SEARCH with UB = " << UB << "\n\n";
+
+    if(heuristicSolution.size() < g->nr_nodes)
+    {
+      printf("Local search received no solution from Heuristic, bailing out...\n");
+      return false;
+    }
     // initialize the centers from heuristicSolution
     vector<int> centers(k, -1);
     int pos = 0;
@@ -436,6 +446,13 @@ void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& 
         pos++;
       }
     }
+
+    if(find(centers.begin(), centers.end(), -1) != centers.end())
+    {
+      fprintf(stderr, "Local search input from Heuristic is malicious, bailing out...\n");
+      return false;
+    }
+
     try {
       GRBEnv env = GRBEnv();
       GRBModel model = GRBModel(env);
@@ -511,16 +528,20 @@ void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& 
     catch (GRBException e) {
       cout << "Error code = " << e.getErrorCode() << endl;
       cout << e.getMessage() << endl;
+      return false;
     }
     catch (const char* msg) {
       cout << "Exception with message : " << msg << endl;
+      return false;
     }
     catch (...) {
       cout << "Exception during optimization" << endl;
+      return false;
     }
     cout << "UB at end of local search heuristic = " << UB << endl;
     double obj = 0;
     for (int i = 0; i < g->nr_nodes; ++i)
       obj += w[i][heuristicSolution[i]];
     cout << "UB of heuristicSolution = " << obj << endl;
+    return true;
 }

@@ -108,7 +108,7 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
 void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<vector<double> > &w, 
   const vector<int> &population, int L, int U, int k, double &UB, string arg_model);
 
-void LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& population,
+bool LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& population,
   int L, int U, int k, vector<int>&heuristicSolution, double &UB);
 
 #endif

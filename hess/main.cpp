@@ -120,12 +120,13 @@ int main(int argc, char *argv[])
 
   // run local search
   auto LS_start = chrono::steady_clock::now();
-  LocalSearch(g, w, population, L, U, k, heuristicSolution, UB);
+  bool ls_ok;
+  ls_ok = LocalSearch(g, w, population, L, U, k, heuristicSolution, UB);
   chrono::duration<double> LS_duration = chrono::steady_clock::now() - LS_start;
   fprintf(stderr, "%.2lf %.2lf ", UB, LS_duration.count());
   printf("Best solution after local search is %.2lf\n", UB);
 
-  if (arg_model != "hess")  // solve contiguity-constrained problem, restricted to centers from heuristicSolution
+  if (arg_model != "hess" && ls_ok)  // solve contiguity-constrained problem, restricted to centers from heuristicSolution
   {
     UB = INFINITY;
     auto contiguity_start = chrono::steady_clock::now();
@@ -202,15 +203,16 @@ int main(int argc, char *argv[])
     model.set(GRB_DoubleParam_MIPGap, 0);
 
     // provide IP warm start 
-    for (int i = 0; i < g->nr_nodes; ++i)
-    {
-      for (int j = 0; j < g->nr_nodes; ++j)
-        if (IS_X(i, j))
-          X_V(i, j).set(GRB_DoubleAttr_Start, 0);
+    if(ls_ok)
+      for (int i = 0; i < g->nr_nodes; ++i)
+      {
+        for (int j = 0; j < g->nr_nodes; ++j)
+          if (IS_X(i, j))
+            X_V(i, j).set(GRB_DoubleAttr_Start, 0);
 
-      if (IS_X(i, heuristicSolution[i]))
-        X_V(i, heuristicSolution[i]).set(GRB_DoubleAttr_Start, 1);
-    }
+        if (IS_X(i, heuristicSolution[i]))
+          X_V(i, heuristicSolution[i]).set(GRB_DoubleAttr_Start, 1);
+      }
 
     //optimize the model
     auto IP_start = chrono::steady_clock::now();
