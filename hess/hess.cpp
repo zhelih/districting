@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <vector>
 #include <algorithm>
+#include <unordered_set>
+#include <string>
 #include "graph.h"
 #include "gurobi_c++.h"
 #include "models.h"
@@ -13,11 +15,6 @@ double get_objective_coefficient(const vector<vector<int>>& dist, const vector<i
 {
   return (static_cast<double>(dist[i][j]) / 1000.) * (static_cast<double>(dist[i][j]) / 1000.) * static_cast<double>(population[i]);
 }
-
-/*    // hash routines
-    unordered_set<string> htbl;
-    auto centers_to_string(const vector<int>& centers);
-*/
 
 // adds hess model constraints and the objective function to model using graph "g", distance data "dist", population data "pop"
 // returns "x" variables in the Hess model
@@ -435,6 +432,19 @@ bool LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& 
       printf("Local search received no solution from Heuristic, bailing out...\n");
       return false;
     }
+
+    // hash routines
+    unordered_set<string> htbl;
+    auto centers_to_string = [](vector<int>& centers) -> string {
+      sort(centers.begin(), centers.end());
+      string ret;
+      for(int c : centers)
+      {
+        ret += to_string(c) + "_";
+      }
+      return "";
+    };
+
     // initialize the centers from heuristicSolution
     vector<int> centers(k, -1);
     int pos = 0;
@@ -519,6 +529,14 @@ bool LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& 
                     if (X_V(i,centers[j]).get(GRB_DoubleAttr_X) > 0.5)
                       heuristicSolution[i] = centers[j];
                   }
+                // cache centers
+                string centers_str = centers_to_string(centers);
+                if(htbl.count(centers_str) > 0)
+                {
+                  printf("Local Search encountered cyclic centers, aborting...\n");
+                  return true;
+                }
+                htbl.insert(centers_str);
               }
             }
           }
