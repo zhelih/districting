@@ -77,7 +77,7 @@ void build_mcf(GRBModel* model, hess_params& p, graph* g)
 {
     int n = g->nr_nodes;
 
-        // hash edges similarly to mcf1
+    // hash edges similarly to mcf1
     std::unordered_map<int, int> hash_edges;
     int cur = 0;
     for (int i = 0; i < n; ++i)
@@ -148,7 +148,7 @@ void build_mcf(GRBModel* model, hess_params& p, graph* g)
             for (int j : g->nb(b))
                 f[b][hash_edges[j*n + b]][a_i].set(GRB_DoubleAttr_UB, 0.); // j -- b
 
-                                              // add constraint (19e)
+    // add constraint (19e)
     for (int b = 0; b < n; ++b)
         for (int a_i = 0; a_i < n - 1 - g->nb(b).size(); ++a_i)
             for (int j = 0; j < n; ++j)
