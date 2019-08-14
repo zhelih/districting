@@ -77,19 +77,17 @@ HessCallback* build_lcut(GRBModel* model, hess_params& p, graph* g, const vector
 // input:
 //    g: graph pointer
 //    multipliers : 3|V| array of lagrangian multipliers [A,L,U]
-//    F_0 : vertices fixed x_jj = 0
-//    F_1 : vertices fixed x_jj = 1
 //    L : population lower limit
 //    U : population upper limit
 //    k : number of districts
-//    cluters : ?
 //    population : array i-th element is population of i-th node
-//    w : ?
-//    w_hat : ?
-//    W : ?
+//    w : original objective coefficients w_ij to assign i to j
+//    w_hat : adjusted objective coefficients (after combining like terms)
+//    W : weight of a min-weight subgraph rooted at j is W_j, i.e., w_hat_jj + \sum_{j!=i} max(0,w_hat_ij)
 //    S : solution of the inner problem for clusterheads
 //    grad : pointer to the resulting gradient
 //    f_val : resulting objective value
+//    currentCenters : the best k centers (for the current multipliers), i.e., the k vertices j that have least W_j
 void solveInnerProblem(graph* g, const double* multipliers, int L, int U, int k, const vector<int>& population,
   const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& currentCenters);
 
