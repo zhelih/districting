@@ -94,13 +94,13 @@ int main(int argc, char *argv[])
   if (arg_model != "hess")
     exploit_contiguity = true;
 
-  auto start = chrono::steady_clock::now();
-
   // set objective function coefficients
   vector<vector<double>> w(g->nr_nodes, vector<double>(g->nr_nodes)); // this is the weight matrix in the objective function
   for (int i = 0; i < g->nr_nodes; i++)
     for (int j = 0; j < g->nr_nodes; j++)
       w[i][j] = get_objective_coefficient(dist, population, i, j);
+  
+  auto start = chrono::steady_clock::now();
 
   // apply Lagrangian 
   vector< vector<double> > LB1(g->nr_nodes, vector<double>(g->nr_nodes, -INFINITY)); // LB1[i][j] is a lower bound on problem objective if we fix x[i][j] = 1
