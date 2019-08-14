@@ -11,7 +11,7 @@
 #define INT_MAX (std::numeric_limits<int>::max())
 #endif
 
-const bool do_reverse_nb = true;
+const bool do_reverse_nb = true; // controls whether cut C is found near a (true) or near b (false)
 
 class CutCallback : public HessCallback
 {
