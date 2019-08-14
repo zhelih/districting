@@ -197,10 +197,10 @@ int main(int argc, char *argv[])
 
     //TODO change user-interactive?
     model.set(GRB_DoubleParam_TimeLimit, 3600.); // 1 hour
-    //model.set(GRB_IntParam_Threads, 10);
+    //model.set(GRB_IntParam_Threads, 10); // limit to 10 threads
     model.set(GRB_DoubleParam_NodefileStart, 10); // 10 GB
-    model.set(GRB_IntParam_Method, 3);
-    model.set(GRB_DoubleParam_MIPGap, 0);
+    model.set(GRB_IntParam_Method, 3);  // use concurrent method to solve root LP
+    model.set(GRB_DoubleParam_MIPGap, 0);  // force gurobi to prove optimality
 
     // provide IP warm start 
     if(ls_ok)
