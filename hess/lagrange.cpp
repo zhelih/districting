@@ -120,8 +120,6 @@ void update_LB(const vector<double>& W, const vector<bool>& currentCenters, doub
       }
     }
   }
-
-  // TODO currently not updating LB0, since x[i][j]=1 safe fixings are not common????
 }
 
 void update_LB_contiguity(graph* g, const vector<double>& W, const vector<bool>& currentCenters, double f_val,
