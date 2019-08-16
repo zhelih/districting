@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 {
   //printf("Districting, build %s\n", gitversion);
   if (argc < 2) {
-    printf("Usage: %s <config> [state]\n\
+    printf("Usage: %s <config> [state [ralg_hot_start]]\n\
   Available models:\n\
   \thess\t\tHess model\n\
   \tshir\t\tHess model with SHIR\n\
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 
   // parse config
   run_params rp;
-  rp = read_config(argv[1], (argc>2 ? argv[2] : ""));
+  rp = read_config(argv[1], (argc>2 ? argv[2] : ""), (argc>3 ? argv[3] : ""));
   int L = rp.L; int U = rp.U;
   bool ralg_hot_start = !rp.ralg_hot_start.empty();
   const char* ralg_hot_start_fname = (rp.ralg_hot_start.empty() ? nullptr : rp.ralg_hot_start.c_str());
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
   for (int i = 0; i < g->nr_nodes; i++)
     for (int j = 0; j < g->nr_nodes; j++)
       w[i][j] = get_objective_coefficient(dist, population, i, j);
-  
+
   auto start = chrono::steady_clock::now();
 
   // apply Lagrangian 

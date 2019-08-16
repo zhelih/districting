@@ -21,7 +21,7 @@ struct run_params
   string output;
 };
 
-run_params read_config(const char* fname, const char* state);
+run_params read_config(const char* fname, const char* state, const char* ralg_hot_start);
 
 int read_input_data(const char* dimacs_fname, const char* distance_fname, const char* population_fname, // INPUTS
                      graph* &g, vector<vector<int> >& dist, vector<int>& population); // OUTPUTS

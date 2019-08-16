@@ -126,7 +126,7 @@ void read_ralg_hot_start(const char* fname, double* x0, int dim)
   FILE* f = fopen(fname, "r");
   if(!f)
   {
-    fprintf(stderr, "Failed to open %s.\n", fname);
+    fprintf(stderr, "WARNING: Failed to open %s!\n", fname);
     return;
   }
   for(int i = 0; i < dim; ++i)
@@ -177,7 +177,7 @@ const char* parse_param(const char* src, const char* prefix)
   return src+k;
 }
 
-run_params read_config(const char* fname, const char* state)
+run_params read_config(const char* fname, const char* state, const char* ralg_hot_start)
 {
   FILE* f = fopen(fname, "r");
   if(!f)
@@ -188,8 +188,10 @@ run_params read_config(const char* fname, const char* state)
 
   run_params rp;
 
-  if(strlen(state) > 1)
+  if(state && strlen(state) > 1)
     strncpy(rp.state, state, 2);
+  if(ralg_hot_start && strlen(ralg_hot_start) > 1)
+    rp.ralg_hot_start = ralg_hot_start;
 
   char buf[1020];
   string database;
@@ -236,7 +238,14 @@ run_params read_config(const char* fname, const char* state)
     else if((v = parse_param(buf, "model")) != nullptr)
       rp.model = v;
     else if((v = parse_param(buf, "ralg_hot_start")) != nullptr)
+    {
+      if(ralg_hot_start != nullptr && ralg_hot_start != NULL && strlen(ralg_hot_start) > 0)
+      {
+        fprintf(stderr, "Found ralg_hot_start in config file, however passed %s, which do you want me to use?\n", ralg_hot_start);
+        exit(1);
+      }
       rp.ralg_hot_start = v;
+    }
     else if((v = parse_param(buf, "output")) != nullptr)
       rp.output = v;
     else if((v = parse_param(buf, "L")) != nullptr)
