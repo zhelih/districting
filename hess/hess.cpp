@@ -442,14 +442,15 @@ bool LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& 
 
     // hash routines
     unordered_set<string> htbl;
-    auto centers_to_string = [](vector<int>& centers) -> string {
-      sort(centers.begin(), centers.end());
+    auto centers_to_string = [](const vector<int>& centers) -> string {
+      vector<int> sorted_centers(centers);
+      sort(sorted_centers.begin(), sorted_centers.end());
       string ret;
-      for(int c : centers)
+      for(int c : sorted_centers)
       {
         ret += to_string(c) + "_";
       }
-      return "";
+      return ret;
     };
 
     // initialize the centers from heuristicSolution
@@ -491,6 +492,16 @@ bool LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& 
           for (int u : g->nb(v))  // swap v for u?
           {
             if (improvement) break;
+            // cache centers
+            centers[c_i] = u;
+            string centers_str = centers_to_string(centers);
+            centers[c_i] = v;
+            if(htbl.count(centers_str) > 0)
+            {
+              printf("Local Search skipping seen centers...\n");
+              continue;
+            }
+            htbl.insert(centers_str);
             model.reset();
             model.set(GRB_DoubleParam_Cutoff, UB);
             // update cost coefficients, as if we had centers[p] = u
@@ -536,14 +547,6 @@ bool LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& 
                     if (X_V(i,centers[j]).get(GRB_DoubleAttr_X) > 0.5)
                       heuristicSolution[i] = centers[j];
                   }
-                // cache centers
-                string centers_str = centers_to_string(centers);
-                if(htbl.count(centers_str) > 0)
-                {
-                  printf("Local Search encountered cyclic centers, aborting...\n");
-                  return true;
-                }
-                htbl.insert(centers_str);
               }
             }
           }
