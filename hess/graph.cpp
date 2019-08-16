@@ -65,6 +65,7 @@ graph* from_dimacs(const char* fname)
             from--; to--;
 #endif
             g->add_edge(from, to);//, weight);
+            nr_edges++;
         }
         else if (buf[0] == 'c' && buf[2] == 'k')
         {
@@ -74,7 +75,7 @@ graph* from_dimacs(const char* fname)
         }
     }
 
-    printf("graph: %d nodes, %d edges\n", nr_nodes, nr_edges);
+    printf("graph: %d nodes, %d edges (read)\n", nr_nodes, nr_edges);
 
     for (int i = 0; i < nr_nodes; ++i)
         sort(g->nb(i).begin(), g->nb(i).end());
