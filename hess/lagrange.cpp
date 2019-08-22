@@ -1,35 +1,18 @@
 // source file for lagrangian relaxation model
 #include <cstdio>
 #include <cassert>
-#include <unordered_set>
 #include <vector>
 #include <algorithm>
 #include <iostream>
 #include <queue>
+#include "common.h"
 #include "graph.h"
 #include "models.h"
 #include "ralg/ralg.h"
 #include "io.h"
 
-struct pair_hash {
-  inline std::size_t operator()(const std::pair<int, int> & v) const {
-    return v.first * 31 + v.second;
-  }
-};
-using namespace std;
-
-#ifndef min
-#define min(a,b) (((a)<(b))?(a):(b))
-#endif
-#ifndef max
-#define max(a,b) (((a)>(b))?(a):(b))
-#endif
-#ifndef abs
-#define abs(x) (((x)>0)?(x):(-(x)))
-#endif
-
 double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<int> &population, int L, int U, int k, 
-  vector<vector<double>>& LB1, bool ralg_hot_start, const char* ralg_hot_start_fname, bool exploit_contiguity)
+  vector<vector<double>>& LB1, bool ralg_hot_start, const char* ralg_hot_start_fname, const run_params& rp, bool exploit_contiguity)
 {
   double LB = -INFINITY;
 
@@ -69,12 +52,7 @@ double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<i
   LB = ralg(&opt, cb_grad_func, dim, multipliers, bestMultipliers, RALG_MAX); // lower bound from lagrangian
 
   // dump result to "state_model.hot"
-  /*string fn1 = string(dimacs_fname);
-  string hsfn = fn1.substr(0, 2) + "_" + arg_model + ".hot";
-  int len1 = hsfn.length() + 1;
-  char* char_array1 = new char[len1];
-  strcpy(char_array1, hsfn.c_str());
-  dump_ralg_hot_start(char_array1, res, dim);*/
+  dump_ralg_hot_start(rp, bestMultipliers, dim, LB);
 
   delete [] multipliers;
   delete [] bestMultipliers;
@@ -92,11 +70,11 @@ void update_LB(const vector<double>& W, const vector<bool>& currentCenters, doub
   // determine values for minW and maxW
   for (int i = 0; i < n; ++i)
     if (currentCenters[i])
-      maxW = max(maxW, W[i]);
+      maxW = mymax(maxW, W[i]);
 
   for (int i = 0; i < n; ++i)
     if (!currentCenters[i])
-      minW = min(minW, W[i]);
+      minW = mymin(minW, W[i]);
 
   // update LB1
   for (int j = 0; j < n; ++j)
@@ -104,11 +82,11 @@ void update_LB(const vector<double>& W, const vector<bool>& currentCenters, doub
     if (!currentCenters[j])
     {
       //if (maxW == -INFINITY) continue;
-      LB1[j][j] = max(LB1[j][j], f_val + W[j] - maxW);
+      LB1[j][j] = mymax(LB1[j][j], f_val + W[j] - maxW);
       for (int i = 0; i < n; ++i)
       {
         if (i == j) continue;
-        LB1[i][j] = max(LB1[i][j], f_val + W[j] - maxW + max(0, w_hat[i][j]));
+        LB1[i][j] = mymax(LB1[i][j], f_val + W[j] - maxW + mymax(0, w_hat[i][j]));
       }
     }
     else
@@ -116,7 +94,7 @@ void update_LB(const vector<double>& W, const vector<bool>& currentCenters, doub
       for (int i = 0; i < n; ++i)
       {
         if (i == j) continue;
-        LB1[i][j] = max(LB1[i][j], f_val + max(0, w_hat[i][j]));
+        LB1[i][j] = mymax(LB1[i][j], f_val + mymax(0, w_hat[i][j]));
       }
     }
   }
@@ -131,7 +109,7 @@ void update_LB_contiguity(graph* g, const vector<double>& W, const vector<bool>&
   // determine value for maxW
   for (int i = 0; i < n; ++i)
     if (currentCenters[i])
-      maxW = max(maxW, W[i]);
+      maxW = mymax(maxW, W[i]);
 
   // compute special distances 
   vector<double> dist(g->nr_nodes);
@@ -148,7 +126,7 @@ void update_LB_contiguity(graph* g, const vector<double>& W, const vector<bool>&
       int u = pq.top().second;
       pq.pop();
       for (int nb : g->nb(u)) {
-        int weight = max(0, w_hat[nb][j]);
+        int weight = mymax(0, w_hat[nb][j]);
         if (dist[nb] > dist[u] + weight) {
           dist[nb] = dist[u] + weight;
           pq.push(make_pair(dist[nb], nb));
@@ -160,12 +138,12 @@ void update_LB_contiguity(graph* g, const vector<double>& W, const vector<bool>&
     if (currentCenters[j])
     {
       for (int i = 0; i < n; ++i)
-        LB1[i][j] = max(LB1[i][j], f_val + dist[i]);
+        LB1[i][j] = mymax(LB1[i][j], f_val + dist[i]);
     }
     else
     {
       for (int i = 0; i < n; ++i)
-        LB1[i][j] = max(LB1[i][j], f_val - maxW + W[j] + dist[i]);
+        LB1[i][j] = mymax(LB1[i][j], f_val - maxW + W[j] + dist[i]);
     }
   }
 }

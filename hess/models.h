@@ -2,27 +2,14 @@
 #define _MODELS_H
 
 #include <vector>
-#include <unordered_map>
+#include "common.h"
 #include "graph.h"
+#include "io.h"
 #include "gurobi_c++.h"
 
 using namespace std;
 
 typedef const vector<vector<bool>> cvv;
-
-struct hess_params
-{
-  GRBVar* x;
-  vector<vector<bool>> F0;
-  vector<vector<bool>> F1;
-  unordered_map<int, int> h;
-  int n;
-};
-
-//hack
-#define IS_X(i,j) (!p.F0[i][j] && !p.F1[i][j])
-#define X_V(i,j) (p.x[p.h[p.n*i+j]])
-#define X(i,j) (p.F0[i][j]?GRBLinExpr(0.):(p.F1[i][j]?GRBLinExpr(1.):GRBLinExpr(X_V(i,j))))
 
 //auxilliary procedure
 double get_objective_coefficient(const vector<vector<int>>& dist, const vector<int>& population, int i, int j);
@@ -92,7 +79,7 @@ void solveInnerProblem(graph* g, const double* multipliers, int L, int U, int k,
   const vector<vector<double>>& w, vector<vector<double>>& w_hat, vector<double>& W, double* grad, double& f_val, vector<bool>& currentCenters);
 
 double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<int> &population, int L, int U, int k,
-  vector<vector<double>>& LB1, bool ralg_hot_start, const char* ralg_hot_start_fname, bool exploit_contiguity);
+  vector<vector<double>>& LB1, bool ralg_hot_start, const char* ralg_hot_start_fname, const run_params& rp, bool exploit_contiguity);
 
 void update_LB(const vector<double>& W, const vector<bool>& currentCenters, double f_val,
   const vector<vector<double>> &w_hat, vector< vector<double> > &LB1);

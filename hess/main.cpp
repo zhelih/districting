@@ -1,4 +1,3 @@
-// Copyright Eugene Lykhovyd, 2017-2018.
 #include "gurobi_c++.h"
 #include "graph.h"
 #include "io.h"
@@ -10,21 +9,18 @@
 #include <cstring>
 #include <chrono>
 #include <string>
+#include "common.h"
 
-constexpr auto VarFixingEpsilon = 0.00001;
-
-#ifndef sign
-#define sign(x) (((x)>0)?1:((x)==0)?0:(-1))
-#endif
+const double VarFixingEpsilon = 0.00001;
 
 using namespace std;
-//extern const char* gitversion;
+extern const char* gitversion;
 
 #define DO_BATCH_OUTPUT
 
 int main(int argc, char *argv[])
 {
-  //printf("Districting, build %s\n", gitversion);
+  printf("Districting, build %s\n", gitversion);
   if (argc < 2) {
     printf("Usage: %s <config> [state [ralg_hot_start]]\n\
   Available models:\n\
@@ -105,7 +101,7 @@ int main(int argc, char *argv[])
   // apply Lagrangian 
   vector< vector<double> > LB1(g->nr_nodes, vector<double>(g->nr_nodes, -INFINITY)); // LB1[i][j] is a lower bound on problem objective if we fix x[i][j] = 1
   auto lagrange_start = chrono::steady_clock::now();
-  double LB = solveLagrangian(g, w, population, L, U, k, LB1, ralg_hot_start, ralg_hot_start_fname, exploit_contiguity);// lower bound on problem objective, coming from lagrangian
+  double LB = solveLagrangian(g, w, population, L, U, k, LB1, ralg_hot_start, ralg_hot_start_fname, rp, exploit_contiguity);// lower bound on problem objective, coming from lagrangian
   chrono::duration<double> lagrange_duration = chrono::steady_clock::now() - lagrange_start;
   fprintf(stderr, "%.2lf %.2lf ", LB, lagrange_duration.count());
 

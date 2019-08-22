@@ -32,11 +32,4 @@ public:
 
 graph* from_dimacs(const char* fname); // don't forget to delete
 
-//FIXME
-#ifndef INFINITY
-#define INFINITY 1e20
-#endif
-
-
-
 #endif

@@ -3,8 +3,10 @@
 #include <vector>
 #include <cstdio>
 #include <cstring>
+#include <string>
 #include <cmath>
 #include "gurobi_c++.h"
+#include "common.h"
 
 using namespace std;
 
@@ -143,9 +145,10 @@ void read_ralg_hot_start(const char* fname, double* x0, int dim)
 }
 
 // dump result to "ralg_hot_start.txt"
-void dump_ralg_hot_start(double* res, int dim)
+void dump_ralg_hot_start(const run_params& rp, double* res, int dim, double opt)
 {
-  const char* outname = "ralg_hot_start.txt";
+  string hsfn = string(rp.state) + "_" + rp.model + ".hot";
+  const char* outname = hsfn.c_str();
   FILE* f = fopen(outname, "w");
   if(!f)
   {
@@ -154,6 +157,7 @@ void dump_ralg_hot_start(double* res, int dim)
   }
   for(int i = 0; i < dim; ++i)
     fprintf(f, "%lf\n", res[i]);
+  fprintf(f, "%lf\n", opt);
   fclose(f);
 }
 
