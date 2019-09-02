@@ -1,0 +1,7 @@
+database /home/lykhovyd/progs/districting/hess/data/districting
+#state AL
+level counties
+L auto
+U auto
+k auto
+model hess
