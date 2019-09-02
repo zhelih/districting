@@ -30,7 +30,7 @@ struct run_params
   int k;
   std::string model;
   std::string ralg_hot_start;
-  std::string output;
+  FILE* output;
 };
 
 struct pair_hash {

@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdio>
 #include <cstring>
+#include <stdarg.h>
 #include <string>
 #include <cmath>
 #include "gurobi_c++.h"
@@ -190,12 +191,16 @@ run_params read_config(const char* fname, const char* state, const char* ralg_ho
     exit(1);
   }
 
+  // clean newlines from fgets
+  auto clean_nl = [](string& s) { while(!s.empty() && s.back() == '\n') s.pop_back(); };
+
   run_params rp;
 
   if(state && strlen(state) > 1)
     strncpy(rp.state, state, 2);
   if(ralg_hot_start && strlen(ralg_hot_start) > 1)
     rp.ralg_hot_start = ralg_hot_start;
+  rp.output = stderr;
 
   char buf[1020];
   string database;
@@ -251,7 +256,15 @@ run_params read_config(const char* fname, const char* state, const char* ralg_ho
       rp.ralg_hot_start = v;
     }
     else if((v = parse_param(buf, "output")) != nullptr)
-      rp.output = v;
+    {
+      string v_ = v; clean_nl(v_); // do better?
+      rp.output = fopen(v_.c_str(), "a");
+      if(!rp.output)
+      {
+        fprintf(stderr, "Failed to open %s for dumping output.\n", v_.c_str());
+        exit(1);
+      }
+    }
     else if((v = parse_param(buf, "L")) != nullptr)
     {
       if(strncmp(v, "auto", 4) == 0)
@@ -276,9 +289,6 @@ run_params read_config(const char* fname, const char* state, const char* ralg_ho
   }
   fclose(f);
 
-  // clean newlines from fgets
-  auto clean_nl = [](string& s) { while(!s.empty() && s.back() == '\n') s.pop_back(); };
-
   clean_nl(database);
   clean_nl(level);
   clean_nl(rp.dimacs_file);
@@ -286,7 +296,6 @@ run_params read_config(const char* fname, const char* state, const char* ralg_ho
   clean_nl(rp.distance_file);
   clean_nl(rp.model);
   clean_nl(rp.ralg_hot_start);
-  clean_nl(rp.output);
   rp.state[2] = '\0';
 
   if(database.empty() && (rp.dimacs_file.empty() || rp.population_file.empty() || rp.distance_file.empty()))
@@ -337,7 +346,18 @@ run_params read_config(const char* fname, const char* state, const char* ralg_ho
   cout << "k               = " << rp.k << endl;
   cout << "model           = " << rp.model << endl;
   cout << "ralg_hot_start  = " << rp.ralg_hot_start << endl;
-  cout << "output          = " << rp.output << endl;
+//  cout << "output          = " << rp.output << endl;
 
   return rp;
+}
+
+// fprintf and fflush
+int ffprintf(FILE* f, const char* fmt, ...)
+{
+  va_list va;
+  va_start(va, fmt);
+  int res = vfprintf(f, fmt, va);
+  va_end(va);
+  fflush(f);
+  return res;
 }

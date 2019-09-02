@@ -46,8 +46,6 @@ int main(int argc, char *argv[])
   if (read_input_data(rp.dimacs_file.c_str(), rp.distance_file.c_str(), rp.population_file.c_str(), g, dist, population))
     return 1; // failure
 
-  fprintf(stderr, "%s %d ", rp.dimacs_file.c_str(), g->nr_nodes);
-
   int k = (rp.k == 0) ? g->get_k() : rp.k;
 
   if (L == 0 || U == 0)
@@ -55,27 +53,33 @@ int main(int argc, char *argv[])
 
   printf("Model input: L = %d, U = %d, k = %d.\n", L, U, k);
 
+  // dump run args to output
+  ffprintf(rp.output, "%s, %s, %d, %d, %d, %d, ", rp.state, rp.model.c_str(), g->nr_nodes, k, L, U);
+
   g->connect(dist);
 
   // check connectivity
   if (!g->is_connected())
   {
     printf("Problem is infeasible (not connected!)\n");
-#ifdef DO_BATCH_OUTPUT
-    printf("qwerky567: %s, disconnected\n", rp.dimacs_file.c_str());
-#endif
+    ffprintf(rp.output, "disconnected\n");
+    fclose(rp.output);
     return 1;
   }
 
   if (g->nr_nodes <= 0)
   {
-    fprintf(stderr, "empty graph\n");
+    printf("empty graph\n");
+    ffprintf(rp.output, "empty graph\n");
+    fclose(rp.output);
     return 1;
   }
 
   if (dist.size() != g->nr_nodes || population.size() != g->nr_nodes)
   {
-    fprintf(stderr, "dist/population size != n, expected %d\n", g->nr_nodes);
+    printf("dist/population size != n, expected %d\n", g->nr_nodes);
+    ffprintf(rp.output, "bad input data\n");
+    fclose(rp.output);
     return 1;
   }
 
@@ -103,7 +107,7 @@ int main(int argc, char *argv[])
   auto lagrange_start = chrono::steady_clock::now();
   double LB = solveLagrangian(g, w, population, L, U, k, LB1, ralg_hot_start, ralg_hot_start_fname, rp, exploit_contiguity);// lower bound on problem objective, coming from lagrangian
   chrono::duration<double> lagrange_duration = chrono::steady_clock::now() - lagrange_start;
-  fprintf(stderr, "%.2lf %.2lf ", LB, lagrange_duration.count());
+  ffprintf(rp.output, "%.2lf, %.2lf, ", LB, lagrange_duration.count());
 
   // run a heuristic
   double UB = INFINITY;
@@ -111,7 +115,7 @@ int main(int argc, char *argv[])
   auto heuristic_start = chrono::steady_clock::now();
   vector<int> heuristicSolution = HessHeuristic(g, w, population, L, U, k, UB, maxIterations, false);
   chrono::duration<double> heuristic_duration = chrono::steady_clock::now() - heuristic_start;
-  fprintf(stderr, "%.2lf %.2lf ", UB, heuristic_duration.count());
+  ffprintf(rp.output, "%.2lf, %.2lf, ", UB, heuristic_duration.count());
   printf("Best solution after %d of HessHeuristic is %.2lf\n", maxIterations, UB);
 
   // run local search
@@ -119,7 +123,7 @@ int main(int argc, char *argv[])
   bool ls_ok;
   ls_ok = LocalSearch(g, w, population, L, U, k, heuristicSolution, UB);
   chrono::duration<double> LS_duration = chrono::steady_clock::now() - LS_start;
-  fprintf(stderr, "%.2lf %.2lf ", UB, LS_duration.count());
+  ffprintf(rp.output, "%.2lf, %.2lf, ", UB, LS_duration.count());
   printf("Best solution after local search is %.2lf\n", UB);
 
   if (arg_model != "hess" && ls_ok)  // solve contiguity-constrained problem, restricted to centers from heuristicSolution
@@ -128,8 +132,8 @@ int main(int argc, char *argv[])
     auto contiguity_start = chrono::steady_clock::now();
     ContiguityHeuristic(heuristicSolution, g, w, population, L, U, k, UB, "shir"); // arg_model);
     chrono::duration<double> contiguity_duration = chrono::steady_clock::now() - contiguity_start;
-    fprintf(stderr, "%.2lf %.2lf ", UB, contiguity_duration.count());
-  }
+    ffprintf(rp.output, "%.2lf, %.2lf, ", UB, contiguity_duration.count());
+  } else ffprintf(rp.output, "NA, NA, ");
 
   // determine which variables can be fixed
   vector<vector<bool>> F0(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_0
@@ -158,8 +162,9 @@ int main(int argc, char *argv[])
   printf("Number of variables fixed to one  = %d\n", numFixedOne);
   printf("Number of variables not fixed     = %d\n", numUnfixed);
   printf("Number of centers left            = %d\n", numCentersLeft);
-  printf("Percentage of vars fixed = %.2lf\n", (double)(g->nr_nodes*g->nr_nodes - numUnfixed) / (g->nr_nodes*g->nr_nodes));
-  fprintf(stderr, "%.2lf ", (double)(g->nr_nodes*g->nr_nodes - numUnfixed) / (g->nr_nodes*g->nr_nodes));
+  double perc_var_fixed = (double)(g->nr_nodes*g->nr_nodes - numUnfixed) / (g->nr_nodes*g->nr_nodes);
+  printf("Percentage of vars fixed = %.2lf\n", perc_var_fixed);
+  ffprintf(rp.output, "%.2lf, ", perc_var_fixed);
 
   try
   {
@@ -187,7 +192,7 @@ int main(int argc, char *argv[])
     else if (arg_model == "lcut")
       cb = build_lcut(&model, p, g, population, U);
     else if (arg_model != "hess") {
-      fprintf(stderr, "ERROR: Unknown model : %s\n", arg_model.c_str());
+      printf("ERROR: Unknown model : %s\n", arg_model.c_str());
       exit(1);
     }
 
@@ -214,21 +219,19 @@ int main(int argc, char *argv[])
     auto IP_start = chrono::steady_clock::now();
     model.optimize();
     chrono::duration<double> IP_duration = chrono::steady_clock::now() - IP_start;
-    fprintf(stderr, "%.2lf ", IP_duration.count());
+    ffprintf(rp.output, "%.2lf, ", IP_duration.count());
     printf("IP duration time: %lf seconds\n", IP_duration.count());
     chrono::duration<double> duration = chrono::steady_clock::now() - start;
-    printf("Time elapsed: %lf seconds\n", duration.count()); // TODO use gurobi Runtime model attr
+    printf("Total time elapsed: %lf seconds\n", duration.count());
+    ffprintf(rp.output, "%.2lf, ", duration.count());
     if (cb)
     {
       printf("Number of callbacks: %d\n", cb->numCallbacks);
       printf("Time in callbacks: %lf seconds\n", cb->callbackTime);
       printf("Number of lazy constraints generated: %d\n", cb->numLazyCuts);
+      ffprintf(rp.output, "%d, %.2lf, %d, ", cb->numCallbacks, cb->callbackTime, cb->numLazyCuts);
       delete cb;
-    }
-
-#ifdef DO_BATCH_OUTPUT
-
-    printf("qwerky567: %s, %d, %d, %d, %d, %.2lf", rp.state, k, g->nr_nodes, L, U, duration.count());
+    } else ffprintf(rp.output, "0, 0.0, 0, ");
 
     // output overtly
     int max_pv = population[0];
@@ -236,11 +239,10 @@ int main(int argc, char *argv[])
       max_pv = max(max_pv, pv);
 
 
-    printf(",%.2lf", static_cast<double>(max_pv) / static_cast<double>(U));
+    ffprintf(rp.output, "%.2lf, ", static_cast<double>(max_pv) / static_cast<double>(U));
 
-    // will remain temporary for script run
     if (model.get(GRB_IntAttr_Status) == 3) // infeasible
-      printf(",infeasible,,");
+      ffprintf(rp.output, "infeasible, 0.0, 0.0, ");
     else {
 
       double objval = model.get(GRB_DoubleAttr_ObjVal);
@@ -254,28 +256,19 @@ int main(int argc, char *argv[])
         objval = 0.;
       }
 
-      printf(", %.2lf, %.2lf, %.2lf", objval, mipgap, objbound);
+      ffprintf(rp.output, "%.2lf, %.2lf, %.2lf, ", objval, mipgap, objbound);
     }
 
     long nodecount = static_cast<long>(model.get(GRB_DoubleAttr_NodeCount));
+    ffprintf(rp.output, "%ld, ", nodecount);
 
-    int num_callbacks = 0;
-    double time_callbacks = 0.;
-    int num_lazy = 0;
-    if (cb) {
-      num_callbacks = cb->numCallbacks;
-      time_callbacks = cb->callbackTime;
-      num_lazy = cb->numLazyCuts;
-    }
-    // state, k n l u time obj mipgap objbound nodes callback x3
-    printf(", %ld, %d, %.2lf, %d\n", nodecount, num_callbacks, time_callbacks, num_lazy);
-
-    // will remain temporary for script run
-    //if(model.get(GRB_IntAttr_SolCount) > 0)
+    if(model.get(GRB_IntAttr_SolCount) > 0)
+      ffprintf(rp.output, "Y");
+    else
+      ffprintf(rp.output, "N");
     // printf("qwerky567: sol: L = %.4lf, U = %.4lf\n", x[g->nr_nodes][0].get(GRB_DoubleAttr_X), x[g->nr_nodes][1].get(GRB_DoubleAttr_X));
     //else
     // printf("qwerly567: sol: no incumbent solution found!\n");
-#endif
 
     if (model.get(GRB_IntAttr_Status) != 3) {
       vector<int> sol;
@@ -299,7 +292,8 @@ int main(int argc, char *argv[])
     printf("Exception during optimization\n");
   }
 
-
+  ffprintf(rp.output, "\n");
+  fclose(rp.output);
   delete g;
   return 0;
 }
