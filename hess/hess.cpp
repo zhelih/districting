@@ -299,7 +299,7 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
       for (int i = 0; i < k; ++i)
         centers[i] = allNodes[i];
 
-      double iterUB = INFINITY; // the best UB found in this iteration (iter)
+      double iterUB = MYINFINITY; // the best UB found in this iteration (iter)
       double oldIterUB;     // the UB found in the previous iteration
       for (int i = 0; i < g->nr_nodes; ++i) // reset vector for this iteration's heuristic solution 
         iterHeuristicSolution[i] = -1;
@@ -366,7 +366,7 @@ vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vect
 
             // find best center of this district
             int bestCenter = -1;
-            double bestCost = INFINITY;
+            double bestCost = MYINFINITY;
 
             for (int i = 0; i < district.size(); ++i)
             {

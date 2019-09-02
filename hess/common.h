@@ -47,8 +47,7 @@ struct pair_hash {
 #ifndef sign
 #define sign(x) (((x)>0)?1:((x)==0)?0:(-1))
 #endif
-#ifndef INFINITY
-#define INFINITY 1e20
-#endif
+
+#define MYINFINITY 1e20
 
 #endif

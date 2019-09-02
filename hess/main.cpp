@@ -103,19 +103,22 @@ int main(int argc, char *argv[])
   auto start = chrono::steady_clock::now();
 
   // apply Lagrangian 
-  vector< vector<double> > LB1(g->nr_nodes, vector<double>(g->nr_nodes, -INFINITY)); // LB1[i][j] is a lower bound on problem objective if we fix x[i][j] = 1
+  vector< vector<double> > LB1(g->nr_nodes, vector<double>(g->nr_nodes, -MYINFINITY)); // LB1[i][j] is a lower bound on problem objective if we fix x[i][j] = 1
   auto lagrange_start = chrono::steady_clock::now();
   double LB = solveLagrangian(g, w, population, L, U, k, LB1, ralg_hot_start, ralg_hot_start_fname, rp, exploit_contiguity);// lower bound on problem objective, coming from lagrangian
   chrono::duration<double> lagrange_duration = chrono::steady_clock::now() - lagrange_start;
   ffprintf(rp.output, "%.2lf, %.2lf, ", LB, lagrange_duration.count());
 
+  auto dump_maybe_inf = [&rp](double val) { if (fabs(val-MYINFINITY) <= 1.) ffprintf(rp.output, "inf, "); else ffprintf(rp.output, "%.2lf, ", val); };
+
   // run a heuristic
-  double UB = INFINITY;
+  double UB = MYINFINITY;
   int maxIterations = 10;   // 10 iterations is often sufficient
   auto heuristic_start = chrono::steady_clock::now();
   vector<int> heuristicSolution = HessHeuristic(g, w, population, L, U, k, UB, maxIterations, false);
   chrono::duration<double> heuristic_duration = chrono::steady_clock::now() - heuristic_start;
-  ffprintf(rp.output, "%.2lf, %.2lf, ", UB, heuristic_duration.count());
+  dump_maybe_inf(UB);
+  ffprintf(rp.output, "%.2lf, ", heuristic_duration.count());
   printf("Best solution after %d of HessHeuristic is %.2lf\n", maxIterations, UB);
 
   // run local search
@@ -123,16 +126,18 @@ int main(int argc, char *argv[])
   bool ls_ok;
   ls_ok = LocalSearch(g, w, population, L, U, k, heuristicSolution, UB);
   chrono::duration<double> LS_duration = chrono::steady_clock::now() - LS_start;
-  ffprintf(rp.output, "%.2lf, %.2lf, ", UB, LS_duration.count());
+  dump_maybe_inf(UB);
+  ffprintf(rp.output, "%.2lf, ", LS_duration.count());
   printf("Best solution after local search is %.2lf\n", UB);
 
   if (arg_model != "hess" && ls_ok)  // solve contiguity-constrained problem, restricted to centers from heuristicSolution
   {
-    UB = INFINITY;
+    UB = MYINFINITY;
     auto contiguity_start = chrono::steady_clock::now();
     ContiguityHeuristic(heuristicSolution, g, w, population, L, U, k, UB, "shir"); // arg_model);
     chrono::duration<double> contiguity_duration = chrono::steady_clock::now() - contiguity_start;
-    ffprintf(rp.output, "%.2lf, %.2lf, ", UB, contiguity_duration.count());
+    dump_maybe_inf(UB);
+    ffprintf(rp.output, "%.2lf, ", contiguity_duration.count());
   } else ffprintf(rp.output, "NA, NA, ");
 
   // determine which variables can be fixed

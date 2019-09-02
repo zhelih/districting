@@ -14,7 +14,7 @@
 double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<int> &population, int L, int U, int k, 
   vector<vector<double>>& LB1, bool ralg_hot_start, const char* ralg_hot_start_fname, const run_params& rp, bool exploit_contiguity)
 {
-  double LB = -INFINITY;
+  double LB = -MYINFINITY;
 
   vector<double> W(g->nr_nodes, 0);
   vector<vector<double>> w_hat(g->nr_nodes, vector<double>(g->nr_nodes));
@@ -64,8 +64,8 @@ void update_LB(const vector<double>& W, const vector<bool>& currentCenters, doub
   const vector<vector<double>> &w_hat, vector< vector<double> > &LB1)
 {
   int n = currentCenters.size();
-  double maxW = -INFINITY;
-  double minW = INFINITY;
+  double maxW = -MYINFINITY;
+  double minW = MYINFINITY;
 
   // determine values for minW and maxW
   for (int i = 0; i < n; ++i)
@@ -81,7 +81,7 @@ void update_LB(const vector<double>& W, const vector<bool>& currentCenters, doub
   {
     if (!currentCenters[j])
     {
-      //if (maxW == -INFINITY) continue;
+      //if (maxW == -MYINFINITY) continue;
       LB1[j][j] = mymax(LB1[j][j], f_val + W[j] - maxW);
       for (int i = 0; i < n; ++i)
       {
@@ -104,7 +104,7 @@ void update_LB_contiguity(graph* g, const vector<double>& W, const vector<bool>&
   const vector<vector<double>> &w_hat, vector< vector<double> > &LB1)
 {
   int n = currentCenters.size();
-  double maxW = -INFINITY;
+  double maxW = -MYINFINITY;
 
   // determine value for maxW
   for (int i = 0; i < n; ++i)
