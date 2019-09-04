@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
   const char* ralg_hot_start_fname = (rp.ralg_hot_start.empty() ? nullptr : rp.ralg_hot_start.c_str());
 
   // read inputs
-  graph* g = 0;
+  graph* g = nullptr;
   vector<vector<int> > dist;
   vector<int> population;
   if (read_input_data(rp.dimacs_file.c_str(), rp.distance_file.c_str(), rp.population_file.c_str(), g, dist, population))
@@ -88,6 +88,8 @@ int main(int argc, char *argv[])
     total_pop += p;
   printf("Model input: total population = %ld\n", total_pop);
 
+  int nr_nodes = g->nr_nodes;
+
   string arg_model = rp.model;
 
   bool exploit_contiguity = false;
@@ -95,15 +97,15 @@ int main(int argc, char *argv[])
     exploit_contiguity = true;
 
   // set objective function coefficients
-  vector<vector<double>> w(g->nr_nodes, vector<double>(g->nr_nodes)); // this is the weight matrix in the objective function
-  for (int i = 0; i < g->nr_nodes; i++)
-    for (int j = 0; j < g->nr_nodes; j++)
+  vector<vector<double>> w(nr_nodes, vector<double>(nr_nodes)); // this is the weight matrix in the objective function
+  for (int i = 0; i < nr_nodes; i++)
+    for (int j = 0; j < nr_nodes; j++)
       w[i][j] = get_objective_coefficient(dist, population, i, j);
 
   auto start = chrono::steady_clock::now();
 
   // apply Lagrangian 
-  vector< vector<double> > LB1(g->nr_nodes, vector<double>(g->nr_nodes, -MYINFINITY)); // LB1[i][j] is a lower bound on problem objective if we fix x[i][j] = 1
+  vector< vector<double> > LB1(nr_nodes, vector<double>(nr_nodes, -MYINFINITY)); // LB1[i][j] is a lower bound on problem objective if we fix x[i][j] = 1
   auto lagrange_start = chrono::steady_clock::now();
   double LB = solveLagrangian(g, w, population, L, U, k, LB1, ralg_hot_start, ralg_hot_start_fname, rp, exploit_contiguity);// lower bound on problem objective, coming from lagrangian
   chrono::duration<double> lagrange_duration = chrono::steady_clock::now() - lagrange_start;
@@ -141,10 +143,10 @@ int main(int argc, char *argv[])
   } else ffprintf(rp.output, "n/a, n/a, ");
 
   // determine which variables can be fixed
-  vector<vector<bool>> F0(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_0
-  vector<vector<bool>> F1(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_1
-  for (int i = 0; i < g->nr_nodes; ++i)
-    for (int j = 0; j < g->nr_nodes; ++j)
+  vector<vector<bool>> F0(nr_nodes, vector<bool>(nr_nodes, false)); // define matrix F_0
+  vector<vector<bool>> F1(nr_nodes, vector<bool>(nr_nodes, false)); // define matrix F_1
+  for (int i = 0; i < nr_nodes; ++i)
+    for (int j = 0; j < nr_nodes; ++j)
       if (LB1[i][j] > UB + VarFixingEpsilon) F0[i][j] = true;
 
   // report the number of fixings
@@ -152,10 +154,10 @@ int main(int argc, char *argv[])
   int numFixedOne = 0;
   int numUnfixed = 0;
   int numCentersLeft = 0;
-  for (int i = 0; i < g->nr_nodes; ++i)
+  for (int i = 0; i < nr_nodes; ++i)
   {
     if (!F0[i][i]) numCentersLeft++;
-    for (int j = 0; j < g->nr_nodes; ++j)
+    for (int j = 0; j < nr_nodes; ++j)
     {
       if (F0[i][j]) numFixedZero++;
       else if (F1[i][j]) numFixedOne++;
@@ -167,7 +169,7 @@ int main(int argc, char *argv[])
   printf("Number of variables fixed to one  = %d\n", numFixedOne);
   printf("Number of variables not fixed     = %d\n", numUnfixed);
   printf("Number of centers left            = %d\n", numCentersLeft);
-  double perc_var_fixed = (double)(g->nr_nodes*g->nr_nodes - numUnfixed) / (g->nr_nodes*g->nr_nodes);
+  double perc_var_fixed = (double)(nr_nodes*nr_nodes - numUnfixed) / (nr_nodes*nr_nodes);
   printf("Percentage of vars fixed = %.2lf\n", perc_var_fixed);
   ffprintf(rp.output, "%.2lf, ", perc_var_fixed);
 
@@ -182,11 +184,11 @@ int main(int argc, char *argv[])
     p = build_hess(&model, g, w, population, L, U, k, F0, F1);
 
     // push GUROBI to branch over clusterheads
-    for (int i = 0; i < g->nr_nodes; ++i)
+    for (int i = 0; i < nr_nodes; ++i)
       if (IS_X(i, i))
         X_V(i, i).set(GRB_IntAttr_BranchPriority, 1);
 
-    HessCallback* cb = 0;
+    HessCallback* cb = nullptr;
 
     if (arg_model == "shir")
       build_shir(&model, p, g);
@@ -201,6 +203,13 @@ int main(int argc, char *argv[])
       exit(1);
     }
 
+    // preserve memory here
+    if(!cb)
+    {
+      delete g;
+      g = nullptr;
+    }
+
     //TODO change user-interactive?
     model.set(GRB_DoubleParam_TimeLimit, 3600.); // 1 hour
     //model.set(GRB_IntParam_Threads, 10); // limit to 10 threads
@@ -210,9 +219,9 @@ int main(int argc, char *argv[])
 
     // provide IP warm start 
     if(ls_ok)
-      for (int i = 0; i < g->nr_nodes; ++i)
+      for (int i = 0; i < nr_nodes; ++i)
       {
-        for (int j = 0; j < g->nr_nodes; ++j)
+        for (int j = 0; j < nr_nodes; ++j)
           if (IS_X(i, j))
             X_V(i, j).set(GRB_DoubleAttr_Start, 0);
 
@@ -272,18 +281,12 @@ int main(int argc, char *argv[])
       ffprintf(rp.output, "Y");
     else
       ffprintf(rp.output, "N");
-    // printf("qwerky567: sol: L = %.4lf, U = %.4lf\n", x[g->nr_nodes][0].get(GRB_DoubleAttr_X), x[g->nr_nodes][1].get(GRB_DoubleAttr_X));
-    //else
-    // printf("qwerly567: sol: no incumbent solution found!\n");
 
     if (model.get(GRB_IntAttr_Status) != 3) {
       vector<int> sol;
-      translate_solution(p, sol, g->nr_nodes);
+      translate_solution(p, sol, nr_nodes);
       string soln_fn = string(rp.state) + "_" + arg_model + ".sol";
-      int len = soln_fn.length() + 1;
-      char* char_array = new char[len];
-      strcpy(char_array, soln_fn.c_str());
-      printf_solution(sol, char_array);
+      printf_solution(sol, soln_fn.c_str());
     }
 
   }
@@ -300,6 +303,6 @@ int main(int argc, char *argv[])
 
   ffprintf(rp.output, "\n");
   fclose(rp.output);
-  delete g;
+  if(g) delete g;
   return 0;
 }
