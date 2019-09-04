@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
       max_pv = max(max_pv, pv);
 
     // free population and w
-    dealloc_vec(population, "population");
+    if(!cb) dealloc_vec(population, "population");
     dealloc_vec(w, "w");
 
     //optimize the model
