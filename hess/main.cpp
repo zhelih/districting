@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
   chrono::duration<double> lagrange_duration = chrono::steady_clock::now() - lagrange_start;
   ffprintf(rp.output, "%.2lf, %.2lf, ", LB, lagrange_duration.count());
 
-  auto dump_maybe_inf = [&rp](double val) { if (fabs(val-MYINFINITY) <= 1.) ffprintf(rp.output, "inf, "); else ffprintf(rp.output, "%.2lf, ", val); };
+  auto dump_maybe_inf = [&rp](double val) { if (fabs(val-MYINFINITY) <= 1.) ffprintf(rp.output, "infinity, "); else ffprintf(rp.output, "%.2lf, ", val); };
 
   // run a heuristic
   double UB = MYINFINITY;
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
     chrono::duration<double> contiguity_duration = chrono::steady_clock::now() - contiguity_start;
     dump_maybe_inf(UB);
     ffprintf(rp.output, "%.2lf, ", contiguity_duration.count());
-  } else ffprintf(rp.output, "NA, NA, ");
+  } else ffprintf(rp.output, "n/a, n/a, ");
 
   // determine which variables can be fixed
   vector<vector<bool>> F0(g->nr_nodes, vector<bool>(g->nr_nodes, false)); // define matrix F_0
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
       printf("Number of lazy constraints generated: %d\n", cb->numLazyCuts);
       ffprintf(rp.output, "%d, %.2lf, %d, ", cb->numCallbacks, cb->callbackTime, cb->numLazyCuts);
       delete cb;
-    } else ffprintf(rp.output, "0, 0.0, 0, ");
+    } else ffprintf(rp.output, "n/a, n/a, n/a, ");
 
     // output overtly
     int max_pv = population[0];
@@ -247,21 +247,22 @@ int main(int argc, char *argv[])
     ffprintf(rp.output, "%.2lf, ", static_cast<double>(max_pv) / static_cast<double>(U));
 
     if (model.get(GRB_IntAttr_Status) == 3) // infeasible
-      ffprintf(rp.output, "infeasible, 0.0, 0.0, ");
+      ffprintf(rp.output, "infeasible, , , ");
     else {
 
-      double objval = model.get(GRB_DoubleAttr_ObjVal);
-      double mipgap = model.get(GRB_DoubleAttr_MIPGap)*100.;
       double objbound = model.get(GRB_DoubleAttr_ObjBound);
 
       // no incumbent solution was found, these values do no make sense
       if (model.get(GRB_IntAttr_SolCount) == 0)
+        ffprintf(rp.output, "?, ?, %.2lf, ", objbound);
+      else
       {
-        mipgap = 100.;
-        objval = 0.;
+        double objval = model.get(GRB_DoubleAttr_ObjVal);
+        double mipgap = model.get(GRB_DoubleAttr_MIPGap)*100.;
+        ffprintf(rp.output, "%.2lf, %.2lf, ", objval, mipgap);
       }
 
-      ffprintf(rp.output, "%.2lf, %.2lf, %.2lf, ", objval, mipgap, objbound);
+      ffprintf(rp.output, "%.2lf, ", objbound);
     }
 
     long nodecount = static_cast<long>(model.get(GRB_DoubleAttr_NodeCount));
