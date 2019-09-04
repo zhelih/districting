@@ -16,8 +16,15 @@ const double VarFixingEpsilon = 0.00001;
 using namespace std;
 extern const char* gitversion;
 
-#define DO_BATCH_OUTPUT
-
+template <typename T>
+void dealloc_vec(vector<T>& v, const char* name)
+{
+  v.clear(); v.shrink_to_fit();
+  if(v.capacity() > 0)
+  {
+    printf("Failed to release %s memory, %ld remaining.\n", name, v.capacity());
+  }
+}
 int main(int argc, char *argv[])
 {
   printf("Districting, build %s\n", gitversion);
@@ -102,12 +109,15 @@ int main(int argc, char *argv[])
     for (int j = 0; j < nr_nodes; j++)
       w[i][j] = get_objective_coefficient(dist, population, i, j);
 
+  // dist is not used anymore
+  dealloc_vec(dist, "dist");
+
   auto start = chrono::steady_clock::now();
 
   // apply Lagrangian 
   vector< vector<double> > LB1(nr_nodes, vector<double>(nr_nodes, -MYINFINITY)); // LB1[i][j] is a lower bound on problem objective if we fix x[i][j] = 1
   auto lagrange_start = chrono::steady_clock::now();
-  double LB = solveLagrangian(g, w, population, L, U, k, LB1, ralg_hot_start, ralg_hot_start_fname, rp, exploit_contiguity);// lower bound on problem objective, coming from lagrangian
+  double LB = solveLagrangian(g, w, population, L, U, k, LB1, ralg_hot_start, ralg_hot_start_fname, rp, exploit_contiguity); // lower bound on problem objective, coming from lagrangian
   chrono::duration<double> lagrange_duration = chrono::steady_clock::now() - lagrange_start;
   ffprintf(rp.output, "%.2lf, %.2lf, ", LB, lagrange_duration.count());
 
@@ -125,8 +135,7 @@ int main(int argc, char *argv[])
 
   // run local search
   auto LS_start = chrono::steady_clock::now();
-  bool ls_ok;
-  ls_ok = LocalSearch(g, w, population, L, U, k, heuristicSolution, UB);
+  bool ls_ok = LocalSearch(g, w, population, L, U, k, heuristicSolution, UB);
   chrono::duration<double> LS_duration = chrono::steady_clock::now() - LS_start;
   dump_maybe_inf(UB);
   ffprintf(rp.output, "%.2lf, ", LS_duration.count());
@@ -148,7 +157,8 @@ int main(int argc, char *argv[])
   for (int i = 0; i < nr_nodes; ++i)
     for (int j = 0; j < nr_nodes; ++j)
       if (LB1[i][j] > UB + VarFixingEpsilon) F0[i][j] = true;
-
+  // LB1 is not used anymore, release memory
+  dealloc_vec(LB1, "LB1");
   // report the number of fixings
   int numFixedZero = 0;
   int numFixedOne = 0;
@@ -229,6 +239,15 @@ int main(int argc, char *argv[])
           X_V(i, heuristicSolution[i]).set(GRB_DoubleAttr_Start, 1);
       }
 
+    // calculate overtly
+    int max_pv = population[0];
+    for (int pv : population)
+      max_pv = max(max_pv, pv);
+
+    // free population and w
+    dealloc_vec(population, "population");
+    dealloc_vec(w, "w");
+
     //optimize the model
     auto IP_start = chrono::steady_clock::now();
     model.optimize();
@@ -246,12 +265,6 @@ int main(int argc, char *argv[])
       ffprintf(rp.output, "%d, %.2lf, %d, ", cb->numCallbacks, cb->callbackTime, cb->numLazyCuts);
       delete cb;
     } else ffprintf(rp.output, "n/a, n/a, n/a, ");
-
-    // output overtly
-    int max_pv = population[0];
-    for (int pv : population)
-      max_pv = max(max_pv, pv);
-
 
     ffprintf(rp.output, "%.2lf, ", static_cast<double>(max_pv) / static_cast<double>(U));
 
