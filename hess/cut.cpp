@@ -6,11 +6,6 @@
 #include <unordered_set>
 #include <queue> // priority queue
 
-#ifndef INT_MAX
-#include <limits>
-#define INT_MAX (std::numeric_limits<int>::max())
-#endif
-
 const bool do_reverse_nb = true; // controls whether cut C is found near a (true) or near b (false)
 
 class CutCallback : public HessCallback
@@ -146,7 +141,7 @@ void CutCallback::callback()
                   // priority queue Dijkstra
                   // priority queue pair is <weight, vertex>, min weight on top
                   priority_queue< pair<int, int>, vector <pair<int, int>>, greater<pair<int, int>> > pq;
-                  fill(dist.begin(), dist.end(), INT_MAX);
+                  fill(dist.begin(), dist.end(), MYINFINITY);
                   const vector<int>& p = population; // alias
                   pq.push(make_pair(p[a], a));
                   dist[a] = p[a];
@@ -213,7 +208,7 @@ HessCallback* build_lcut(GRBModel* model, hess_params& p, graph* g, const vector
   {
     // compute population-weighted distance from a to all other nodes.
     priority_queue< pair<int, int>, vector <pair<int, int>>, greater<pair<int, int>> > pq;
-    fill(dist.begin(), dist.end(), INT_MAX);
+    fill(dist.begin(), dist.end(), MYINFINITY);
     pq.push(make_pair(population[b], b));
     dist[b] = population[b];
     while (!pq.empty())
