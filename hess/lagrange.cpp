@@ -167,9 +167,9 @@ void solveInnerProblem(graph* g, const double* multipliers, int L, int U, int k,
     for (int j = 0; j < g->nr_nodes; ++j)
     {
       // w[i][i] == 0?
-      w_hat[i][j] = w[i][j] - alpha[i] - abs(lambda[j]) * pOverL + abs(upsilon[j]) * pOverU;
+      w_hat[i][j] = w[i][j] - alpha[i] - myabs(lambda[j]) * pOverL + myabs(upsilon[j]) * pOverU;
       if (i == j)
-        w_hat[i][j] += abs(lambda[j]) - abs(upsilon[j]);
+        w_hat[i][j] += myabs(lambda[j]) - myabs(upsilon[j]);
     }
   }
 
