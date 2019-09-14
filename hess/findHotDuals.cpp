@@ -11,11 +11,6 @@
 
 using namespace std;
 
-//double get_objective_coefficient(const vector<vector<int>>& dist, const vector<int>& population, int i, int j)
-//{
-//    return (static_cast<double>(dist[i][j]) / 1000.) * (static_cast<double>(dist[i][j]) / 1000.) * static_cast<double>(population[i]);
-//}
-
 hess_params findHotDual(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, cvv& F0, cvv& F1)
 {
 
