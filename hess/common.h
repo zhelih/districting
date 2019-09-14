@@ -41,7 +41,12 @@ struct pair_hash {
 
 #define mymin(a,b) (((a)<(b))?(a):(b))
 #define mymax(a,b) (((a)>(b))?(a):(b))
-#define myabs(x) (((x)>0)?(x):(-(x)))
+#ifndef abs
+#define abs(x) (((x)>0)?(x):(-(x)))
+#endif
+#ifndef sign
+#define sign(x) (((x)>0)?1:((x)==0)?0:(-1))
+#endif
 
 #define MYINFINITY 1e20
 

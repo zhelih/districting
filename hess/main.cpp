@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
   chrono::duration<double> lagrange_duration = chrono::steady_clock::now() - lagrange_start;
   ffprintf(rp.output, "%.2lf, %.2lf, ", LB, lagrange_duration.count());
 
-  auto dump_maybe_inf = [&rp](double val) { if (myabs(val-MYINFINITY) <= 1.) ffprintf(rp.output, "infinity, "); else ffprintf(rp.output, "%.2lf, ", val); };
+  auto dump_maybe_inf = [&rp](double val) { if (fabs(val-MYINFINITY) <= 1.) ffprintf(rp.output, "infinity, "); else ffprintf(rp.output, "%.2lf, ", val); };
 
   // run a heuristic
   double UB = MYINFINITY;
