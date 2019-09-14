@@ -14,7 +14,7 @@
 const double VarFixingEpsilon = 0.00001;
 
 using namespace std;
-extern const char* gitversion;
+//extern const char* gitversion;
 
 template <typename T>
 void dealloc_vec(vector<T>& v, const char* name)
@@ -27,7 +27,7 @@ void dealloc_vec(vector<T>& v, const char* name)
 }
 int main(int argc, char *argv[])
 {
-  printf("Districting, build %s\n", gitversion);
+  //printf("Districting, build %s\n", gitversion);
   if (argc < 2) {
     printf("Usage: %s <config> [state [ralg_hot_start]]\n\
   Available models:\n\
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
       if (LB1[i][j] > UB + VarFixingEpsilon) F0[i][j] = true;
   // LB1 is not used anymore, release memory
   dealloc_vec(LB1, "LB1");
-  // report the number of fixings
+  //report the number of fixings
   int numFixedZero = 0;
   int numFixedOne = 0;
   int numUnfixed = 0;
@@ -191,7 +191,10 @@ int main(int argc, char *argv[])
 
     // get incumbent solution using centers from lagrangian
     hess_params p;
-    p = build_hess(&model, g, w, population, L, U, k, F0, F1);
+    if (arg_model == "hotDual")
+        p = findHotDual(&model, g, w, population, L, U, k, F0, F1);
+    else
+        p = build_hess(&model, g, w, population, L, U, k, F0, F1);
 
     // push GUROBI to branch over clusterheads
     for (int i = 0; i < nr_nodes; ++i)
@@ -208,7 +211,7 @@ int main(int argc, char *argv[])
       cb = build_cut(&model, p, g, population);
     else if (arg_model == "lcut")
       cb = build_lcut(&model, p, g, population, U);
-    else if (arg_model != "hess") {
+    else if (arg_model != "hess" && arg_model != "hotDual") {
       printf("ERROR: Unknown model : %s\n", arg_model.c_str());
       exit(1);
     }
@@ -220,12 +223,21 @@ int main(int argc, char *argv[])
       g = nullptr;
     }
 
-    //TODO change user-interactive?
-    model.set(GRB_DoubleParam_TimeLimit, 3600.); // 1 hour
-    //model.set(GRB_IntParam_Threads, 10); // limit to 10 threads
-    model.set(GRB_DoubleParam_NodefileStart, 10); // 10 GB
-    model.set(GRB_IntParam_Method, 3);  // use concurrent method to solve root LP
-    model.set(GRB_DoubleParam_MIPGap, 0);  // force gurobi to prove optimality
+    if (arg_model == "hotDual")
+    {
+        model.set(GRB_IntParam_Method, 2);
+        model.set(GRB_IntParam_OutputFlag, 0);
+        model.set(GRB_IntParam_Crossover, 0);
+    }
+    else
+    {
+        //TODO change user-interactive?
+        model.set(GRB_DoubleParam_TimeLimit, 3600.); // 1 hour
+        //model.set(GRB_IntParam_Threads, 10); // limit to 10 threads
+        model.set(GRB_DoubleParam_NodefileStart, 10); // 10 GB
+        model.set(GRB_IntParam_Method, 3);  // use concurrent method to solve root LP
+        model.set(GRB_DoubleParam_MIPGap, 0);  // force gurobi to prove optimality
+    }
 
     // provide IP warm start 
     if(ls_ok)
@@ -249,8 +261,41 @@ int main(int argc, char *argv[])
     dealloc_vec(w, "w");
 
     //optimize the model
-    auto IP_start = chrono::steady_clock::now();
+    auto IP_start = chrono::steady_clock::now();  
+
     model.optimize();
+
+    if (arg_model == "hotDual")
+    {
+        if (model.get(GRB_IntAttr_Status) == 3) // infeasible
+            cerr << "Infeasible!" << endl;
+
+        //define constraints
+        GRBConstr *c = 0;
+        c = model.getConstrs();
+
+        int i;
+
+        //create a file
+        FILE* f;
+        f = fopen("dualHot.txt", "w");
+
+        //print dual vars in file
+        
+        for (int i = 0; i < nr_nodes; ++i)
+            fprintf(f, "%.6lf\n", c[i].get(GRB_DoubleAttr_Pi));
+        
+        for (; i < 2 * nr_nodes; ++i)
+            fprintf(f, "%.6lf\n", L * c[i].get(GRB_DoubleAttr_Pi));
+
+        for (; i < 3 * nr_nodes; ++i)
+            fprintf(f, "%.6lf\n", U * c[i].get(GRB_DoubleAttr_Pi));
+ 
+        chrono::duration<double> hotDual_duration = chrono::steady_clock::now() - IP_start;
+        printf("hotDual duration time: %lf seconds\n", hotDual_duration.count());
+        exit(1);
+    }
+    
     chrono::duration<double> IP_duration = chrono::steady_clock::now() - IP_start;
     ffprintf(rp.output, "%.2lf, ", IP_duration.count());
     printf("IP duration time: %lf seconds\n", IP_duration.count());

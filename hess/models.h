@@ -14,6 +14,9 @@ typedef const vector<vector<bool>> cvv;
 //auxilliary procedure
 double get_objective_coefficient(const vector<vector<int>>& dist, const vector<int>& population, int i, int j);
 
+//find dual vars of hess model for Lagrangian hot start
+hess_params findHotDual(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, cvv& F0, cvv& F1);
+
 // build hess model and return x variables
 hess_params build_hess(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, cvv& F0, cvv& F1);
 // add MCF constraints to model with hess variables x
