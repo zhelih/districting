@@ -278,7 +278,8 @@ int main(int argc, char *argv[])
 
         //create a file
         FILE* f;
-        f = fopen("dualHot.txt", "w");
+        string dualHot_fn = string(rp.state) + "_" + arg_model + ".hot";
+        f = fopen(dualHot_fn.c_str(), "w");
 
         //print dual vars in file
         
