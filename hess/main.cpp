@@ -194,8 +194,13 @@ int main(int argc, char *argv[])
     if (arg_model == "hotDual")
     {
         for (int i = 0; i < nr_nodes; ++i)
+        {
             for (int j = 0; j < nr_nodes; ++j)
+            {
                 F0[i][j] = false;
+                F1[i][j] = false;
+            }
+        }
         p = findHotDual(&model, g, w, population, L, U, k, F0, F1);
     }        
     else
