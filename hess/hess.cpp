@@ -187,87 +187,182 @@ hess_params build_hess_restricted(GRBModel* model, graph* g, const vector<vector
 }
 
 void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<vector<double> > &w,
-  const vector<int> &population, int L, int U, int k, double &UB, string arg_model)
+    const vector<int> &population, int L, int U, int k, double &UB, string arg_model)
 {
-  vector<int> centers(k); 
-  int pos = 0;
-  for (int i = 0; i < g->nr_nodes; ++i)
-  {
-    if (heuristicSolution[i] == i)
+    vector<int> centers;
+
+    // find centers
+    for (int i = 0; i < g->nr_nodes; ++i)
+        if (heuristicSolution[i] == i)
+            centers.push_back(i);
+
+    // this is B
+    vector<vector<int>> initialAssignments(k);
+
+    // this is inerior of B
+    vector<vector<int>> interior(k);
+
+    for (int j = 0; j < k; ++j)
     {
-      centers[pos] = i;
-      pos++;
-      cout << "i=" << i << endl;
+        vector<bool> assignToCenterj(g->nr_nodes, false);
+        for (int i = 0; i < g->nr_nodes; ++i)
+        {
+            if (heuristicSolution[i] == centers[j])
+                assignToCenterj[i] = true;
+        }
+
+        // run DFS to find connected a component with center j 
+        vector<int> s; // vector for the DFS
+        vector<bool> visited(g->nr_nodes, false);
+        initialAssignments[j].push_back(centers[j]);
+        s.clear(); s.push_back(centers[j]); visited[centers[j]] = true;
+        while (!s.empty())
+        {
+            int cur = s.back(); s.pop_back();
+            for (int nb_cur : g->nb(cur))
+                if (assignToCenterj[nb_cur]) // if nb_cur is in C_b
+                {
+                    if (!visited[nb_cur])
+                    {
+                        visited[nb_cur] = true;
+                        s.push_back(nb_cur);
+                        initialAssignments[j].push_back(nb_cur);
+                    }
+                }
+        }
+        // find interior vertices
+        for (int u = 0; u < initialAssignments[j].size(); ++u)
+        {
+            int i = initialAssignments[j][u];
+            int count = 0;
+            for (int nb_i : g->nb(i))
+            {
+                if (heuristicSolution[nb_i] == centers[j])
+                    count++;
+            }
+            if (count == g->nb(i).size())
+                interior[j].push_back(i);
+        }
     }
-  }
 
-  HessCallback* cb = nullptr;
+    HessCallback* cb = nullptr;
 
-  try {
-    GRBEnv env = GRBEnv();
-    GRBModel model = GRBModel(env);
-    model.set(GRB_DoubleParam_TimeLimit, 600.);
-    //model.set(GRB_IntParam_OutputFlag, 0);
+    try {
+        GRBEnv env = GRBEnv();
+        GRBModel model = GRBModel(env);
+        model.set(GRB_DoubleParam_TimeLimit, 3600.);
 
-    hess_params p = build_hess_restricted(&model, g, w, population, centers, L, U, k);
-    populate_hess_params(p, g, centers); // now just use X(i,j), F0, F1 and more importantly hashtable are properly set up
+        hess_params p = build_hess_restricted(&model, g, w, population, centers, L, U, k);
+        populate_hess_params(p, g, centers); // now just use X(i,j), F0, F1 and more importantly hashtable are properly set up
 
 
-    if (arg_model == "shir")
-      build_shir(&model, p, g);
-    else if (arg_model == "mcf")
-      build_mcf(&model, p, g);
-    else if (arg_model == "cut")
-      cb = build_cut(&model, p, g, population);
-    else if (arg_model == "lcut")
-      cb = build_lcut(&model, p, g, population, U);
-    else {
-      fprintf(stderr, "ERROR: Unknown contiguity model : %s\n", arg_model.c_str());
-      exit(1);
+        if (arg_model == "shir")
+            build_shir(&model, p, g);
+        else if (arg_model == "mcf")
+            build_mcf(&model, p, g);
+        else if (arg_model == "cut")
+            cb = build_cut(&model, p, g, population);
+        else if (arg_model == "lcut")
+            cb = build_lcut(&model, p, g, population, U);
+        else {
+            fprintf(stderr, "ERROR: Unknown contiguity model : %s\n", arg_model.c_str());
+            exit(1);
+        }
+
+        for (int i = 0; i < g->nr_nodes; ++i)
+        {
+            if (population[i] == 0)
+            {
+                int count = 0;
+                int last;
+                for (int j : g->nb(i))
+                {
+                    if (population[j] != 0)
+                    {
+                        for (int u : centers)
+                        {
+                            model.addConstr(X_V(j, u) <= X_V(i, u));
+                        }
+                        break;
+                    }
+                    count++;
+                    last = j;
+                }
+                if (count == g->nb(i).size())
+                {
+                    for (int u : centers)
+                    {
+                        model.addConstr(X_V(last, u) <= X_V(i, u));
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < k; ++i)
+        {
+            int v = centers[i];
+            X_V(v, v).set(GRB_DoubleAttr_LB, 1);
+        }
+
+        // start with initial assignments
+        for (int v = 0; v < initialAssignments.size(); ++v)
+        {
+            int j = centers[v];
+            for (int u = 0; u < initialAssignments[v].size(); ++u)
+            {
+                int i = initialAssignments[v][u];
+                X_V(i, j).set(GRB_DoubleAttr_Start, 1);
+            }
+        }
+
+        // fix interior vertices
+        for (int v = 0; v < interior.size(); ++v)
+        {
+            int j = centers[v];
+            for (int u = 0; u < interior[v].size(); ++u)
+            {
+                int i = interior[v][u];
+                X_V(i, j).set(GRB_DoubleAttr_LB, 1);
+            }
+        }
+
+        model.optimize();
+
+        if (model.get(GRB_IntAttr_Status) == 2 || model.get(GRB_IntAttr_Status) == 9) // model was solved to optimality (subject to tolerances), so update UB.
+        {
+            UB = model.get(GRB_DoubleAttr_ObjVal); // we get a warm start from previous round, so iterUB will only get better
+            cout << "  UB from ContiguityHeuristic restricted IP = " << UB << " using centers : ";
+            for (int i = 0; i < k; ++i)
+                cout << centers[i] << " ";
+            cout << endl;
+
+            for (int i = 0; i < g->nr_nodes; ++i)
+                for (int j = 0; j < g->nr_nodes; ++j)
+                    if (p.F0[i][j])
+                        continue;
+                    else if (p.F1[i][j] || X_V(i, j).get(GRB_DoubleAttr_X) > 0.5)
+                        heuristicSolution[i] = j;
+        }
     }
-    for (int i = 0; i < k; ++i)
-    {
-      int v = centers[i];
-      X_V(v,v).set(GRB_DoubleAttr_LB, 1);
+    catch (GRBException e) {
+        cout << "Error code = " << e.getErrorCode() << endl;
+        cout << e.getMessage() << endl;
     }
-    model.optimize();
-
-
-    if (model.get(GRB_IntAttr_Status) == 2 || model.get(GRB_IntAttr_Status) == 9) // model was solved to optimality (subject to tolerances), so update UB.
-    {
-      UB = model.get(GRB_DoubleAttr_ObjVal); // we get a warm start from previous round, so iterUB will only get better
-      cout << "  UB from ContiguityHeuristic restricted IP = " << UB << " using centers : ";
-      for (int i = 0; i < k; ++i)
-        cout << centers[i] << " ";
-      cout << endl;
-
-      for (int i = 0; i < g->nr_nodes; ++i)
-        for (int j = 0; j < g->nr_nodes; ++j)
-          if (p.F0[i][j])
-            continue;
-          else if (p.F1[i][j] || X_V(i, j).get(GRB_DoubleAttr_X) > 0.5)
-            heuristicSolution[i] = j;
+    catch (const char* msg) {
+        cout << "Exception with message : " << msg << endl;
     }
-  }
-  catch (GRBException e) {
-    cout << "Error code = " << e.getErrorCode() << endl;
-    cout << e.getMessage() << endl;
-  }
-  catch (const char* msg) {
-    cout << "Exception with message : " << msg << endl;
-  }
-  catch (...) {
-    cout << "Exception during optimization" << endl;
-  }
+    catch (...) {
+        cout << "Exception during optimization" << endl;
+    }
 
-  cout << "UB at end of ContiguityHeuristic = " << UB << endl;
-  double obj = 0;
-  for (int i = 0; i < g->nr_nodes; ++i)
-    obj += w[i][heuristicSolution[i]];
-  cout << "UB of (contiguous) heuristicSolution = " << obj << endl;
-  if (cb)
-    delete cb;
-  return;
+    cout << "UB at end of ContiguityHeuristic = " << UB << endl;
+    double obj = 0;
+    for (int i = 0; i < g->nr_nodes; ++i)
+        obj += w[i][heuristicSolution[i]];
+    cout << "UB of (contiguous) heuristicSolution = " << obj << endl;
+    if (cb)
+        delete cb;
+    return;
 }
 
 vector<int> HessHeuristic(graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, double &UB, int maxIterations, bool do_cuts)
