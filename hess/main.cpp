@@ -228,22 +228,13 @@ int main(int argc, char *argv[])
       g = nullptr;
     }
 
-    if (arg_model == "hotDual")
-    {
-        model.set(GRB_IntParam_Method, 2);
-        model.set(GRB_IntParam_OutputFlag, 0);
-        model.set(GRB_IntParam_Crossover, 0);
-    }
-    else
-    {
-        //TODO change user-interactive?
-        model.set(GRB_DoubleParam_TimeLimit, 3600.); // 1 hour
-        //model.set(GRB_IntParam_Threads, 10); // limit to 10 threads
-        model.set(GRB_DoubleParam_NodefileStart, 10); // 10 GB
-        model.set(GRB_IntParam_Method, 3);  // use concurrent method to solve root LP
-        model.set(GRB_DoubleParam_MIPGap, 0);  // force gurobi to prove optimality
-    }
-
+    //TODO change user-interactive?
+    model.set(GRB_DoubleParam_TimeLimit, 3600.); // 1 hour
+    //model.set(GRB_IntParam_Threads, 10); // limit to 10 threads
+    model.set(GRB_DoubleParam_NodefileStart, 10); // 10 GB
+    model.set(GRB_IntParam_Method, 3);  // use concurrent method to solve root LP
+    model.set(GRB_DoubleParam_MIPGap, 0);  // force gurobi to prove optimality
+   
     //provide IP warm start 
     if(ls_ok)
       for (int i = 0; i < nr_nodes; ++i)
@@ -269,38 +260,6 @@ int main(int argc, char *argv[])
     auto IP_start = chrono::steady_clock::now();  
 
     model.optimize();
-
-    if (arg_model == "hotDual")
-    {
-        if (model.get(GRB_IntAttr_Status) == 3) // infeasible
-            cerr << "Infeasible!" << endl;
-
-        //define constraints
-        GRBConstr *c = 0;
-        c = model.getConstrs();
-
-        int i;
-
-        //create a file
-        FILE* f;
-        string dualHot_fn = string(rp.state) + "_" + arg_model + ".hot";
-        f = fopen(dualHot_fn.c_str(), "w");
-
-        //print dual vars in file
-        
-        for (i = 0; i < nr_nodes; ++i)
-            fprintf(f, "%.6lf\n", c[i].get(GRB_DoubleAttr_Pi));
-        
-        for (; i < 2 * nr_nodes; ++i)
-            fprintf(f, "%.6lf\n", L * c[i].get(GRB_DoubleAttr_Pi));
-
-        for (; i < 3 * nr_nodes; ++i)
-            fprintf(f, "%.6lf\n", U * c[i].get(GRB_DoubleAttr_Pi));
- 
-        chrono::duration<double> hotDual_duration = chrono::steady_clock::now() - IP_start;
-        printf("hotDual duration time: %lf seconds\n", hotDual_duration.count());
-        exit(1);
-    }
     
     chrono::duration<double> IP_duration = chrono::steady_clock::now() - IP_start;
     ffprintf(rp.output, "%.2lf, ", IP_duration.count());
