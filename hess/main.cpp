@@ -191,15 +191,7 @@ int main(int argc, char *argv[])
 
     // get incumbent solution using centers from lagrangian
     hess_params p;
-    if (arg_model == "hotDual")
-    {
-        for (int i = 0; i < nr_nodes; ++i)
-            for (int j = 0; j < nr_nodes; ++j)
-                F0[i][j] = false;
-        p = findHotDual(&model, g, w, population, L, U, k, F0, F1);
-    }        
-    else
-        p = build_hess(&model, g, w, population, L, U, k, F0, F1);
+    p = build_hess(&model, g, w, population, L, U, k, F0, F1);
 
     // push GUROBI to branch over clusterheads
     for (int i = 0; i < nr_nodes; ++i)
