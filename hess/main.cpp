@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
       cb = build_cut(&model, p, g, population);
     else if (arg_model == "lcut")
       cb = build_lcut(&model, p, g, population, U);
-    else if (arg_model != "hess" && arg_model != "hotDual") {
+    else if (arg_model != "hess") {
       printf("ERROR: Unknown model : %s\n", arg_model.c_str());
       exit(1);
     }
