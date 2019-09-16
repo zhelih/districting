@@ -17,19 +17,13 @@ void find_LP_dual_solution(GRBModel* model, graph* g, run_params rp, const vecto
     int n = g->nr_nodes;
     hess_params p;
     p.n = n;
-    //p.F0 = F0; p.F1 = F1; // copy
 
     // hash variables
     int cur = 0;
     for (int i = 0; i < n; ++i)
-    {
         for (int j = 0; j < n; ++j)
-        {
-            //cerr << i << ", " << j << endl;
-            //if (!F0[i][j] && !F1[i][j])
             p.h[n*i + j] = cur++; //FIXME implicit reuse of the map (i,j) -> n*i+j
-        }            
-    }       
+     
 
     printf("Build hess : created %lu variables\n", p.h.size());
     int nr_var = static_cast<int>(p.h.size());
@@ -82,19 +76,14 @@ void find_LP_dual_solution(GRBModel* model, graph* g, run_params rp, const vecto
     // add contraints (e)
     for (int i = 0; i < n; ++i)
         for (int j = 0; j < n; ++j)
-            //if (i != j && !F0[i][j])
                 model->addConstr(X_V(i, j) <= X_V(j, j));
 
     model->update();
 
     model->set(GRB_IntParam_Method, 2);
-    model->set(GRB_IntParam_OutputFlag, 0);
     model->set(GRB_IntParam_Crossover, 0);
 
     model->optimize();
-
-    if (model->get(GRB_IntAttr_Status) == 3) // infeasible
-        cerr << "Infeasible!" << endl;
 
     //define constraints
     GRBConstr *c = 0;
@@ -104,18 +93,17 @@ void find_LP_dual_solution(GRBModel* model, graph* g, run_params rp, const vecto
 
     //create a file
     FILE* f;
-    string dualHot_fn = string(rp.state) + "_" + "hotDual" + ".hot";
+    string dualHot_fn = string(rp.state) + "_" + "LPdual" + ".hot";
     f = fopen(dualHot_fn.c_str(), "w");
 
     //print dual vars in file
-
     for (i = 0; i < n; ++i)
         fprintf(f, "%.6lf\n", c[i].get(GRB_DoubleAttr_Pi));
 
     for (; i < 2 * n; ++i)
-        fprintf(f, "%.6lf\n", L * c[i].get(GRB_DoubleAttr_Pi));
+        fprintf(f, "%.6lf\n", (double) L * c[i].get(GRB_DoubleAttr_Pi));
 
     for (; i < 3 * n; ++i)
-        fprintf(f, "%.6lf\n", U * c[i].get(GRB_DoubleAttr_Pi));
+        fprintf(f, "%.6lf\n", (double) U * c[i].get(GRB_DoubleAttr_Pi));
 }
 
