@@ -286,7 +286,7 @@ void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<
             X_V(v, v).set(GRB_DoubleAttr_LB, 1);
         }  
 
-        // fix interior vertices for n>=200
+        // fix interior of J to j when n>=200
         if(g->nr_nodes >= 200)
         {
             for (int v = 0; v < interiorOfJ.size(); ++v)
