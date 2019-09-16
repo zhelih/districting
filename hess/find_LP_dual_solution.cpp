@@ -24,7 +24,6 @@ void find_LP_dual_solution(GRBModel* model, graph* g, run_params rp, const vecto
         for (int j = 0; j < n; ++j)
             p.h[n*i + j] = cur++; //FIXME implicit reuse of the map (i,j) -> n*i+j
      
-
     printf("Build hess : created %lu variables\n", p.h.size());
     int nr_var = static_cast<int>(p.h.size());
 
@@ -32,7 +31,7 @@ void find_LP_dual_solution(GRBModel* model, graph* g, run_params rp, const vecto
     p.x = model->addVars(nr_var, GRB_CONTINUOUS);
     model->update();
 
-    // Set objective: minimize sum d^2_ij*x_ij
+    // set objective function
     GRBLinExpr expr = 0;
     for (int i = 0; i < n; ++i)   
         for (int j = 0; j < n; ++j)
@@ -68,17 +67,20 @@ void find_LP_dual_solution(GRBModel* model, graph* g, run_params rp, const vecto
     }
 
     // add constraint (c)
-    expr = 0;
+    GRBLinExpr constr = 0;
     for (int j = 0; j < n; ++j)
-        expr += X_V(j, j);
-    model->addConstr(expr == k);
+        constr += X_V(j, j);
+    model->addConstr(constr == k);
 
     // add contraints (e)
     for (int i = 0; i < n; ++i)
+    {
         for (int j = 0; j < n; ++j)
-                model->addConstr(X_V(i, j) <= X_V(j, j));
-
-    model->update();
+        {
+            if (i == j) continue;
+            model->addConstr(X_V(i, j) <= X_V(j, j));
+        }           
+    }      
 
     model->set(GRB_IntParam_Method, 2);
     model->set(GRB_IntParam_Crossover, 0);
@@ -93,8 +95,8 @@ void find_LP_dual_solution(GRBModel* model, graph* g, run_params rp, const vecto
 
     //create a file
     FILE* f;
-    string dualHot_fn = string(rp.state) + "_" + "LPdual" + ".hot";
-    f = fopen(dualHot_fn.c_str(), "w");
+    string lpDual_fn = string(rp.state) + "_" + "LPdual" + ".hot";
+    f = fopen(lpDual_fn.c_str(), "w");
 
     //print dual vars in file
     for (i = 0; i < n; ++i)
