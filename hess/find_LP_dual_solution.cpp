@@ -1,4 +1,4 @@
-// source file for finding hot dual
+// source file for finding dual LP solution
 #include <cstdio>
 #include <vector>
 #include <algorithm>
