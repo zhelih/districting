@@ -196,11 +196,11 @@ void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<
         if (heuristicSolution[i] == i)
             centers.push_back(i);
 
-    // this is B
-    vector<vector<int>> initialAssignments(k);
+    // this is J
+    vector<vector<int>> J(k);
 
-    // this is inerior of B
-    vector<vector<int>> interior(k);
+    // this is interior of J
+    vector<vector<int>> interiorOfJ(k);
 
     for (int j = 0; j < k; ++j)
     {
@@ -214,7 +214,7 @@ void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<
         // run DFS to find connected a component with center j 
         vector<int> s; // vector for the DFS
         vector<bool> visited(g->nr_nodes, false);
-        initialAssignments[j].push_back(centers[j]);
+        J[j].push_back(centers[j]);
         s.clear(); s.push_back(centers[j]); visited[centers[j]] = true;
         while (!s.empty())
         {
@@ -226,14 +226,14 @@ void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<
                     {
                         visited[nb_cur] = true;
                         s.push_back(nb_cur);
-                        initialAssignments[j].push_back(nb_cur);
+                        J[j].push_back(nb_cur);
                     }
                 }
         }
         // find interior vertices
-        for (int u = 0; u < initialAssignments[j].size(); ++u)
+        for (int u = 0; u < J[j].size(); ++u)
         {
-            int i = initialAssignments[j][u];
+            int i = J[j][u];
             int count = 0;
             for (int nb_i : g->nb(i))
             {
@@ -241,7 +241,7 @@ void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<
                     count++;
             }
             if (count == g->nb(i).size())
-                interior[j].push_back(i);
+                interiorOfJ[j].push_back(i);
         }
     }
 
@@ -298,31 +298,38 @@ void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<
             }
         }
 
-        for (int i = 0; i < k; ++i)
-        {
-            int v = centers[i];
-            X_V(v, v).set(GRB_DoubleAttr_LB, 1);
-        }
-
-        // start with initial assignments
-        for (int v = 0; v < initialAssignments.size(); ++v)
+        // give a partial warm start where each vertex subset J is assigned to center j
+        for (int v = 0; v < J.size(); ++v)
         {
             int j = centers[v];
-            for (int u = 0; u < initialAssignments[v].size(); ++u)
+            for (int u = 0; u < J[v].size(); ++u)
             {
-                int i = initialAssignments[v][u];
+                int i = J[v][u];
                 X_V(i, j).set(GRB_DoubleAttr_Start, 1);
             }
         }
 
-        // fix interior vertices
-        for (int v = 0; v < interior.size(); ++v)
+        // fix centers for n >= 200
+        if (g->nr_nodes >= 200)
         {
-            int j = centers[v];
-            for (int u = 0; u < interior[v].size(); ++u)
+            for (int i = 0; i < k; ++i)
             {
-                int i = interior[v][u];
-                X_V(i, j).set(GRB_DoubleAttr_LB, 1);
+                int v = centers[i];
+                X_V(v, v).set(GRB_DoubleAttr_LB, 1);
+            }
+        }
+
+        // fix interior vertices for n>=200
+        if(g->nr_nodes >= 200)
+        {
+            for (int v = 0; v < interiorOfJ.size(); ++v)
+            {
+                int j = centers[v];
+                for (int u = 0; u < interiorOfJ[v].size(); ++u)
+                {
+                    int i = interiorOfJ[v][u];
+                    X_V(i, j).set(GRB_DoubleAttr_LB, 1);
+                }
             }
         }
 
