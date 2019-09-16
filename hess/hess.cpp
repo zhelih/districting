@@ -255,7 +255,6 @@ void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<
         hess_params p = build_hess_restricted(&model, g, w, population, centers, L, U, k);
         populate_hess_params(p, g, centers); // now just use X(i,j), F0, F1 and more importantly hashtable are properly set up
 
-
         if (arg_model == "shir")
             build_shir(&model, p, g);
         else if (arg_model == "mcf")
@@ -269,35 +268,6 @@ void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<
             exit(1);
         }
 
-        for (int i = 0; i < g->nr_nodes; ++i)
-        {
-            if (population[i] == 0)
-            {
-                int count = 0;
-                int last;
-                for (int j : g->nb(i))
-                {
-                    if (population[j] != 0)
-                    {
-                        for (int u : centers)
-                        {
-                            model.addConstr(X_V(j, u) <= X_V(i, u));
-                        }
-                        break;
-                    }
-                    count++;
-                    last = j;
-                }
-                if (count == g->nb(i).size())
-                {
-                    for (int u : centers)
-                    {
-                        model.addConstr(X_V(last, u) <= X_V(i, u));
-                    }
-                }
-            }
-        }
-
         // give a partial warm start where each vertex subset J is assigned to center j
         for (int v = 0; v < J.size(); ++v)
         {
@@ -309,15 +279,12 @@ void ContiguityHeuristic(vector<int> &heuristicSolution, graph* g, const vector<
             }
         }
 
-        // fix centers for n >= 200
-        if (g->nr_nodes >= 200)
+        // fix centers
+        for (int i = 0; i < k; ++i)
         {
-            for (int i = 0; i < k; ++i)
-            {
-                int v = centers[i];
-                X_V(v, v).set(GRB_DoubleAttr_LB, 1);
-            }
-        }
+            int v = centers[i];
+            X_V(v, v).set(GRB_DoubleAttr_LB, 1);
+        }  
 
         // fix interior vertices for n>=200
         if(g->nr_nodes >= 200)
