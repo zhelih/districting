@@ -8,7 +8,7 @@
 #include "common.h"
 #include "graph.h"
 #include "models.h"
-#include "ralg.h"
+#include "ralg/ralg.h"
 #include "io.h"
 
 double solveLagrangian(graph* g, const vector<vector<double>>& w, const vector<int> &population, int L, int U, int k, 
