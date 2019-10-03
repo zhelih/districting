@@ -157,8 +157,8 @@ void dump_ralg_hot_start(const run_params& rp, double* res, int dim, double opt)
     return;
   }
   for(int i = 0; i < dim; ++i)
-    fprintf(f, "%lf\n", res[i]);
-  fprintf(f, "%lf\n", opt);
+    fprintf(f, "%.6lf\n", res[i]);
+  fprintf(f, "%.6lf\n", opt);
   fclose(f);
 }
 

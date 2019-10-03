@@ -23,7 +23,7 @@ void find_LP_dual_solution(GRBModel* model, graph* g, run_params rp, const vecto
     for (int i = 0; i < n; ++i)
         for (int j = 0; j < n; ++j)
             p.h[n*i + j] = cur++; //FIXME implicit reuse of the map (i,j) -> n*i+j
-     
+
     printf("Build hess : created %lu variables\n", p.h.size());
     int nr_var = static_cast<int>(p.h.size());
 
@@ -33,10 +33,10 @@ void find_LP_dual_solution(GRBModel* model, graph* g, run_params rp, const vecto
 
     // set objective function
     GRBLinExpr expr = 0;
-    for (int i = 0; i < n; ++i)   
+    for (int i = 0; i < n; ++i)
         for (int j = 0; j < n; ++j)
             expr += w[i][j] * X_V(i, j);
-      
+
     model->setObjective(expr, GRB_MINIMIZE);
 
     // add constraints (b)
@@ -79,8 +79,8 @@ void find_LP_dual_solution(GRBModel* model, graph* g, run_params rp, const vecto
         {
             if (i == j) continue;
             model->addConstr(X_V(i, j) <= X_V(j, j));
-        }           
-    }      
+        }
+    }
 
     model->set(GRB_IntParam_Method, 2);
     model->set(GRB_IntParam_Crossover, 0);
@@ -109,3 +109,22 @@ void find_LP_dual_solution(GRBModel* model, graph* g, run_params rp, const vecto
         fprintf(f, "%.6lf\n", (double) U * c[i].get(GRB_DoubleAttr_Pi));
 }
 
+// factor
+void run_relax(GRBModel* model, int n, int L, int U, const run_params rp)
+{
+    GRBModel* relax = model->relax();
+    relax->set(GRB_IntParam_Method, 2);
+    relax->set(GRB_IntParam_Crossover, 0);
+    relax->optimize();
+    double opt = relax->get(GRB_DoubleAttr_ObjVal);
+    GRBConstr* c = relax->getConstrs();
+    // extra memory usage, but should not matter
+    std::vector<double> x_val(3*n);
+    for(int i = 0; i < 3*n; ++i)
+    {
+      double coef = 1;
+      if(i >= n) coef = L; if(i >= 2*n) coef = U;
+      x_val[i] = coef * c[i].get(GRB_DoubleAttr_Pi);
+    }
+    dump_ralg_hot_start(rp, x_val, 3*n, opt);
+}
