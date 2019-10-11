@@ -17,8 +17,10 @@ all: districting ralg_hot_start
 
 districting: $(COMMON_OBJ) main.o
 	g++ main.o $(COMMON_OBJ) -o districting $(GENERAL_FLAGS) $(GUROBI_FLAGS) $(MKL_FLAGS)
+	cp districting ../
 ralg_hot_start: version.c graph.o lagrange.o main_hot_start.o io.o hess.o flow.o cut.o ralg.o
 	g++ main_hot_start.o $(COMMON_OBJ) -o ralg_hot_start $(GENERAL_FLAGS) $(GUROBI_FLAGS) $(MKL_FLAGS)
+	cp ralg_hot_start ../
 
 ralg.o: ralg/*
 	g++ -c -Wall ralg/ralg.cpp -O2 -I"$(MKLINCLUDE)" -std=c++11
