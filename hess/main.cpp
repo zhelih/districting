@@ -14,7 +14,7 @@
 const double VarFixingEpsilon = 0.00001;
 
 using namespace std;
-//extern const char* gitversion;
+extern const char* gitversion;
 
 template <typename T>
 void dealloc_vec(vector<T>& v, const char* name)
@@ -27,7 +27,7 @@ void dealloc_vec(vector<T>& v, const char* name)
 }
 int main(int argc, char *argv[])
 {
-  //printf("Districting, build %s\n", gitversion);
+  printf("Districting, build %s\n", gitversion);
   if (argc < 2) {
     printf("Usage: %s <config> [state [ralg_hot_start]]\n\
   Available models:\n\

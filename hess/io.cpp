@@ -145,11 +145,8 @@ void read_ralg_hot_start(const char* fname, double* x0, int dim)
   fclose(f);
 }
 
-// dump result to "ralg_hot_start.txt"
-void dump_ralg_hot_start(const run_params& rp, double* res, int dim, double opt)
+void dump_ralg_hot_start_fname(const char* outname, double* res, int dim, double opt)
 {
-  string hsfn = string(rp.state) + "_" + rp.model + ".hot";
-  const char* outname = hsfn.c_str();
   FILE* f = fopen(outname, "w");
   if(!f)
   {
@@ -160,6 +157,12 @@ void dump_ralg_hot_start(const run_params& rp, double* res, int dim, double opt)
     fprintf(f, "%.6lf\n", res[i]);
   fprintf(f, "%.6lf\n", opt);
   fclose(f);
+}
+void dump_ralg_hot_start(const run_params& rp, double* res, int dim, double opt)
+{
+  string hsfn = string(rp.state) + "_" + rp.model + ".hot";
+  const char* outname = hsfn.c_str();
+  dump_ralg_hot_start_fname(outname, res, dim, opt);
 }
 
 const char* parse_param(const char* src, const char* prefix)
