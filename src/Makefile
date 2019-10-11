@@ -13,7 +13,7 @@ GENERAL_FLAGS=-std=c++11 -O3 -Wno-sign-compare -Wall -Wextra
 COMMON_OBJ=version.c graph.o lagrange.o io.o hess.o flow.o cut.o ralg.o
 
 
-all: districting ralg_hot_start
+all: districting ralg_hot_start translate
 
 districting: $(COMMON_OBJ) main.o
 	g++ main.o $(COMMON_OBJ) -o districting $(GENERAL_FLAGS) $(GUROBI_FLAGS) $(MKL_FLAGS)
@@ -40,5 +40,6 @@ translate: translate.cpp
 clean:
 	rm ./districting
 	rm ./ralg_hot_start
+	rm ./translate
 	rm *.o
 	rm ./version.c

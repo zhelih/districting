@@ -57,5 +57,5 @@ WY
 
 for state in $states; do
   echo "Running $state"
-  /home/lykhovyd/progs/districting/hess/districting myconfig.txt $state
+  /home/lykhovyd/progs/districting/ralg_hot_start myconfig.txt $state $state.ralg_hot
 done
