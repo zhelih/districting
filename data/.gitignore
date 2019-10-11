@@ -1,6 +1,0 @@
-# keeping data localy here
-states/*
-*.native
-_build/
-TX.data
-TX.dimacs
