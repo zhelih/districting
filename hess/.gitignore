@@ -5,6 +5,7 @@ data/*
 grids/*
 # executables
 districting
+ralg_hot_start
 gridgen
 translate
 *.o
