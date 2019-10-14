@@ -12,6 +12,7 @@ struct hess_params
   std::vector<std::vector<bool>> F1;
   std::unordered_map<int, int> h;
   int n;
+  int infty;
 };
 
 //hack

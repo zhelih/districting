@@ -134,9 +134,6 @@ void CutCallback::callback()
               if (is_lcut)
               {
                 // refine set C
-                int infty = 1;
-                for (int i = 0; i<g->nr_nodes; ++i)
-                  infty += population[i];
                 for (auto it_c = C.begin(); it_c != C.end(); )
                 {
                   int c = *it_c;
@@ -144,7 +141,7 @@ void CutCallback::callback()
                   // priority queue Dijkstra
                   // priority queue pair is <weight, vertex>, min weight on top
                   priority_queue< pair<int, int>, vector <pair<int, int>>, greater<pair<int, int>> > pq;
-                  fill(dist.begin(), dist.end(), infty);
+                  fill(dist.begin(), dist.end(), p.infty);
                   const vector<int>& p = population; // alias
                   pq.push(make_pair(p[a], a));
                   dist[a] = p[a];
@@ -205,16 +202,13 @@ HessCallback* build_cut(GRBModel* model, hess_params& p, graph* g, const vector<
 HessCallback* build_lcut(GRBModel* model, hess_params& p, graph* g, const vector<int>& population, int U)
 {
   // fix x_ab=0 if dist_{G,p}(a,b)>U 
-  int infty = 1;
-  for (int i = 0; i<g->nr_nodes; ++i)
-    infty += population[i];
   vector<int> dist(g->nr_nodes);
   int countFixed = 0;
   for (int b = 0; b < g->nr_nodes; ++b)
   {
     // compute population-weighted distance from a to all other nodes.
     priority_queue< pair<int, int>, vector <pair<int, int>>, greater<pair<int, int>> > pq;
-    fill(dist.begin(), dist.end(), infty);
+    fill(dist.begin(), dist.end(), p.infty);
     pq.push(make_pair(population[b], b));
     dist[b] = population[b];
     while (!pq.empty())

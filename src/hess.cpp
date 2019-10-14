@@ -26,6 +26,12 @@ hess_params build_hess(GRBModel* model, graph* g, const vector<vector<double> >&
   p.n = n;
   p.F0 = F0; p.F1 = F1; // copy
 
+  // used in Cut callbacks
+  p.infty = 1;
+  for(int i = 0; i < n; ++i)
+    p.infty += population[i];
+
+
   // hash variables
   int cur = 0;
   for (int i = 0; i < n; ++i)
