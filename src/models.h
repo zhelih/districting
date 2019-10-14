@@ -16,6 +16,8 @@ double get_objective_coefficient(const vector<vector<int>>& dist, const vector<i
 
 // build hess model and return x variables
 hess_params build_hess(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k, cvv& F0, cvv& F1);
+// constraints are organized in certain order to match Lagrangian
+hess_params build_hess_special(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k);
 // add MCF constraints to model with hess variables x
 void build_shir(GRBModel* model, hess_params& p, graph* g);
 void build_mcf(GRBModel* model, hess_params& p, graph* g);

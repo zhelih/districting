@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 
     // get incumbent solution using centers from lagrangian
     hess_params p;
-    p = build_hess(&model, g, w, population, L, U, k, F0, F1);
+    p = build_hess_special(&model, g, w, population, L, U, k); // constraints are well-organized
 
     // relax the model
     //model.set(GRB_IntParam_NodeCount, 1);

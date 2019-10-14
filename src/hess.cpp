@@ -642,3 +642,74 @@ bool LocalSearch(graph* g, const vector<vector<double> >& w, const vector<int>& 
     cout << "UB of heuristicSolution = " << obj << endl;
     return true;
 }
+
+hess_params build_hess_special(GRBModel* model, graph* g, const vector<vector<double> >& w, const vector<int>& population, int L, int U, int k)
+{
+  // create GUROBI Hess model
+  int n = g->nr_nodes;
+  hess_params p;
+  p.n = n;
+  p.F0 = std::vector<std::vector<bool>>(n, std::vector<bool>(n, false));
+  p.F1 = std::vector<std::vector<bool>>(n, std::vector<bool>(n, false));
+
+  // do this only for compatibility with typical hess
+  int cur = 0;
+  for (int i = 0; i < n; ++i)
+    for (int j = 0; j < n; ++j)
+        p.h[n*i + j] = cur++; //FIXME unify ind
+
+  printf("Build hess : created %lu variables\n", p.h.size());
+  int nr_var = static_cast<int>(p.h.size());
+
+  // create variables
+  p.x = model->addVars(nr_var, GRB_CONTINUOUS); // !! create relaxation
+  model->update();
+
+  // Set objective: minimize sum d^2_ij*x_ij
+  GRBLinExpr expr = 0;
+  for (int i = 0; i < n; ++i)
+    for (int j = 0; j < n; ++j)
+      expr += w[i][j] * X(i, j);
+
+  model->setObjective(expr, GRB_MINIMIZE);
+
+  // add constraints (b)
+  for (int i = 0; i < n; ++i)
+  {
+    GRBLinExpr constr = 0;
+    for (int j = 0; j < n; ++j)
+      constr += X(i, j);
+    model->addConstr(constr == 1);
+  }
+
+  // add constraint (d)
+  for (int l = 0; l < 2; ++l) // firstly add lower bound
+  for (int j = 0; j < n; ++j)
+  {
+    GRBLinExpr constr = 0;
+    for (int i = 0; i < n; ++i)
+      constr += population[i] * X(i, j);
+    if(l == 0)
+      model->addConstr(constr - L * X(j, j) >= 0);
+    else
+      model->addConstr(constr - U * X(j, j) <= 0);
+  }
+
+
+  // add constraint (c)
+  expr = 0;
+  for (int j = 0; j < n; ++j)
+    expr += X(j, j);
+  model->addConstr(expr == k);
+
+  // add contraints (e)
+  for (int i = 0; i < n; ++i)
+    for (int j = 0; j < n; ++j)
+        model->addConstr(X(i, j) <= X(j, j));
+
+  model->update();
+
+  //model->write("debug_hess_special.lp");
+
+  return p;
+}
