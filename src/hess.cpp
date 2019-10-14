@@ -664,7 +664,8 @@ hess_params build_hess_special(GRBModel* model, graph* g, const vector<vector<do
   // create variables
   p.x = model->addVars(nr_var, GRB_CONTINUOUS); // !! create relaxation
   model->update();
-
+  for(int i = 0; i < nr_var; ++i)
+    p.x[i].set(GRB_DoubleAttr_UB, 1.); // upper bound
   // Set objective: minimize sum d^2_ij*x_ij
   GRBLinExpr expr = 0;
   for (int i = 0; i < n; ++i)

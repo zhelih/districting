@@ -75,17 +75,13 @@ int main(int argc, char *argv[])
 
     // relax the model
     //model.set(GRB_IntParam_NodeCount, 1);
-    for(int i = 0; i < nr_nodes; ++i)
-      for(int j = 0; j < nr_nodes; ++j)
-      {
-        X_V(i, j).set(GRB_CharAttr_VType, 'C'); // set variables continuous
-        X_V(i, j).set(GRB_DoubleAttr_UB, 1.); // upper bound
-      }
+    // UPD: build hess special is already relaxed
 
     model.set(GRB_DoubleParam_TimeLimit, 3600.); // 1 hour
     //model.set(GRB_IntParam_Threads, 10); // limit to 10 threads
     model.set(GRB_DoubleParam_NodefileStart, 10); // 10 GB
-    model.set(GRB_IntParam_Method, 3);  // use concurrent method to solve root LP
+    model.set(GRB_IntParam_Method, 2);  // use barrier
+    model.set(GRB_IntParam_Crossover, 0); // disable crossover to get internal point
 
     model.optimize();
 
