@@ -77,9 +77,9 @@ int main(int argc, char *argv[])
     //model.set(GRB_IntParam_NodeCount, 1);
     // UPD: build hess special is already relaxed
 
-    model.set(GRB_DoubleParam_TimeLimit, 3600.); // 1 hour
+    //model.set(GRB_DoubleParam_TimeLimit, 3600.); // 1 hour
     //model.set(GRB_IntParam_Threads, 10); // limit to 10 threads
-    model.set(GRB_DoubleParam_NodefileStart, 10); // 10 GB
+    //model.set(GRB_DoubleParam_NodefileStart, 10); // 10 GB
     model.set(GRB_IntParam_Method, 2);  // use barrier
     model.set(GRB_IntParam_Crossover, 0); // disable crossover to get internal point
 
