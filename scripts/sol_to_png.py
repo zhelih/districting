@@ -9,14 +9,21 @@ from random import randrange
 from qgis.core import *
 from qgis.gui import *
 
-DATABASE_PATH = "/home/lykhovyd/progs/gerry/lp2/districting/hess/data/districting/"
-DISTRICT_FILE = "/home/lykhovyd/progs/gerry/lp2/districting/hess/translation.out"
+import sys
+
+if len(sys.argv) < 4:
+    print("Usage : %s <shapefile> <blockfile> <output.png>" % sys.argv[0])
+    exit(0)
+
+SHP_FILE = sys.argv[1]
+DISTRICT_FILE = sys.argv[2]
+OUTPUT_FILE = sys.argv[3]
 QGIS_PATH = "/usr"
 
 # state = two letter abbreviation
 # level = [ counties | tracts ]
-state="OK"
-level="tracts"
+#state="OK"
+#level="tracts"
 
 
 ########################################################################################
@@ -30,17 +37,6 @@ app.initQgis()
 
 print("QGIS environment loaded")
 
-
-folder=""
-if level == "tracts":
-    folder = "census_tracts"
-elif level == "counties":
-    folder = level
-else:
-    print("Unknown level %s, must be counties or tracts!" % level)
-    exit(1)
-
-SHP_FILE = DATABASE_PATH + state + "/" + folder + "/maps/" + state + "_" + level + ".shp"
 
 layer = QgsVectorLayer(SHP_FILE, "district_map", "ogr")
 #layer = iface.addVectorLayer(SHP_FILE, "Global", "ogr")
@@ -115,7 +111,7 @@ options.setExtent(layer.extent())
 render = QgsMapRendererParallelJob(options)
 def finished():
     img = render.renderedImage()
-    img.save(state + "_" + level + ".png", "png")
+    img.save(OUTPUT_FILE, "png")
     print("Saving image done")
 render.finished.connect(finished)
 render.start()
