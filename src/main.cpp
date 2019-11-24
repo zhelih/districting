@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
     model.set(GRB_DoubleParam_NodefileStart, 10); // 10 GB
     model.set(GRB_IntParam_Method, 3);  // use concurrent method to solve root LP
     model.set(GRB_DoubleParam_MIPGap, 0);  // force gurobi to prove optimality
-   
+
     //provide IP warm start 
     if(ls_ok)
       for (int i = 0; i < nr_nodes; ++i)
@@ -249,10 +249,10 @@ int main(int argc, char *argv[])
     dealloc_vec(w, "w");
 
     //optimize the model
-    auto IP_start = chrono::steady_clock::now();  
+    auto IP_start = chrono::steady_clock::now();
 
     model.optimize();
-    
+
     chrono::duration<double> IP_duration = chrono::steady_clock::now() - IP_start;
     ffprintf(rp.output, "%.2lf, ", IP_duration.count());
     printf("IP duration time: %lf seconds\n", IP_duration.count());
