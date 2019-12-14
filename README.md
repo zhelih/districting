@@ -1,5 +1,5 @@
 # districting
-GUROBI based districting algorithms :earth_americas:
+C++ code and experimental results to accompany the paper "Imposing contiguity constraints in political districting models" by Hamidreza Validi, Austin Buchanan, and Eugene Lykhovyd. :earth_americas:
 
 #### Build:
 ```
