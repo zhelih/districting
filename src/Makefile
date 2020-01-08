@@ -12,11 +12,11 @@ no-mkl: MKLINCLUDE=-Iralg/cblas
 no-mkl: MKL_FLAGS= ralg/cblas/mkl_cblas.o
 no-mkl: check-env ralg/cblas/mkl_cblas.o $(TARGETS)
 
-districting: $(EXTRADEP) $(COMMON_OBJ) main.o
+districting: $(COMMON_OBJ) main.o
 	g++ main.o $(COMMON_OBJ) -o districting $(GENERAL_FLAGS) $(GUROBI_FLAGS) $(MKL_FLAGS)
 	cp districting ../
 
-ralg_hot_start: $(COMMON_OBJ)  main_hot_start.o $(EXTRADEP)
+ralg_hot_start: $(COMMON_OBJ)  main_hot_start.o
 	g++ main_hot_start.o $(COMMON_OBJ) -o ralg_hot_start $(GENERAL_FLAGS) $(GUROBI_FLAGS) $(MKL_FLAGS)
 	cp ralg_hot_start ../
 
