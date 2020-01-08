@@ -16,7 +16,7 @@ districting: $(COMMON_OBJ) main.o
 	g++ main.o $(COMMON_OBJ) -o districting $(GENERAL_FLAGS) $(GUROBI_FLAGS) $(MKL_FLAGS)
 	cp districting ../
 
-ralg_hot_start: $(COMMON_OBJ)  main_hot_start.o
+ralg_hot_start: $(COMMON_OBJ) main_hot_start.o
 	g++ main_hot_start.o $(COMMON_OBJ) -o ralg_hot_start $(GENERAL_FLAGS) $(GUROBI_FLAGS) $(MKL_FLAGS)
 	cp ralg_hot_start ../
 
@@ -26,8 +26,8 @@ ralg.o: ralg/*
 %.o: %.cpp *.h
 	g++ $(GENERAL_FLAGS) $(GUROBI_FLAGS) $(MKLINCLUDE) -c $< -o $@
 
-version.c: ../.git/HEAD ../.git/index
-	echo "const char *gitversion = \"$(shell git describe --tags --always)\";" > $@
+update_version: ../.git/HEAD ../.git/index
+	echo "const char *gitversion = \"$(shell git describe --tags --always)\";" > version.c
 
 gridgen: gridgen.cpp graph.o
 	g++ $(GENERAL_FLAGS) graph.o gridgen.cpp -o gridgen
@@ -41,7 +41,6 @@ clean:
 	rm -f ./translate
 	rm -f *.o
 	rm -f ./ralg/cblas/mkl_cblas.o
-	rm -f ./version.c
 
 check-env:
 ifndef GUROBI_HOME
@@ -58,4 +57,4 @@ else
   MKL_FLAGS:=-L$(MKLLIB) -L$(INTELROOT)/lib/intel64 -lmkl_blas95_lp64 -Wl,--start-group $(MKLLIB)/libmkl_intel_lp64.a $(MKLLIB)/libmkl_intel_thread.a $(MKLLIB)/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl
 endif
 
-.PHONY: check-env check-mkl-env
+.PHONY: check-env check-mkl-env update_version
