@@ -1,3 +1,0 @@
-state, model, nodes, k, L, U, LB, LB Time, UB, UB Time, UB LS, UB LS Time, UB cont, UB cont time, percent fixed, IP Time, Total Time, Num Callbacks, Callback Time, Num Cuts, Overty, Objval, Mipgap, Objbound, NodeCount, Found feasbile?
-KS, cut, 770, 4, 709714, 716845, KS, cut, 770, 4, 709714, 716845, 22654.34, 6.63, 22786.63, 2.67, 22786.63, 0.44, 22786.69, 0.82, 0.85, 1088.48, 1099.32, 4, 0.01, 9, 0.02, 22786.69, 0.00, 22786.69, 2951, Y
-KS, shir, 770, 4, 709714, 716845, 22654.34, 6.64, 22786.63, 2.63, 22786.63, 0.44, 22786.69, 0.82, 0.85, 2364.55, 2376.74, n/a, n/a, n/a, 0.02, 22786.69, 0.00, 22786.69, 2659, Y
