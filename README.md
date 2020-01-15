@@ -1,4 +1,4 @@
-# Imposing contiguity in the Hess model for political districting
+# Imposing contiguity constraints in political districting models
 C++ code and experimental results to accompany the paper "Imposing contiguity constraints in political districting models" by Hamidreza Validi, Austin Buchanan, and Eugene Lykhovyd. :earth_americas:
 
 #### Build:
@@ -9,7 +9,7 @@ make
 Environment variable `GUROBI_HOME` must point to current GUROBI installation. The current `Makefile` is written for version 8.1, corresponding changes might be needed to correctly link with another version.
 #### Binaries
 
-- `ralg_hot_start` computes good starting point for the r-algorithm, e.g., computes Lagrangian Dual bound. This is important step to fix as much variables as possible.
+- `ralg_hot_start` computes good starting point for the r-algorithm, e.g., computes Lagrangian Dual bound. This is important step to fix as many variables as possible.
 
 - `districting` main binary: computes Lagrangian Dual, heuristic, fixes variables and finds the districting partition.
 
