@@ -1,4 +1,4 @@
-# districting
+# Imposing contiguity in the Hess model for political districting
 C++ code and experimental results to accompany the paper "Imposing contiguity constraints in political districting models" by Hamidreza Validi, Austin Buchanan, and Eugene Lykhovyd. :earth_americas:
 
 #### Build:
