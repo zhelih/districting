@@ -126,7 +126,7 @@ void update_LB_contiguity(graph* g, const vector<double>& W, const vector<bool>&
       int u = pq.top().second;
       pq.pop();
       for (int nb : g->nb(u)) {
-        int weight = mymax(0, w_hat[nb][j]);
+        double weight = mymax(0, w_hat[nb][j]);
         if (dist[nb] > dist[u] + weight) {
           dist[nb] = dist[u] + weight;
           pq.push(make_pair(dist[nb], nb));
