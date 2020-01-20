@@ -75,17 +75,27 @@ print("Done adding district feature")
 fni = layer.fields().indexFromName(NEW_DISTRICT_FIELD)
 unique_values = layer.uniqueValues(fni)
 categories = []
-palette = [ '255, 0, 0', '0, 255, 0', '0, 0, 255', '255, 255, 0', '0, 255, 255', '255, 0, 255', '128, 128, 128', '128, 0, 0', '0, 128, 0', '128, 128, 0', '0, 128, 128', '0, 0, 128' ]
+# black -> gray, gradient
+outline = [ '#000000', '#696969', '#808080', '#A9A9A9', '#C0C0C0' ]
+
+palette_prism = [ '#5F4690', '#1D6996', '#38A6A5', '#0F8554', '#73AF48', '#EDAD08', '#E17C05', '#CC503E', '#94346E', '#6F4070', '#994E95', '#666666' ]
+palette_pastel = [ '#66C5CC', '#F6CF71', '#F89C74', '#DCB0F2', '#87C55F', '#9EB9F3', '#FE88B1', '#C9DB74', '#8BE0A4', '#B497E7', '#D3B484', '#B3B3B3' ]
+palette_random = QgsLimitedRandomColorRamp.randomColors(len(unique_values))
+
+outline_color = outline[ 0 ]
+print("Setting outline color to %s" % outline_color)
+
 for i, unique_value in enumerate(unique_values):
     # initialize the default symbol for this geometry type
     symbol = QgsSymbol.defaultSymbol(layer.geometryType())
 
     # configure a symbol layer
     layer_style = {}
-    # layer_style['color'] = '%d, %d, %d' % (randrange(0, 256), randrange(0, 256), randrange(0, 256))
-    layer_style['color'] = palette[ i % len(palette) ]
-    layer_style['outline'] = '#000000'
+    layer_style['color'] = palette_pastel[ i % len(palette_pastel) ] # palette_random[ i ].name()
+    layer_style['strokeColor'] = outline_color
+    layer_style['strokeWidth'] = "1.0"
     symbol_layer = QgsSimpleFillSymbolLayer.create(layer_style)
+    symbol_layer.setStrokeColor(QColor(layer_style['strokeColor'])) # must be done due to QGIS bug
 
     # replace default symbol layer with the configured one
     if symbol_layer is not None:
@@ -96,7 +106,7 @@ for i, unique_value in enumerate(unique_values):
     # entry for the list of category items
     categories.append(category)
 layer.setRenderer( QgsCategorizedSymbolRenderer ( NEW_DISTRICT_FIELD, categories ) )
-layer.triggerRepaint()
+layer.triggerRepaint(False)
 
 print("Categorizing done")
 
@@ -105,7 +115,8 @@ QgsProject.instance().addMapLayer(layer)
 options = QgsMapSettings()
 options.setLayers([layer]) #"district_map"])
 options.setBackgroundColor(QColor(255, 255, 255))
-options.setOutputSize(QSize(500, 500))
+options.setOutputDpi(50.0)
+options.setOutputSize(QSize(1024, 1024))
 options.setExtent(layer.extent())
 
 render = QgsMapRendererParallelJob(options)
