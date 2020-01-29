@@ -1,5 +1,5 @@
 # Imposing contiguity constraints in political districting models
-C++ code and experimental results to accompany the paper "Imposing contiguity constraints in political districting models" by Hamidreza Validi, Austin Buchanan, and Eugene Lykhovyd. :earth_americas:
+C++ code and experimental results to accompany the paper "Imposing contiguity constraints in political districting models" by Hamidreza Validi, Austin Buchanan, and Eugene Lykhovyd. [pdf](http://www.optimization-online.org/DB_HTML/2020/01/7582.html) :earth_americas:
 
 #### Build:
 ```
