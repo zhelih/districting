@@ -1,1 +1,1 @@
-const char *gitversion = "90dc491";
+const char *gitversion = "05bd92b";
