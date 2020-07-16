@@ -79,7 +79,8 @@ categories = []
 outline = [ '#000000', '#696969', '#808080', '#A9A9A9', '#C0C0C0' ]
 
 palette_prism = [ '#5F4690', '#1D6996', '#38A6A5', '#0F8554', '#73AF48', '#EDAD08', '#E17C05', '#CC503E', '#94346E', '#6F4070', '#994E95', '#666666' ]
-palette_pastel = [ '#66C5CC', '#F6CF71', '#F89C74', '#DCB0F2', '#87C55F', '#9EB9F3', '#FE88B1', '#C9DB74', '#8BE0A4', '#B497E7', '#D3B484', '#B3B3B3' ]
+palette_pastel = [ '#66C5CC', '#F6CF71', '#F89C74', '#DCB0F2', '#87C55F', '#9EB9F3', '#FE88B1', '#C9DB74', '#8BE0A4', '#B497E7', '#D3B484', '#B3B3B3',
+'#855C75', '#D9AF6B', '#AF6458', '#736F4C', '#526A83', '#625377', '#68855C', '#9C9C5E', '#A06177', '#8C785D', '#467378', '#7C7C7C' ]
 palette_random = QgsLimitedRandomColorRamp.randomColors(len(unique_values))
 
 outline_color = outline[ 0 ]
