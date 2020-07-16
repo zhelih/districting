@@ -278,7 +278,7 @@ int main(int argc, char *argv[])
 
       // no incumbent solution was found, these values do no make sense
       if (model.get(GRB_IntAttr_SolCount) == 0)
-        ffprintf(rp.output, "?, ?, %.2lf, ", objbound);
+        ffprintf(rp.output, "?, ?, ");
       else
       {
         double objval = model.get(GRB_DoubleAttr_ObjVal);
