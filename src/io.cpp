@@ -105,7 +105,7 @@ void printf_solution(const vector<int>& sol, const char* fname)
   }
 }
 
-void calculate_UL(const vector<int> population, int k, int* L, int* U)
+void calculate_UL(const vector<int>& population, int k, int* L, int* U)
 {
   int total_pop = 0;
   for(int p : population)
