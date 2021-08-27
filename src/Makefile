@@ -1,4 +1,4 @@
-GUROBI_FLAGS=-I"$(GUROBI_HOME)/include" -L"$(GUROBI_HOME)/lib" -lgurobi81 -lgurobi_g++5.2
+GUROBI_FLAGS=-I"$(GUROBI_HOME)/include" -L"$(GUROBI_HOME)/lib" -lgurobi91 -lgurobi_g++5.2
 GENERAL_FLAGS=-std=c++11 -O3 -Wno-sign-compare -Wall -Wextra
 
 
@@ -53,7 +53,7 @@ ifndef INTELROOT
 else
   MKLROOT:=$(INTELROOT)/mkl
   MKLLIB:=$(MKLROOT)/lib/intel64_lin
-  MKLINCLUDE:=-I$(MKLROOT)/include -I$(MKLINCLUDE)/intel64/lp64 
+  MKLINCLUDE:=-I$(MKLROOT)/include -I$(MKLINCLUDE)/intel64/lp64
   MKL_FLAGS:=-L$(MKLLIB) -L$(INTELROOT)/lib/intel64 -lmkl_blas95_lp64 -Wl,--start-group $(MKLLIB)/libmkl_intel_lp64.a $(MKLLIB)/libmkl_intel_thread.a $(MKLLIB)/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl
 endif
 

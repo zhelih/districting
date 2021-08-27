@@ -15,7 +15,7 @@ int read_input_data(const char* dimacs_fname, const char* distance_fname, const 
 void translate_solution(hess_params& p, vector<int>& sol, int n);
 // prints the solution <node> <district>
 void printf_solution(const vector<int>& sol, const char* fname=NULL);
-void calculate_UL(const vector<int> population, int k, int* L, int* U);
+void calculate_UL(const vector<int>& population, int k, int* L, int* U);
 int read_auto_int(const char*, int);
 //read ralg initial point from file [fname] to [x0]
 void read_ralg_hot_start(const char* fname, double* x0, int dim);
