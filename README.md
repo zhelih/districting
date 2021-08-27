@@ -6,7 +6,7 @@ C++ code and experimental results to accompany the paper "Imposing contiguity co
 cd src/
 make
 ```
-Environment variable `GUROBI_HOME` must point to current GUROBI installation. The current `Makefile` is written for version 8.1, corresponding changes might be needed to correctly link with another version.
+Environment variable `GUROBI_HOME` must point to current GUROBI installation. The current `Makefile` is written for version 9.1.2, corresponding changes might be needed to correctly link with another version.
 #### Binaries
 
 - `ralg_hot_start` computes good starting point for the r-algorithm, e.g., computes Lagrangian Dual bound. This is important step to fix as many variables as possible.
