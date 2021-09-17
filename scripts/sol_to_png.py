@@ -1,4 +1,10 @@
-#!/bin/python3
+#!/usr/bin/python3
+
+import sys
+
+if len(sys.argv) < 4:
+    print("Usage : %s <shapefile> <blockfile> <output.png>" % sys.argv[0])
+    exit(0)
 
 from qgis.utils import iface
 from PyQt5.QtCore import QVariant, QSize
@@ -9,11 +15,6 @@ from random import randrange
 from qgis.core import *
 from qgis.gui import *
 
-import sys
-
-if len(sys.argv) < 4:
-    print("Usage : %s <shapefile> <blockfile> <output.png>" % sys.argv[0])
-    exit(0)
 
 SHP_FILE = sys.argv[1]
 DISTRICT_FILE = sys.argv[2]
@@ -60,7 +61,7 @@ if -1 == layer.fields().indexFromName(NEW_DISTRICT_FIELD):
 
 # loop through all GEOIDs
 for f in layer.getFeatures():
-    geoid = f["GEOID10"]
+    geoid = f["GEOID20"]
     if geoid in dict:
         # add district number as attribute
         f[NEW_DISTRICT_FIELD] = dict[geoid]
