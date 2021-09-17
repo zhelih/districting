@@ -64,6 +64,7 @@ let () =
   let rec loop i =
     try
       let (geoid,d) = match nsplit (input_line f) ',' with f::s -> f,s | _ -> assert false in
+      let geoid = if geoid.[0] = '"' then String.sub geoid 1 (String.length geoid - 2) else geoid in
 
       Hashtbl.add h_row geoid i;
       List.iteri (fun j d ->
@@ -89,6 +90,7 @@ let () =
       let (_,rest) = split rest ',' in
       let rest = if rest.[0] = '"' then String.sub rest 1 (String.length rest - 2) else rest in (* remove quotes *)
       let nbs = nsplit rest ',' in
+      let geoid = if geoid.[0] = '"' then String.sub geoid 1 (String.length geoid - 2) else geoid in
 
       let v_from = try Hashtbl.find h_ind geoid with exn -> (printf "missing %s (v_from)\n" geoid; raise exn) in
       List.iter (fun geoid_to ->
@@ -101,7 +103,7 @@ let () =
         let d_row2 = try Hashtbl.find h_row geoid with exn -> (printf "missing %s from distances rows" geoid; raise exn) in
         let d = distances.(d_col).(d_row) in
         let d2 = distances.(d_col2).(d_row2) in
-        if d <> d2 then
+        if abs_float (d -. d2) > 1.e-6 then
           printf "Distance error: %.8f <> %.8f for geoid %s and %s (indices (%d,%d) and (%d,%d)\n" d d2 geoid geoid_to d_col d_row d_col2 d_row2;
         adj.(v_from).(v_to) <- Some d;
         adj.(v_to).(v_from) <- Some d

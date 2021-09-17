@@ -1,5 +1,31 @@
+#!/usr/bin/python
+import os
+
+#population_temp
+
+def initialize_pop():
+    print("Loading population data (might take a while)...")
+    res = {}
+    folder = 'population_temp'
+    for filename in os.listdir(folder):
+        with open(folder+'/'+filename, 'r', errors='replace') as f:
+            try:
+                lines = f.readlines()
+                for line in lines:
+                    line = line.strip()
+                    fields = line.split('|')
+                    population = fields[-7]
+                    geoid = fields[9]
+                    res[geoid] = population
+            except:
+                print("Exception in file %s" % filename)
+    print("done")
+    return res
+
+population = initialize_pop()
+
 # To run use `execfile('script.py')' in QGIS Python Console
-from qgis import processing
+import processing
 from os import mkdir
 from shutil import rmtree as rm
 import smtplib
@@ -28,7 +54,7 @@ states = {
 '24': {'abbr': 'MD', 'espg': '3559', 'name': 'Maryland'},
 '25': {'abbr': 'MA', 'espg': '3585', 'name': 'Massachusetts'},
 '26': {'abbr': 'MI', 'espg': '3587', 'name': 'Michigan'},
-'27': {'abbr': 'Mn', 'espg': '3594', 'name': 'Minnesota'},
+'27': {'abbr': 'MN', 'espg': '3594', 'name': 'Minnesota'},
 '28': {'abbr': 'MS', 'espg': '3597', 'name': 'Mississippi'},
 '29': {'abbr': 'MO', 'espg': '3602', 'name': 'Missouri'},
 '30': {'abbr': 'MT', 'espg': '3604', 'name': 'Montana'},
@@ -58,10 +84,7 @@ states = {
 '56': {'abbr': 'WY', 'espg': '3703', 'name': 'Wyoming'}
 }
 
-_NAME_FIELD = 'GEOID10'
-_POP_FIELD = 'DP0010001'
-_NEW_NEIGHBORS_FIELD = 'NEIGHBORS'
-
+_NAME_FIELD = 'GEOID20'
 
 def writeGraphFromLayer(layer, prefix):
 #layer = iface.activeLayer()
@@ -77,7 +100,7 @@ def writeGraphFromLayer(layer, prefix):
 
     # Loop through all features and find features that touch each feature
     for f in feature_dict.values():
-        print 'Working on %s' % f[_NAME_FIELD]
+        print('Working on %s' % f[_NAME_FIELD])
         geom = f.geometry()
         # Find all features that intersect the bounding box of the current feature.
         # We use spatial index to find the features intersecting the bounding box
@@ -99,50 +122,58 @@ def writeGraphFromLayer(layer, prefix):
                 if(com.length() > 1.e-10):
                     neighbors.append(intersecting_f[_NAME_FIELD])
         res = ','.join(neighbors)
-        output_file.write("{},{},\"{}\"\n".format(f[_NAME_FIELD], f[_POP_FIELD], res))
+        if f[_NAME_FIELD] not in population:
+            print("Unknown population for GEOID %s" % f[_NAME_FIELD])
+        pop = population[f[_NAME_FIELD]]
+        output_file.write("{},{},\"{}\"\n".format(f[_NAME_FIELD], pop, res))
         layer.updateFeature(f)
 
     layer.commitChanges()
     output_file.close()
-    print 'Processing complete.'
-
-def sendMail(subj, message):
-    msg = MIMEText(message)
-    msg['Subject'] = subj
-    msg['From'] =  'noreply@ie-etb2027sb06.engr.tamu.edu'
-    msg['To'] = 'lykhovyd@tamu.edu'
-    msg['Cc'] = 'tsumiman@tamu.edu'
-
-    s = smtplib.SMTP('localhost')
-    s.sendmail(msg['From'], [msg['To'], msg['Cc']], msg.as_string())
-    s.quit()
+    print('Processing complete.')
 
 map_data = "Profile-County_Tract/Profile-County_Tract.gdb"
 layer_name = "Tract_2010Census_DP1"
-layer = iface.addVectorLayer("{file}|layername={layer}".format(file=map_data, layer=layer_name), "Main", "ogr")
+#layer = iface.addVectorLayer("{file}|layername={layer}".format(file=map_data, layer=layer_name), "Main", "ogr")
 
-sendMail("QGIS script launched", "Hide your kittens")
+print("QGis script started")
 try:
     for code in states:
         name = states[code]["name"]
         abbr = states[code]["abbr"]
         espg = states[code]["espg"]
-        try:	
-          mkdir("{}".format(name))
-        except OSError:
-          pass
+        # change dir
+        os.chdir(abbr)
+        os.chdir('census_tracts') #TODO
+        #os.chdir('counties')
+        os.chdir('maps')
         print("Processing state {} (GEOID10 {})".format(name, code))
-        _ = layer.setSubsetString(""""GEOID10" LIKE '{statecode}%'""".format(statecode=code))
-        QgsVectorFileWriter.writeAsVectorFormat(layer, "{}/{}_tracts.shp".format(name, abbr), "utf-8", None)
-        centroids = processing.runandload("qgis:polygoncentroids", layer, "{}/{}_centers.shp".format(name, abbr))
-        layer_centroids = QgsMapLayerRegistry.instance().mapLayersByName("Centroids")[0]
-        projected = processing.runandload("qgis:reprojectlayer", layer_centroids, "EPSG:{}".format(espg), "{}/{}_centers_proj.shp".format(name, abbr))
-        layer_projected = QgsMapLayerRegistry.instance().mapLayersByName("Reprojected")[0]
-        distance = processing.runalg("qgis:distancematrix", layer_projected, "GEOID10", layer_projected, "GEOID10", 1, 0, "{}/{}_d.csv".format(name, abbr))
-        QgsMapLayerRegistry.instance().removeMapLayers([layer_centroids.id(), layer_projected.id()])
-        writeGraphFromLayer(layer, "{}/{}".format(name, abbr))
+        #layer = iface.addVectorLayer('%s_tracts.shp' % abbr, abbr, "ogr") #TODO
+        layer = iface.addVectorLayer('%s_tracts.shp' % abbr, abbr, "ogr") #TODO
+        centroids_fname = "{}_centers.shp".format(abbr)
+        # keep all parts False since then we have duplicate centers
+        centroids = processing.run("native:centroids", {"INPUT": layer, "ALL_PARTS":False, "OUTPUT": centroids_fname})
+        layer_projected = iface.addVectorLayer(centroids_fname, "%s_centr" % abbr, "ogr")
+        #repro_fname = "{}_centers_proj.shp".format(abbr)
+        #projected = processing.run("native:reprojectlayer", {"INPUT": layer_centroids, "TARGET_CRS": "EPSG:{}".format(espg), "OUTPUT": repro_fname})
+        #layer_projected = QgsMapLayerRegistry.instance().mapLayersByName("Reprojected")[0]
+        #layer_projected = iface.addVectorLayer(repro_fname, "%s_repro" % abbr, "ogr")
+        distance = processing.run("qgis:distancematrix", {"INPUT": layer_projected, "INPUT_FIELD": "GEOID20", "TARGET": layer_projected, "TARGET_FIELD": "GEOID20", "MATRIX_TYPE": 1, "NEAREST_POINTS": 0, "OUTPUT": "{}_d.csv".format(abbr)})
+        #QgsMapLayerRegistry.instance().removeMapLayers([layer_centroids.id(), layer_projected.id()])
+        writeGraphFromLayer(layer, abbr)
+        QgsProject.instance().removeMapLayer(layer_projected)
+        #QgsProject.instance().removeMapLayer(layer_centroids)
+        QgsProject.instance().removeMapLayer(layer)
+        os.chdir('..')
+        os.chdir('..')
+        os.chdir('..')
+        print("Done for %s" % abbr)
+        #break
 except Exception as error:
     #TODO send email
     print("Got an error: %s" % str(error))
-    sendMail("Error during QGIS script run", str(error))
-sendMail("QGIS run is done", "OK")
+    os.chdir('..')
+    os.chdir('..')
+    os.chdir('..')
+    raise error
+print("ALL DONE")

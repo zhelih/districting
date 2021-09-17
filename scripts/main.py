@@ -18,7 +18,7 @@ def read_table(filename_in, filename_out, id_map):
 
   for line in fin.readlines():
     line = line.replace("\n", "").split(",")
-    hashed = line[0]
+    hashed = line[0].replace('"', "")
     values = line[1:]
     lid = id_map[hashed]
     for i in range(len(values)):
