@@ -15,8 +15,11 @@ def initialize_pop():
                     line = line.strip()
                     fields = line.split('|')
                     population = fields[-7]
-                    geoid = fields[9]
-                    res[geoid] = population
+                    # Census files have matching geoids for different entities (why?)
+                    # we filter by tracts and counties only (CT stands for tract, 06 is county flag)
+                    if fields[-3] == '06' or fields[-3] == 'CT':
+                        geoid = fields[9]
+                        res[geoid] = population
             except:
                 print("Exception in file %s" % filename)
     print("done")
