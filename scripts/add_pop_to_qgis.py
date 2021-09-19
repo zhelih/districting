@@ -16,8 +16,9 @@ def initialize_pop():
                     fields = line.split('|')
                     population = fields[-7]
                     # Census files have matching geoids for different entities (why?)
-                    # we filter by tracts and counties only (CT stands for tract, 06 is county flag)
-                    if fields[-3] == '06' or fields[-3] == 'CT':
+                    # we filter by tracts and counties only (CT stands for tract, 06 is county flag)a
+                    markers = [ '06', 'CT', '05', '04', '03', '12', '15', '25', '00' ]
+                    if fields[-3] in markers:
                         geoid = fields[9]
                         res[geoid] = population
             except:
@@ -151,8 +152,8 @@ try:
         #os.chdir('counties')
         os.chdir('maps')
         print("Processing state {} (GEOID10 {})".format(name, code))
+        layer = iface.addVectorLayer('%s_counties.shp' % abbr, abbr, "ogr") #TODO
         #layer = iface.addVectorLayer('%s_tracts.shp' % abbr, abbr, "ogr") #TODO
-        layer = iface.addVectorLayer('%s_tracts.shp' % abbr, abbr, "ogr") #TODO
         centroids_fname = "{}_centers.shp".format(abbr)
         # keep all parts False since then we have duplicate centers
         centroids = processing.run("native:centroids", {"INPUT": layer, "ALL_PARTS":False, "OUTPUT": centroids_fname})
